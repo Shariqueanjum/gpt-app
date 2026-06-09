@@ -18,7 +18,7 @@ import {
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import CloseIcon from '@mui/icons-material/Close'
-import { logout } from '../../slices/authSlice'
+import { logoutUser } from '../../slices/authSlice'
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -40,18 +40,18 @@ const Navbar = () => {
   const handleClose = () => setMobileOpen(false)
 
   const handleLogout = () => {
-    dispatch(logout())
+    dispatch(logoutUser())
     navigate('/')
     handleClose()
   }
-
+  
   const publicNavLinks = [
-    { label: 'Home', path: '/' },
-    { label: 'How it Works?', path: '/#how-it-works' },
-    { label: 'Redeem', path: '/#redeem' },
-    { label: 'Why Choose Us', path: '/#why-choose-us' },
-    { label: 'We Paid', path: '/#we-paid' },
-  ]
+  { label: 'Home', path: '/' },
+  { label: 'How it Works?', path: '/#how-it-works' },
+  { label: 'Why Choose Us', path: '/#why-choose-us' },
+  { label: 'Redeem', path: '/#redeem' },
+  { label: 'We Paid', path: '/#we-paid' },
+]
 
   const authNavLinks = [
     { label: 'Dashboard', path: '/dashboard' },
