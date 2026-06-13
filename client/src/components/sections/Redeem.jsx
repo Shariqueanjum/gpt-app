@@ -2,37 +2,36 @@
 import { Box, Typography, Paper, Container } from '@mui/material'
 import { useState } from 'react'
 
-// Inline SVG icons — no external dependencies, fast loading
 const UPIIcon = () => (
-  <svg width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect width="100" height="100" rx="20" fill="#5312bc"/>
     <text x="50" y="58" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="32">UPI</text>
   </svg>
 )
 
 const NetBankingIcon = () => (
-  <svg width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect width="100" height="100" rx="20" fill="#006e2f"/>
     <path d="M50 20L20 40H30V75H45V55H55V75H70V40H80L50 20Z" fill="white"/>
   </svg>
 )
 
 const PayPalIcon = () => (
-  <svg width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect width="100" height="100" rx="20" fill="#003087"/>
     <text x="50" y="62" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="28">PP</text>
   </svg>
 )
 
 const CryptoIcon = () => (
-  <svg width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <circle cx="50" cy="50" r="40" fill="#F7931A"/>
     <text x="50" y="65" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="42">₿</text>
   </svg>
 )
 
 const GooglePlayIcon = () => (
-  <svg width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect width="100" height="100" rx="20" fill="url(#playGrad)"/>
     <defs>
       <linearGradient id="playGrad" x1="0" y1="0" x2="100" y2="100">
@@ -46,7 +45,7 @@ const GooglePlayIcon = () => (
 )
 
 const GiftCardIcon = () => (
-  <svg width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect width="100" height="100" rx="20" fill="#E03110"/>
     <rect x="20" y="35" width="60" height="40" rx="6" fill="white" fillOpacity="0.9"/>
     <rect x="20" y="25" width="60" height="15" rx="6" fill="white" fillOpacity="0.6"/>
@@ -89,7 +88,6 @@ const Redeem = () => {
         `,
       }}
     >
-      {/* Background glow orbs */}
       <Box
         sx={{
           position: 'absolute',
@@ -118,52 +116,43 @@ const Redeem = () => {
       />
 
       <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
-        {/* Header Row */}
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            justifyContent: 'space-between',
-            alignItems: { xs: 'flex-start', md: 'flex-end' },
-            mb: { xs: 5, md: 7 },
-            gap: { xs: 3, md: 0 },
-          }}
-        >
-          <Box sx={{ maxWidth: 560 }}>
-            <Typography
-              sx={{
-                fontFamily: '"Sora", sans-serif',
-                fontSize: { xs: '28px', md: '40px' },
-                fontWeight: 800,
-                lineHeight: 1.15,
-                color: '#131b2e',
-                mb: 2,
-              }}
-            >
-              How to Withdraw
-            </Typography>
+        {/* Header — Centered */}
+        <Box sx={{ textAlign: 'center', mb: { xs: 5, md: 7 } }}>
+          <Typography
+            sx={{
+              fontFamily: '"Sora", sans-serif',
+              fontSize: { xs: '28px', md: '36px' },
+              fontWeight: 800,
+              lineHeight: 1.15,
+              color: '#131b2e',
+              mb: 2,
+            }}
+          >
+            How to Withdraw
+          </Typography>
 
-            <Typography
-              sx={{
-                fontFamily: '"Plus Jakarta Sans", sans-serif',
-                fontSize: { xs: '1.1rem', md: '1.2rem' },
-                lineHeight: 1.5,
-                color: '#1f2937',
-                fontWeight: 500,
-              }}
-            >
-              Instant payouts through the world's most trusted platforms. No waiting, no hidden fees.
-            </Typography>
-          </Box>
+          <Typography
+            sx={{
+              fontFamily: '"Plus Jakarta Sans", sans-serif',
+              fontSize: { xs: '1.1rem', md: '1.2rem' },
+              lineHeight: 1.5,
+              color: '#1f2937',
+              fontWeight: 500,
+              maxWidth: 560,
+              mx: 'auto',
+              mb: 3,
+            }}
+          >
+            Instant payouts through the world's most trusted platforms. No waiting, no hidden fees.
+          </Typography>
 
-          {/* Verified Badge */}
           <Box
             sx={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 1.5,
               px: 4,
-              py: 2.5,
+              py: 2,
               borderRadius: '9999px',
               bgcolor: 'rgba(255, 255, 255, 0.6)',
               backdropFilter: 'blur(12px)',
@@ -200,99 +189,118 @@ const Redeem = () => {
           </Box>
         </Box>
 
-        {/* Payment Methods Grid */}
+        {/* Horizontal Carousel — NO NUMBERS */}
         <Box
           sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: 'repeat(2, 1fr)',
-              sm: 'repeat(3, 1fr)',
-              md: 'repeat(6, 1fr)',
-            },
-            gap: 3,
+            position: 'relative',
+            mx: { xs: -2, md: 0 },
             mb: 6,
           }}
         >
-          {paymentMethods.map((method, idx) => {
-            const IconComponent = method.Icon
-            return (
-              <Paper
-                key={idx}
-                elevation={0}
-                onMouseEnter={() => setHoveredIndex(idx)}
-                onMouseLeave={() => setHoveredIndex(null)}
-                sx={{
-                  p: 3,
-                  borderRadius: '16px',
-                  bgcolor: 'rgba(255, 255, 255, 0.7)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(203, 195, 215, 0.25)',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                  transform: hoveredIndex === idx ? 'translateY(-8px) scale(1.02)' : 'none',
-                  boxShadow: hoveredIndex === idx
-                    ? '0 20px 40px -12px rgba(83, 18, 188, 0.15)'
-                    : '0 4px 12px rgba(0,0,0,0.04)',
-                  '&:hover': {
-                    borderColor: 'rgba(83, 18, 188, 0.15)',
-                    '& .method-icon': {
-                      transform: 'scale(1.1)',
-                    },
-                  },
-                }}
-              >
-                {/* Icon Container */}
-                <Box
-                  className="method-icon"
+          <Box
+            sx={{
+              display: 'flex',
+              gap: { xs: 2, md: 3 },
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              px: { xs: 2, md: 0 },
+              py: 2,
+              '&::-webkit-scrollbar': { display: 'none' },
+              scrollbarWidth: 'none',
+              cursor: 'grab',
+              scrollBehavior: 'smooth',
+              touchAction: 'pan-x',
+            }}
+          >
+            {paymentMethods.map((method, idx) => {
+              const IconComponent = method.Icon
+              return (
+                <Paper
+                  key={idx}
+                  elevation={0}
+                  onMouseEnter={() => setHoveredIndex(idx)}
+                  onMouseLeave={() => setHoveredIndex(null)}
                   sx={{
-                    width: '100%',
-                    aspectRatio: '1',
-                    bgcolor: '#fff',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mb: 2.5,
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
-                    transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    flex: '0 0 auto',
+                    width: { xs: 160, sm: 180, md: 200 },
+                    borderRadius: '16px',
+                    bgcolor: 'rgba(255, 255, 255, 0.7)',
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(203, 195, 215, 0.25)',
+                    cursor: 'pointer',
                     position: 'relative',
-                    zIndex: 2,
-                    p: 1,
+                    overflow: 'hidden',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transform: hoveredIndex === idx ? 'translateY(-8px) scale(1.05)' : 'none',
+                    boxShadow: hoveredIndex === idx
+                      ? '0 20px 40px -12px rgba(83, 18, 188, 0.15)'
+                      : '0 4px 12px rgba(0,0,0,0.04)',
+                    '&:hover': {
+                      borderColor: 'rgba(83, 18, 188, 0.15)',
+                      '& .method-icon': {
+                        transform: 'scale(1.1)',
+                      },
+                    },
                   }}
                 >
-                  <IconComponent />
-                </Box>
+                  {/* Icon area — clean, no numbers */}
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      height: { xs: 140, sm: 160, md: 180 },
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      p: 2,
+                    }}
+                  >
+                    <Box
+                      className="method-icon"
+                      sx={{
+                        width: { xs: 60, md: 72 },
+                        height: { xs: 60, md: 72 },
+                        bgcolor: '#fff',
+                        borderRadius: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                        transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        p: 1,
+                      }}
+                    >
+                      <IconComponent />
+                    </Box>
+                  </Box>
 
-                {/* Name */}
-                <Typography
-                  sx={{
-                    fontFamily: '"Sora", sans-serif',
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    color: '#131b2e',
-                    mb: 0.5,
-                  }}
-                >
-                  {method.name}
-                </Typography>
-
-                {/* Min */}
-                <Typography
-                  sx={{
-                    fontFamily: '"Plus Jakarta Sans", sans-serif',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    color: '#7b7486',
-                  }}
-                >
-                  {method.min} Min
-                </Typography>
-              </Paper>
-            )
-          })}
+                  {/* Text */}
+                  <Box sx={{ p: { xs: 2, md: 2.5 }, pt: 0 }}>
+                    <Typography
+                      sx={{
+                        fontFamily: '"Sora", sans-serif',
+                        fontSize: { xs: '13px', md: '14px' },
+                        fontWeight: 700,
+                        color: '#131b2e',
+                        mb: 0.5,
+                      }}
+                    >
+                      {method.name}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: '"Plus Jakarta Sans", sans-serif',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        color: '#7b7486',
+                      }}
+                    >
+                      {method.min} Min
+                    </Typography>
+                  </Box>
+                </Paper>
+              )
+            })}
+          </Box>
         </Box>
 
         {/* Stats Row */}

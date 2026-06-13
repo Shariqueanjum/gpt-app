@@ -98,11 +98,11 @@ const WhyChooseUs = () => {
     >
       <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
         {/* Header */}
-        <Box sx={{ mb: { xs: 4, md: 5 } }}>
+        <Box sx={{ mb: { xs: 4, md: 5 }, textAlign: 'center' }}>
           <Typography
             sx={{
               fontFamily: '"Sora", sans-serif',
-              fontSize: { xs: '24px', md: '32px' },
+              fontSize: { xs: '28px', md: '36px' },
               fontWeight: 800,
               lineHeight: 1.15,
               color: '#131b2e',
@@ -114,11 +114,12 @@ const WhyChooseUs = () => {
           <Typography
             sx={{
               fontFamily: '"Plus Jakarta Sans", sans-serif',
-              fontSize: { xs: '1rem', md: '1.1rem' },
+              fontSize: { xs: '1.1rem', md: '1.2rem' },
               lineHeight: 1.5,
-              color: '#4b5563',
+              color: '#1f2937',
               fontWeight: 500,
               maxWidth: 480,
+              mx: 'auto',
             }}
           >
             Built for earners, by earners. Every feature tested by real users.

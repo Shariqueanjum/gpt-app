@@ -30,7 +30,7 @@ const Navbar = () => {
   const { isAuthenticated } = useSelector((state) => state.auth)
   const isHomePage = location.pathname === '/'
 
-  useEffect(() => {
+    useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
@@ -45,18 +45,29 @@ const Navbar = () => {
     return () => { document.body.style.overflow = '' }
   }, [mobileOpen])
 
-  const handleDrawerToggle = () => setMobileOpen(!mobileOpen)
 
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '')
+      setTimeout(() => {
+        const el = document.getElementById(id)
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 300)
+    }
+  }, [location])
+
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen)
   const scrollToSection = (id) => {
     setMobileOpen(false)
     if (!isHomePage) {
-      navigate('/')
+      navigate('/#' + id)
       setTimeout(() => {
         const el = document.getElementById(id)
         el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }, 100)
       return
     }
+    window.history.pushState(null, '', '#' + id)
     const el = document.getElementById(id)
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
@@ -64,6 +75,7 @@ const Navbar = () => {
   const scrollToTop = () => {
     setMobileOpen(false)
     if (!isHomePage) { navigate('/'); return }
+    window.history.pushState(null, '', window.location.pathname)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 

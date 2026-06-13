@@ -59,7 +59,7 @@ const FAQAndCTA = () => {
             <Typography
               sx={{
                 fontFamily: '"Sora", sans-serif',
-                fontSize: { xs: '28px', md: '40px' },
+                fontSize: { xs: '28px', md: '36px' },
                 fontWeight: 800,
                 lineHeight: 1.15,
                 color: '#131b2e',

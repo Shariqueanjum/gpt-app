@@ -90,18 +90,19 @@ const HeroVisual = () => {
       sx={{
         position: 'relative',
         width: '100%',
-        maxWidth: 480,
+        maxWidth: { xs: 340, sm: 400, md: 480 },
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
+        mx: 'auto',
       }}
     >
       {/* Soft glow behind */}
       <Box
         sx={{
           position: 'absolute',
-          width: { xs: 280, md: 400 },
-          height: { xs: 280, md: 400 },
+          width: { xs: 260, sm: 320, md: 400 },
+          height: { xs: 260, sm: 320, md: 400 },
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(83,18,188,0.12) 0%, transparent 70%)',
           filter: 'blur(60px)',
@@ -116,10 +117,10 @@ const HeroVisual = () => {
         sx={{
           position: 'relative',
           width: '100%',
-          maxWidth: 380,
+          maxWidth: { xs: 320, sm: 360, md: 380 },
           bgcolor: '#ffffff',
           borderRadius: '24px',
-          p: { xs: 3, md: 4 },
+          p: { xs: 2.5, sm: 3, md: 4 },
           boxShadow: '0 25px 80px -20px rgba(83,18,188,0.15), 0 10px 30px -10px rgba(0,0,0,0.1)',
           border: '1px solid rgba(203,195,215,0.3)',
           animation: 'floatCard 6s ease-in-out infinite',
@@ -130,19 +131,19 @@ const HeroVisual = () => {
         }}
       >
         {/* Card Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 2, md: 3 } }}>
           <Box>
-            <Typography sx={{ fontFamily: '"Sora", sans-serif', fontSize: '12px', fontWeight: 600, color: '#7b7486', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <Typography sx={{ fontFamily: '"Sora", sans-serif', fontSize: { xs: '11px', md: '12px' }, fontWeight: 600, color: '#7b7486', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Total Balance
             </Typography>
-            <Typography sx={{ fontFamily: '"Sora", sans-serif', fontSize: '32px', fontWeight: 800, color: '#131b2e', lineHeight: 1.2 }}>
+            <Typography sx={{ fontFamily: '"Sora", sans-serif', fontSize: { xs: '26px', sm: '28px', md: '32px' }, fontWeight: 800, color: '#131b2e', lineHeight: 1.2 }}>
               ${balance.toFixed(2)}
             </Typography>
           </Box>
           <Box
             sx={{
-              width: 44,
-              height: 44,
+              width: { xs: 40, md: 44 },
+              height: { xs: 40, md: 44 },
               borderRadius: '14px',
               bgcolor: 'rgba(83,18,188,0.08)',
               display: 'flex',
@@ -158,7 +159,7 @@ const HeroVisual = () => {
         </Box>
 
         {/* Mini chart bars */}
-        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1, mb: 3, height: 60 }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: { xs: 0.5, md: 1 }, mb: { xs: 2, md: 3 }, height: { xs: 50, md: 60 } }}>
           {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 100].map((h, i) => (
             <Box
               key={i}
@@ -174,20 +175,20 @@ const HeroVisual = () => {
         </Box>
 
         {/* Recent activity items */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 } }}>
           {[
             { label: 'A.I Survey ', amount: '+$2.50', color: '#006e2f' },
             { label: 'Daily Offer', amount: '+$5.00', color: '#006e2f' },
             { label: 'Daily Bonus', amount: '+$0.50', color: '#623c00' },
           ].map((item, i) => (
-            <Box key={i} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1.5, borderRadius: '12px', bgcolor: '#f8fafc' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box key={i} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: { xs: 1.2, md: 1.5 }, borderRadius: '12px', bgcolor: '#f8fafc' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.5 } }}>
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: item.color }} />
-                <Typography sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontSize: '13px', fontWeight: 600, color: '#131b2e' }}>
+                <Typography sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontSize: { xs: '12px', md: '13px' }, fontWeight: 600, color: '#131b2e' }}>
                   {item.label}
                 </Typography>
               </Box>
-              <Typography sx={{ fontFamily: '"Sora", sans-serif', fontSize: '13px', fontWeight: 700, color: item.color }}>
+              <Typography sx={{ fontFamily: '"Sora", sans-serif', fontSize: { xs: '12px', md: '13px' }, fontWeight: 700, color: item.color }}>
                 {item.amount}
               </Typography>
             </Box>
@@ -198,16 +199,16 @@ const HeroVisual = () => {
         <Box
           sx={{
             position: 'absolute',
-            bottom: -16,
-            left: -16,
+            bottom: { xs: -12, md: -16 },
+            left: { xs: -12, md: -16 },
             bgcolor: '#ffffff',
             borderRadius: '16px',
-            p: 2,
+            p: { xs: 1.5, md: 2 },
             boxShadow: '0 10px 40px rgba(0,0,0,0.12)',
             border: '1px solid rgba(203,195,215,0.25)',
             display: 'flex',
             alignItems: 'center',
-            gap: 1.5,
+            gap: { xs: 1, md: 1.5 },
             animation: 'floatBadge 4s ease-in-out infinite',
             '@keyframes floatBadge': {
               '0%, 100%': { transform: 'translateY(0px)' },
@@ -215,16 +216,16 @@ const HeroVisual = () => {
             },
           }}
         >
-          <Box sx={{ width: 36, height: 36, borderRadius: '10px', bgcolor: 'rgba(0,110,47,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#006e2f' }}>
+          <Box sx={{ width: { xs: 32, md: 36 }, height: { xs: 32, md: 36 }, borderRadius: '10px', bgcolor: 'rgba(0,110,47,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#006e2f' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
             </svg>
           </Box>
           <Box>
-            <Typography sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontSize: '11px', color: '#7b7486', fontWeight: 500 }}>
+            <Typography sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontSize: { xs: '10px', md: '11px' }, color: '#7b7486', fontWeight: 500 }}>
               Instant Payout
             </Typography>
-            <Typography sx={{ fontFamily: '"Sora", sans-serif', fontSize: '13px', fontWeight: 700, color: '#131b2e' }}>
+            <Typography sx={{ fontFamily: '"Sora", sans-serif', fontSize: { xs: '12px', md: '13px' }, fontWeight: 700, color: '#131b2e' }}>
               +$25.00 Received
             </Typography>
           </Box>
@@ -479,12 +480,14 @@ const Hero = () => {
             </Box>
           </Box>
 
-          {/* RIGHT: Dashboard visual */}
+          {/* RIGHT: Dashboard visual — NOW VISIBLE ON MOBILE TOO */}
           <Box
             sx={{
-              display: { xs: 'none', md: 'flex' },
+              display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
+              width: '100%',
+              mt: { xs: 2, md: 0 },
             }}
           >
             <HeroVisual />
