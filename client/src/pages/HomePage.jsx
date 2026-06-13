@@ -3,8 +3,7 @@ import Hero from '../components/sections/Hero.jsx'
 import HowItWorks from '../components/sections/HowItWorks.jsx'
 import WhyChooseUs from '../components/sections/WhyChooseUs.jsx'
 import Redeem from '../components/sections/Redeem.jsx'
-import WePaid from '../components/sections/WePaid.jsx'
-import FinalCTA from '../components/sections/FinalCTA.jsx'
+import FAQAndCTA from '../components/sections/FAQAndCTA.jsx'
 
 const HomePage = () => {
   return (
@@ -13,8 +12,7 @@ const HomePage = () => {
       <HowItWorks />
       <WhyChooseUs />
       <Redeem />
-      <WePaid />
-      <FinalCTA />
+     <FAQAndCTA />
     </Layout>
   )
 }

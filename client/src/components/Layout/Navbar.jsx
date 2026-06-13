@@ -1,34 +1,34 @@
+// client/src/components/Layout/Navbar.jsx
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { useSelector, useDispatch } from 'react-redux'
+import { useSelector } from 'react-redux'
 import {
   AppBar,
   Toolbar,
   Typography,
   Button,
-  IconButton,
   Box,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
-  useMediaQuery,
-  useTheme,
+  IconButton,
+  Collapse,
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import CloseIcon from '@mui/icons-material/Close'
-import { logoutUser } from '../../slices/authSlice'
+
+const navSections = [
+  { label: 'Home', id: 'home' },
+  { label: 'How It Works ?', id: 'how-it-works' },
+  { label: 'Why Choose Us', id: 'why-choose-us' },
+  { label: 'Rewards', id: 'redeem' },
+  { label: 'FAQ', id: 'faq' },
+]
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const { isAuthenticated, user } = useSelector((state) => state.auth)
-  const dispatch = useDispatch()
   const navigate = useNavigate()
   const location = useLocation()
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const { isAuthenticated } = useSelector((state) => state.auth)
+  const isHomePage = location.pathname === '/'
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10)
@@ -36,152 +36,307 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [mobileOpen])
+
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen)
-  const handleClose = () => setMobileOpen(false)
 
-  const handleLogout = () => {
-    dispatch(logoutUser())
-    navigate('/')
-    handleClose()
-  }
-  
-  const publicNavLinks = [
-  { label: 'Home', path: '/' },
-  { label: 'How it Works?', path: '/#how-it-works' },
-  { label: 'Why Choose Us', path: '/#why-choose-us' },
-  { label: 'Redeem', path: '/#redeem' },
-  { label: 'We Paid', path: '/#we-paid' },
-]
-
-  const authNavLinks = [
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Earn', path: '/earn' },
-    { label: 'Withdraw', path: '/withdraw' },
-  ]
-
-  const navLinks = isAuthenticated ? authNavLinks : publicNavLinks
-
-  const isActive = (path) => {
-    if (path === '/') return location.pathname === '/' && !location.hash
-    if (path.startsWith('/#')) return location.pathname === '/' && location.hash === path.substring(1)
-    return location.pathname === path
+  const scrollToSection = (id) => {
+    setMobileOpen(false)
+    if (!isHomePage) {
+      navigate('/')
+      setTimeout(() => {
+        const el = document.getElementById(id)
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 100)
+      return
+    }
+    const el = document.getElementById(id)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const drawerContent = (
-    <Box sx={{ width: 280, height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="h6" component={Link} to="/" onClick={handleClose} sx={{ textDecoration: 'none', color: '#0f172a', fontWeight: 800, letterSpacing: '0.5px', fontSize: '1.25rem' }}>
-          WABCASH
-        </Typography>
-        <IconButton onClick={handleClose} sx={{ color: '#64748b' }}>
-          <CloseIcon />
-        </IconButton>
-      </Box>
-
-      <Divider sx={{ borderColor: '#e2e8f0' }} />
-
-      <List sx={{ px: 1, py: 2, flex: 1 }}>
-        {navLinks.map((link) => (
-          <ListItem key={link.label} component={Link} to={link.path} onClick={handleClose}
-            sx={{ borderRadius: 2, mb: 0.5, color: isActive(link.path) ? '#10b981' : '#475569', bgcolor: isActive(link.path) ? 'rgba(16, 185, 129, 0.08)' : 'transparent', '&:hover': { bgcolor: 'rgba(16, 185, 129, 0.08)', color: '#10b981' }, textDecoration: 'none', transition: 'all 0.2s ease' }}>
-            <ListItemText primary={link.label} primaryTypographyProps={{ fontWeight: isActive(link.path) ? 700 : 500, fontSize: '0.95rem' }} />
-          </ListItem>
-        ))}
-      </List>
-
-      <Divider sx={{ borderColor: '#e2e8f0' }} />
-
-      <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        {isAuthenticated ? (
-          <>
-            <Typography variant="body2" sx={{ color: '#64748b', textAlign: 'center', mb: 1 }}>
-              Signed in as <strong>{user?.username}</strong>
-            </Typography>
-            <Button fullWidth variant="outlined" onClick={handleLogout}
-              sx={{ borderColor: '#e2e8f0', color: '#64748b', textTransform: 'none', borderRadius: 2, py: 1, '&:hover': { borderColor: '#ef4444', color: '#ef4444', bgcolor: 'rgba(239,68,68,0.04)' } }}>
-              Logout
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button fullWidth component={Link} to="/login" onClick={handleClose}
-              sx={{ color: '#475569', textTransform: 'none', borderRadius: 2, py: 1, fontWeight: 600, '&:hover': { bgcolor: 'rgba(15,23,42,0.04)' } }}>
-              Login
-            </Button>
-            <Button fullWidth variant="contained" component={Link} to="/register" onClick={handleClose}
-              sx={{ bgcolor: '#10b981', textTransform: 'none', borderRadius: 2, py: 1, fontWeight: 600, boxShadow: '0 4px 14px rgba(16,185,129,0.25)', '&:hover': { bgcolor: '#059669', boxShadow: '0 6px 20px rgba(16,185,129,0.35)' } }}>
-              Sign Up
-            </Button>
-          </>
-        )}
-      </Box>
-    </Box>
-  )
+  const scrollToTop = () => {
+    setMobileOpen(false)
+    if (!isHomePage) { navigate('/'); return }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   return (
-    <AppBar
-      position="fixed"
-      elevation={0}
-      sx={{
-        bgcolor: scrolled ? '#ffffff' : '#ffffff',  // Solid white always, no transparency
-        borderBottom: scrolled ? '2px solid #e2e8f0' : '2px solid transparent',
-        boxShadow: scrolled ? '0 4px 6px -1px rgba(0,0,0,0.05)' : 'none',
-        transition: 'all 0.3s ease',
-        // REMOVED: backdropFilter — this was causing the glassy bleed-through
-      }}
-    >
-      <Toolbar sx={{ maxWidth: '1280px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, minHeight: '64px' }}>
-        <Typography variant="h6" component={Link} to="/"
-          sx={{ textDecoration: 'none', color: '#0f172a', fontWeight: 800, letterSpacing: '0.5px', fontSize: { xs: '1.1rem', md: '1.25rem' }, flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box component="span" sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: '#10b981', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.9rem', fontWeight: 900 }}>
-            W
-          </Box>
-          WABCASH
-        </Typography>
+    <>
+      <AppBar
+        position="fixed"
+        elevation={scrolled ? 1 : 0}
+        sx={{
+          bgcolor: '#ffffff',
+          borderBottom: mobileOpen ? 'none' : '1px solid #e2e8f0',
+          transition: 'box-shadow 0.3s ease',
+          zIndex: 1300,
+        }}
+      >
+        <Toolbar
+          sx={{
+            justifyContent: 'space-between',
+            minHeight: { xs: '56px', sm: '64px' },
+            px: { xs: 2, sm: 3, md: 4 },
+            maxWidth: '1280px',
+            width: '100%',
+            mx: 'auto',
+            gap: 1,
+          }}
+        >
+          {/* Logo */}
+          <Typography
+            onClick={scrollToTop}
+            sx={{
+              fontFamily: '"Sora", sans-serif',
+              fontSize: { xs: '18px', sm: '20px', md: '22px' },
+              fontWeight: 800,
+              color: '#5312bc',
+              textDecoration: 'none',
+              letterSpacing: '-0.02em',
+              cursor: 'pointer',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            WABCASH
+          </Typography>
 
-        {!isMobile && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            {navLinks.map((link) => (
-              <Button key={link.label} component={Link} to={link.path}
-                sx={{ color: isActive(link.path) ? '#10b981' : '#475569', textTransform: 'none', fontWeight: isActive(link.path) ? 600 : 500, fontSize: '0.9rem', px: 2, py: 1, borderRadius: 2, position: 'relative', '&::after': isActive(link.path) ? { content: '""', position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', width: 20, height: 3, borderRadius: 1.5, bgcolor: '#10b981' } : {}, '&:hover': { bgcolor: 'rgba(16,185,129,0.08)', color: '#10b981' }, transition: 'all 0.2s ease' }}>
-                {link.label}
-              </Button>
+          {/* Desktop Nav */}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5 }}>
+            {navSections.map((item) => (
+              <Typography
+                key={item.id}
+                onClick={() => scrollToSection(item.id)}
+                sx={{
+                  fontFamily: '"Sora", sans-serif',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#64748b',
+                  px: 2,
+                  py: 1,
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  whiteSpace: 'nowrap',
+                  '&:hover': { color: '#5312bc', bgcolor: 'rgba(83, 18, 188, 0.06)' },
+                }}
+              >
+                {item.label}
+              </Typography>
+            ))}
+          </Box>
+
+          {/* Right Side */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+            {/* Desktop auth buttons */}
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
+              {!isAuthenticated ? (
+                <>
+                  <Typography
+                    component={Link}
+                    to="/login"
+                    sx={{
+                      fontFamily: '"Sora", sans-serif',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: '#64748b',
+                      textDecoration: 'none',
+                      px: 2,
+                      py: 1,
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      whiteSpace: 'nowrap',
+                      '&:hover': { color: '#5312bc', bgcolor: 'rgba(83, 18, 188, 0.06)' },
+                    }}
+                  >
+                    Log In
+                  </Typography>
+                  <Button
+                    component={Link}
+                    to="/register"
+                    sx={{
+                      bgcolor: '#5312bc',
+                      color: '#fff',
+                      borderRadius: '9999px',
+                      px: 3,
+                      py: 0.8,
+                      fontFamily: '"Sora", sans-serif',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      whiteSpace: 'nowrap',
+                      '&:hover': { bgcolor: '#6b38d4' },
+                    }}
+                  >
+                    Sign Up
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  component={Link}
+                  to="/dashboard"
+                  sx={{
+                    bgcolor: '#5312bc',
+                    color: '#fff',
+                    borderRadius: '9999px',
+                    px: 3,
+                    py: 0.8,
+                    fontFamily: '"Sora", sans-serif',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    whiteSpace: 'nowrap',
+                    '&:hover': { bgcolor: '#6b38d4' },
+                  }}
+                >
+                  Dashboard
+                </Button>
+              )}
+            </Box>
+
+            {/* Mobile hamburger */}
+            <IconButton
+              onClick={handleDrawerToggle}
+              sx={{
+                display: { md: 'none' },
+                color: '#131b2e',
+                p: 1,
+              }}
+            >
+              {mobileOpen ? <CloseIcon sx={{ fontSize: 24 }} /> : <MenuIcon sx={{ fontSize: 24 }} />}
+            </IconButton>
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      {/* Mobile Menu — Collapse from navbar bottom */}
+      <Collapse
+        in={mobileOpen}
+        timeout={300}
+        sx={{
+          display: { md: 'none' },
+          position: 'fixed',
+          top: '56px',
+          left: 0,
+          right: 0,
+          zIndex: 1299,
+          bgcolor: '#ffffff',
+        }}
+      >
+        <Box
+          sx={{
+            bgcolor: '#ffffff',
+            borderBottom: '1px solid #e2e8f0',
+            px: 2,
+            py: 1,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+          }}
+        >
+          {/* All items in ONE column with EQUAL spacing */}
+          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            {/* Nav sections */}
+            {navSections.map((item) => (
+              <Typography
+                key={item.id}
+                onClick={() => scrollToSection(item.id)}
+                sx={{
+                  fontFamily: '"Sora", sans-serif',
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  color: '#64748b',
+                  py: 1.5,
+                  px: 2,
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  '&:hover': { color: '#5312bc', bgcolor: 'rgba(83, 18, 188, 0.06)' },
+                }}
+              >
+                {item.label}
+              </Typography>
             ))}
 
-            <Divider orientation="vertical" flexItem sx={{ mx: 1, borderColor: '#e2e8f0', height: 24, my: 'auto' }} />
+            {/* Divider */}
+            <Box sx={{ my: 1, height: '1px', bgcolor: '#e2e8f0', mx: 2 }} />
 
-            {isAuthenticated ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 1 }}>
-                <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500 }}>{user?.username}</Typography>
-                <Button onClick={handleLogout} sx={{ color: '#64748b', textTransform: 'none', fontWeight: 500, borderRadius: 2, px: 2, '&:hover': { color: '#ef4444', bgcolor: 'rgba(239,68,68,0.04)' } }}>
-                  Logout
-                </Button>
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
-                <Button component={Link} to="/login" sx={{ color: '#475569', textTransform: 'none', fontWeight: 600, borderRadius: 2, px: 3, '&:hover': { bgcolor: 'rgba(15,23,42,0.04)' } }}>
-                  Login
-                </Button>
-                <Button variant="contained" component={Link} to="/register" sx={{ bgcolor: '#10b981', textTransform: 'none', fontWeight: 600, borderRadius: 2, px: 3, py: 1, boxShadow: '0 4px 14px rgba(16,185,129,0.25)', '&:hover': { bgcolor: '#059669', boxShadow: '0 6px 20px rgba(16,185,129,0.35)' } }}>
+            {/* Auth links — same spacing as nav items */}
+            {!isAuthenticated ? (
+              <>
+                <Typography
+                  component={Link}
+                  to="/login"
+                  onClick={() => setMobileOpen(false)}
+                  sx={{
+                    fontFamily: '"Sora", sans-serif',
+                    fontSize: '15px',
+                    fontWeight: 600,
+                    color: '#64748b',
+                    textDecoration: 'none',
+                    py: 1.5,
+                    px: 2,
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    '&:hover': { color: '#5312bc', bgcolor: 'rgba(83, 18, 188, 0.06)' },
+                  }}
+                >
+                  Log In
+                </Typography>
+                <Typography
+                  component={Link}
+                  to="/register"
+                  onClick={() => setMobileOpen(false)}
+                  sx={{
+                    fontFamily: '"Sora", sans-serif',
+                    fontSize: '15px',
+                    fontWeight: 700,
+                    color: '#5312bc',
+                    textDecoration: 'none',
+                    py: 1.5,
+                    px: 2,
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    '&:hover': { bgcolor: 'rgba(83, 18, 188, 0.08)' },
+                  }}
+                >
                   Sign Up
-                </Button>
-              </Box>
+                </Typography>
+              </>
+            ) : (
+              <Typography
+                component={Link}
+                to="/dashboard"
+                onClick={() => setMobileOpen(false)}
+                sx={{
+                  fontFamily: '"Sora", sans-serif',
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  color: '#5312bc',
+                  textDecoration: 'none',
+                  py: 1.5,
+                  px: 2,
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  '&:hover': { bgcolor: 'rgba(83, 18, 188, 0.08)' },
+                }}
+              >
+                Dashboard
+              </Typography>
             )}
           </Box>
-        )}
-
-        {isMobile && (
-          <IconButton onClick={handleDrawerToggle} sx={{ color: '#475569', ml: 1, '&:hover': { bgcolor: 'rgba(16,185,129,0.08)', color: '#10b981' } }}>
-            <MenuIcon />
-          </IconButton>
-        )}
-      </Toolbar>
-
-      <Drawer anchor="right" open={mobileOpen} onClose={handleClose}
-        PaperProps={{ sx: { borderTopLeftRadius: 16, borderBottomLeftRadius: 16, boxShadow: '-4px 0 24px rgba(0,0,0,0.08)' } }}>
-        {drawerContent}
-      </Drawer>
-    </AppBar>
+        </Box>
+      </Collapse>
+    </>
   )
 }
 

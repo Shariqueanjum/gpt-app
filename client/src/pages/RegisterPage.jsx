@@ -1,347 +1,463 @@
+// client/src/pages/RegisterPage.jsx
 import { useState, useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { registerUser } from '../slices/authSlice'
 import {
   Box,
   Typography,
-  Paper,
+  TextField,
+  Button,
   IconButton,
-  Fade,
+  InputAdornment,
+  Alert,
+  Paper,
   Checkbox,
   FormControlLabel,
-  Divider,
 } from '@mui/material'
+import Visibility from '@mui/icons-material/Visibility'
+import VisibilityOff from '@mui/icons-material/VisibilityOff'
+import RefreshIcon from '@mui/icons-material/Refresh'
 import CloseIcon from '@mui/icons-material/Close'
-import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined'
-import { registerUser, clearError, clearMessage } from '../slices/authSlice'
-import InputField from '../components/common/InputField'
-import Button from '../components/common/Button'
-import ErrorAlert from '../components/common/ErrorAlert'
 
 const RegisterPage = () => {
-  const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { loading, error, message, isAuthenticated } = useSelector((state) => state.auth)
+  const dispatch = useDispatch()
+  const { loading, error, isAuthenticated } = useSelector((state) => state.auth)
 
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
-    referred_by_code: '',
+    confirmPassword: '',
+    agreeTerms: false,
   })
-  const [agreed, setAgreed] = useState(false)
-  const [agreeError, setAgreeError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [securityQuestion, setSecurityQuestion] = useState({
+    num1: 0,
+    num2: 0,
+    operator: '+',
+    answer: 0,
+    userAnswer: '',
+  })
+
+  const generateSecurityQuestion = () => {
+    const operators = ['+', '-']
+    const operator = operators[Math.floor(Math.random() * operators.length)]
+    let num1 = Math.floor(Math.random() * 20) + 1
+    let num2 = Math.floor(Math.random() * 20) + 1
+
+    if (operator === '-' && num2 > num1) {
+      [num1, num2] = [num2, num1]
+    }
+
+    let answer
+    if (operator === '+') answer = num1 + num2
+    else answer = num1 - num2
+
+    setSecurityQuestion({
+      num1,
+      num2,
+      operator,
+      answer,
+      userAnswer: '',
+    })
+  }
 
   useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = 'unset'
-    }
+    generateSecurityQuestion()
   }, [])
 
   useEffect(() => {
-    if (isAuthenticated) navigate('/dashboard')
+    if (isAuthenticated) {
+      navigate('/dashboard')
+    }
   }, [isAuthenticated, navigate])
 
-  useEffect(() => {
-    return () => {
-      dispatch(clearError())
-      dispatch(clearMessage())
-    }
-  }, [dispatch])
+  const handleChange = (e) => {
+    const { name, value, checked } = e.target
+    setFormData({
+      ...formData,
+      [name]: name === 'agreeTerms' ? checked : value,
+    })
+  }
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
-
-  const handleAgreeChange = (e) => {
-    setAgreed(e.target.checked)
-    setAgreeError('')
+  const handleSecurityAnswer = (e) => {
+    setSecurityQuestion({
+      ...securityQuestion,
+      userAnswer: e.target.value,
+    })
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!agreed) {
-      setAgreeError('You must agree to continue.')
+
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match!')
       return
     }
-    dispatch(registerUser(formData))
+
+    if (!formData.agreeTerms) {
+      alert('Please agree to the terms and conditions')
+      return
+    }
+
+    if (parseInt(securityQuestion.userAnswer) !== securityQuestion.answer) {
+      alert('Incorrect security answer. Please try again.')
+      generateSecurityQuestion()
+      return
+    }
+
+    const { confirmPassword, agreeTerms, ...registerData } = formData
+    dispatch(registerUser(registerData))
   }
 
   const handleClose = () => {
-    document.body.style.overflow = 'unset'
     navigate('/')
   }
 
-  // SUCCESS STATE
-  if (message) {
-    return (
-      <Box
-        sx={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: 'rgba(15, 23, 42, 0.6)',
-          p: { xs: 2, sm: 3 },
-          overflow: 'hidden',
-        }}
-        onClick={handleClose}
-      >
-        <Fade in>
-          <Paper
-            onClick={(e) => e.stopPropagation()}
-            elevation={0}
-            sx={{
-              width: '100%',
-              maxWidth: 400,
-              borderRadius: 3,
-              bgcolor: '#ffffff',
-              border: '1px solid #e2e8f0',
-              textAlign: 'center',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: 'linear-gradient(90deg, #10b981 0%, #34d399 50%, #059669 100%)',
-              },
-              position: 'relative',
-              pt: 4,
-              pb: 3,
-              px: 3,
-            }}
-          >
-            <Box
-              sx={{
-                width: 56,
-                height: 56,
-                borderRadius: '50%',
-                bgcolor: '#ecfdf5',
-                color: '#10b981',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mb: 2,
-              }}
-            >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-            </Box>
-
-            <Typography variant="h6" fontWeight={800} sx={{ color: '#0f172a', mb: 1 }}>
-              Check Your Email
-            </Typography>
-
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 4, lineHeight: 1.6 }}>
-              We sent a verification link to <strong>{formData.email}</strong>. Click it to activate your account.
-            </Typography>
-
-            <Button
-              onClick={() => {
-                dispatch(clearMessage())
-                window.location.reload()
-              }}
-              variant="outlined"
-              sx={{
-                color: '#10b981',
-                borderColor: '#10b981',
-                textTransform: 'none',
-                fontWeight: 600,
-                borderRadius: 2,
-                py: 1.2,
-                '&:hover': {
-                  bgcolor: 'rgba(16,185,129,0.04)',
-                  borderColor: '#059669',
-                },
-              }}
-            >
-              Resend Email
-            </Button>
-
-            <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', mt: 2 }}>
-              Check spam folder if not found.
-            </Typography>
-          </Paper>
-        </Fade>
-      </Box>
-    )
-  }
-
-  // FORM STATE
   return (
     <Box
       sx={{
         position: 'fixed',
         inset: 0,
-        zIndex: 9999,
+        zIndex: 1300,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'rgba(15, 23, 42, 0.6)',
-        p: { xs: 2, sm: 3 },
+        // NO blur — homepage visible but darkened
+        bgcolor: 'rgba(0, 0, 0, 0.5)',
+        // Prevent background scrolling
         overflow: 'hidden',
       }}
-      onClick={handleClose}
+      onWheel={(e) => e.preventDefault()}
+      onTouchMove={(e) => e.preventDefault()}
     >
-      <Fade in>
+      {/* Scrollable card container for tall forms */}
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: 420,
+          mx: 2,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          borderRadius: '24px',
+          // Hide scrollbar
+          '&::-webkit-scrollbar': { display: 'none' },
+          scrollbarWidth: 'none',
+        }}
+      >
         <Paper
-          onClick={(e) => e.stopPropagation()}
           elevation={0}
           sx={{
-            width: '100%',
-            maxWidth: 400,
-            borderRadius: 3,
+            p: { xs: 4, md: 5 },
             bgcolor: '#ffffff',
-            border: '1px solid #e2e8f0',
             position: 'relative',
-            overflow: 'hidden',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '4px',
-              background: 'linear-gradient(90deg, #10b981 0%, #34d399 50%, #059669 100%)',
-            },
           }}
         >
-          {/* Close Button */}
+          {/* Close button */}
           <IconButton
             onClick={handleClose}
             sx={{
               position: 'absolute',
-              top: 12,
-              right: 12,
-              color: '#94a3b8',
-              '&:hover': { color: '#0f172a', bgcolor: '#f1f5f9' },
+              top: 16,
+              right: 16,
+              color: '#7b7486',
+              '&:hover': { color: '#131b2e' },
             }}
           >
-            <CloseIcon fontSize="small" />
+            <CloseIcon />
           </IconButton>
 
           {/* Header */}
-          <Box sx={{ textAlign: 'center', pt: 4, pb: 2, px: 3 }}>
-            <Box
+          <Box sx={{ textAlign: 'center', mb: 4 }}>
+            <Typography
               sx={{
-                width: 48,
-                height: 48,
-                borderRadius: 2,
-                bgcolor: '#ecfdf5',
-                color: '#10b981',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mb: 1.5,
+                fontFamily: '"Sora", sans-serif',
+                fontSize: '28px',
+                fontWeight: 800,
+                color: '#131b2e',
+                mb: 1,
               }}
             >
-              <PersonAddOutlinedIcon sx={{ fontSize: 24 }} />
-            </Box>
-            <Typography variant="h6" fontWeight={800} sx={{ color: '#0f172a', mb: 0.5, fontSize: '1.25rem' }}>
               Create Account
             </Typography>
-            <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.85rem' }}>
-              Start earning in 60 seconds
+            <Typography
+              sx={{
+                fontFamily: '"Plus Jakarta Sans", sans-serif',
+                fontSize: '15px',
+                color: '#7b7486',
+              }}
+            >
+              Start earning rewards in minutes
             </Typography>
-          </Box>
-
-          <Box sx={{ mx: 3, mb: 1 }}>
-            <ErrorAlert message={error} onClose={() => dispatch(clearError())} />
           </Box>
 
           {/* Form */}
-          <Box component="form" onSubmit={handleSubmit} sx={{ px: 3, pb: 2 }}>
-            <InputField
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
+          >
+            <TextField
+              fullWidth
               label="Username"
               name="username"
-              placeholder="Choose a username"
               value={formData.username}
               onChange={handleChange}
               required
+              variant="outlined"
+              sx={textFieldStyles}
             />
-            <InputField
-              label="Email Address"
-              type="email"
+
+            <TextField
+              fullWidth
+              label="Email"
               name="email"
-              placeholder="your@email.com"
+              type="email"
               value={formData.email}
               onChange={handleChange}
               required
+              variant="outlined"
+              sx={textFieldStyles}
             />
-            <InputField
+
+            <TextField
+              fullWidth
               label="Password"
-              type="password"
               name="password"
-              placeholder="Min 8 chars, uppercase, number, symbol"
+              type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={handleChange}
               required
-            />
-            <InputField
-              label="Referral Code (Optional)"
-              name="referred_by_code"
-              placeholder="Have a code?"
-              value={formData.referred_by_code}
-              onChange={handleChange}
+              variant="outlined"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      sx={{ color: '#7b7486' }}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={textFieldStyles}
             />
 
-            {/* Terms Checkbox */}
-            <Box sx={{ mt: 1, mb: 2 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={agreed}
-                    onChange={handleAgreeChange}
-                    sx={{
-                      color: '#cbd5e1',
-                      '&.Mui-checked': { color: '#10b981' },
-                      p: 0.5,
-                    }}
-                  />
-                }
-                label={
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
-                    I agree to the{' '}
-                    <Link to="/terms" style={{ color: '#10b981', fontWeight: 600, textDecoration: 'none' }}>Terms</Link>
-                    {' '}and{' '}
-                    <Link to="/privacy" style={{ color: '#10b981', fontWeight: 600, textDecoration: 'none' }}>Privacy Policy</Link>
-                  </Typography>
-                }
-                sx={{ alignItems: 'flex-start' }}
-              />
-              {agreeError && (
-                <Typography variant="caption" sx={{ color: '#ef4444', display: 'block', mt: 0.5 }}>
-                  {agreeError}
+            <TextField
+              fullWidth
+              label="Confirm Password"
+              name="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              variant="outlined"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      edge="end"
+                      sx={{ color: '#7b7486' }}
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={textFieldStyles}
+            />
+
+            {/* Terms */}
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="agreeTerms"
+                  checked={formData.agreeTerms}
+                  onChange={handleChange}
+                  required
+                  sx={{
+                    color: '#5312bc',
+                    '&.Mui-checked': { color: '#5312bc' },
+                  }}
+                />
+              }
+              label={
+                <Typography
+                  sx={{
+                    fontFamily: '"Plus Jakarta Sans", sans-serif',
+                    fontSize: '13px',
+                    color: '#7b7486',
+                  }}
+                >
+                  I agree to the{' '}
+                  <Box
+                    component={Link}
+                    to="/terms"
+                    sx={{ color: '#5312bc', textDecoration: 'none', fontWeight: 600 }}
+                  >
+                    Terms
+                  </Box>{' '}
+                  and{' '}
+                  <Box
+                    component={Link}
+                    to="/privacy"
+                    sx={{ color: '#5312bc', textDecoration: 'none', fontWeight: 600 }}
+                  >
+                    Privacy Policy
+                  </Box>
                 </Typography>
-              )}
+              }
+            />
+
+            {/* Security Question */}
+            <Box
+              sx={{
+                p: 2.5,
+                borderRadius: '12px',
+                bgcolor: '#f2f3ff',
+                border: '1px solid rgba(83, 18, 188, 0.1)',
+              }}
+            >
+              <Typography
+                sx={{
+                  fontFamily: '"Sora", sans-serif',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#5312bc',
+                  mb: 1.5,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Security Check
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Typography
+                  sx={{
+                    fontFamily: '"Sora", sans-serif',
+                    fontSize: '18px',
+                    fontWeight: 700,
+                    color: '#131b2e',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {securityQuestion.num1} {securityQuestion.operator} {securityQuestion.num2} = ?
+                </Typography>
+                <TextField
+                  size="small"
+                  type="number"
+                  value={securityQuestion.userAnswer}
+                  onChange={handleSecurityAnswer}
+                  required
+                  placeholder="?"
+                  sx={{
+                    width: 80,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '10px',
+                      fontFamily: '"Sora", sans-serif',
+                      fontWeight: 700,
+                      textAlign: 'center',
+                      bgcolor: '#fff',
+                      '& fieldset': { borderColor: '#5312bc' },
+                    },
+                  }}
+                />
+                <IconButton
+                  onClick={generateSecurityQuestion}
+                  sx={{
+                    color: '#5312bc',
+                    bgcolor: 'rgba(83, 18, 188, 0.08)',
+                    '&:hover': { bgcolor: 'rgba(83, 18, 188, 0.15)' },
+                  }}
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </Box>
             </Box>
 
-            <Button type="submit" loading={loading}>
-              Create Account
+            {error && (
+              <Alert severity="error" sx={{ borderRadius: '12px' }}>
+                {error}
+              </Alert>
+            )}
+
+            <Button
+              type="submit"
+              fullWidth
+              disabled={loading}
+              sx={{
+                bgcolor: '#5312bc',
+                color: '#fff',
+                borderRadius: '9999px',
+                py: 1.8,
+                fontFamily: '"Sora", sans-serif',
+                fontSize: '15px',
+                fontWeight: 700,
+                textTransform: 'none',
+                boxShadow: '0 8px 24px rgba(83, 18, 188, 0.3)',
+                '&:hover': { bgcolor: '#6b38d4' },
+                '&:disabled': { opacity: 0.6 },
+              }}
+            >
+              {loading ? 'Creating account...' : 'Create Account'}
             </Button>
-          </Box>
 
-          <Divider sx={{ borderColor: '#e2e8f0' }} />
-
-          {/* Bottom */}
-          <Box sx={{ p: 2.5, textAlign: 'center' }}>
-            <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.85rem' }}>
-              Already have an account?{' '}
-              <Link to="/login" style={{ color: '#10b981', fontWeight: 700, textDecoration: 'none' }}>
-                Login
-              </Link>
-            </Typography>
+            <Box
+              sx={{
+                textAlign: 'center',
+                pt: 2,
+                borderTop: '1px solid #e2e8f0',
+              }}
+            >
+              <Typography
+                sx={{
+                  fontFamily: '"Plus Jakarta Sans", sans-serif',
+                  fontSize: '14px',
+                  color: '#7b7486',
+                }}
+              >
+                Already have an account?{' '}
+                <Box
+                  component={Link}
+                  to="/login"
+                  sx={{
+                    color: '#5312bc',
+                    textDecoration: 'none',
+                    fontWeight: 700,
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  Sign in
+                </Box>
+              </Typography>
+            </Box>
           </Box>
         </Paper>
-      </Fade>
+      </Box>
     </Box>
   )
+}
+
+// Shared text field styles
+const textFieldStyles = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '12px',
+    fontFamily: '"Plus Jakarta Sans", sans-serif',
+    bgcolor: '#f8fafc',
+    '& fieldset': { borderColor: '#e2e8f0' },
+    '&:hover fieldset': { borderColor: '#5312bc' },
+    '&.Mui-focused fieldset': { borderColor: '#5312bc' },
+  },
+  '& .MuiInputLabel-root': {
+    fontFamily: '"Plus Jakarta Sans", sans-serif',
+    color: '#7b7486',
+  },
 }
 
 export default RegisterPage
