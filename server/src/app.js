@@ -36,6 +36,8 @@ const adminSettingsRoutes = require('./routes/admin_settings.routes');
 const adminTrafficLogRoutes = require('./routes/admin_traffic_log.routes');
 const performanceRoutes = require('./routes/performance.routes');
 const adminVPNRoutes = require('./routes/admin_vpn.routes');
+const adminOfferWallRoutes = require('./routes/admin_offer_wall.routes');
+const liveActivityRoutes = require('./routes/live_activity.routes');
 
 const app = express();
 
@@ -110,6 +112,10 @@ app.use('/api/admin/traffic-logs', adminTrafficLogRoutes);
 app.use('/api/performance', performanceRoutes);
 
 app.use('/api/admin/vpn', adminVPNRoutes);
+
+app.use('/api/admin/offer-walls', adminOfferWallRoutes);
+
+app.use('/api/live-activity', liveActivityRoutes);
 
 app.use(errorHandler)
 

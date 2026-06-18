@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import LiveActivityFeed from '../components/common/LiveActivityFeed'
 import { useSelector, useDispatch } from 'react-redux'
 import { Link } from 'react-router-dom'
 import {
@@ -25,22 +26,9 @@ import PeopleIcon from '@mui/icons-material/People'
 import axiosInstance from '../utils/axiosInstance'
 import { fetchCurrentUser } from '../slices/authSlice'
 
-const offerWalls = [
-  { name: 'AdGate Media', color: '#ff6b35', earnings: 'Up to $5/survey' },
-  { name: 'OfferToro', color: '#00d4aa', earnings: 'Up to $3/offer' },
-  { name: 'Adscend Media', color: '#6366f1', earnings: 'Up to $10/video' },
-  { name: 'Persona.ly', color: '#ec4899', earnings: 'Up to $2/task' },
-  { name: 'ayeT-Studios', color: '#f59e0b', earnings: 'Up to $15/app' },
-  { name: 'Revenue Universe', color: '#3b82f6', earnings: 'Up to $8/offer' },
-]
+const WALL_COLORS = ['#ff6b35', '#00d4aa', '#6366f1', '#ec4899', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6']
 
-const liveActivity = [
-  { user: 'Alex M.', action: 'completed AdGate survey', amount: '+$2.50', time: '2 min ago' },
-  { user: 'Sarah K.', action: 'redeemed PayPal', amount: '$25.00', time: '5 min ago' },
-  { user: 'Mike R.', action: 'completed OfferToro task', amount: '+$1.80', time: '8 min ago' },
-  { user: 'Emma L.', action: 'redeemed Crypto', amount: '$50.00', time: '12 min ago' },
-  { user: 'John D.', action: 'completed ayeT offer', amount: '+$5.00', time: '15 min ago' },
-]
+
 
 const DashboardPage = () => {
   const dispatch = useDispatch()
@@ -49,11 +37,16 @@ const DashboardPage = () => {
   
   const { user } = useSelector((state) => state.auth)
   const [dashboard, setDashboard] = useState(null)
+  const [offerWalls, setOfferWalls] = useState([])
+  const [streak, setStreak] = useState(null)
+  const [claimingStreak, setClaimingStreak] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     dispatch(fetchCurrentUser())
     fetchDashboard()
+    fetchOfferWalls()
+    fetchStreak()
   }, [dispatch])
 
   const fetchDashboard = async () => {
@@ -64,6 +57,37 @@ const DashboardPage = () => {
       console.error('Dashboard fetch failed:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchOfferWalls = async () => {
+    try {
+      const res = await axiosInstance.get('/offer-walls/')
+      setOfferWalls(res.data.data || [])
+    } catch (err) {
+      console.error('Offer walls fetch failed:', err)
+    }
+  }
+
+  const fetchStreak = async () => {
+    try {
+      const res = await axiosInstance.get('/streak/status')
+      setStreak(res.data.data)
+    } catch (err) {
+      console.error('Streak fetch failed:', err)
+    }
+  }
+
+  const handleClaimStreak = async () => {
+    setClaimingStreak(true)
+    try {
+      const res = await axiosInstance.post('/streak/check-in')
+      setStreak((prev) => ({ ...prev, streak: res.data.data.streak, can_check_in: false }))
+      fetchDashboard()
+    } catch (err) {
+      console.error('Streak claim failed:', err)
+    } finally {
+      setClaimingStreak(false)
     }
   }
 
@@ -156,7 +180,7 @@ const DashboardPage = () => {
         </Box>
         <Chip
           icon={<StarIcon sx={{ fontSize: 16, color: '#f59e0b !important' }} />}
-          label={`Level ${user?.level_id || 1}`}
+          label={`Level ${user?.level || 1}`}
           sx={{
             bgcolor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#fffbeb',
             color: isDark ? '#fcd34d' : '#b45309',
@@ -228,22 +252,30 @@ const DashboardPage = () => {
         </Box>
 
         <Grid container spacing={2}>
-          {offerWalls.map((wall) => (
-            <Grid item xs={6} sm={4} md={2} key={wall.name}>
+          {offerWalls.slice(0, 6).map((wall, idx) => {
+            const color = WALL_COLORS[idx % WALL_COLORS.length]
+            const isLocked = wall.min_level && user?.level < wall.min_level
+            return (
+            <Grid item xs={6} sm={4} md={2} key={wall.id}>
               <Paper
                 elevation={0}
+                component={Link}
+                to="/earn"
                 sx={{
                   p: 2,
                   borderRadius: 3,
-                  border: `1px solid ${cardBorder}`,
+                  border: `1px solid ${isLocked ? cardBorder : cardBorder}`,
                   bgcolor: cardBg,
                   textAlign: 'center',
                   transition: 'all 0.2s ease',
                   cursor: 'pointer',
+                  opacity: isLocked ? 0.55 : 1,
+                  textDecoration: 'none',
+                  display: 'block',
                   '&:hover': {
-                    transform: 'translateY(-3px)',
-                    boxShadow: isDark ? `0 8px 24px ${wall.color}30` : `0 8px 24px ${wall.color}20`,
-                    borderColor: wall.color,
+                    transform: isLocked ? 'none' : 'translateY(-3px)',
+                    boxShadow: isLocked ? 'none' : (isDark ? `0 8px 24px ${color}30` : `0 8px 24px ${color}20`),
+                    borderColor: isLocked ? cardBorder : color,
                   },
                 }}
               >
@@ -252,8 +284,8 @@ const DashboardPage = () => {
                     width: 48,
                     height: 48,
                     borderRadius: 2,
-                    bgcolor: `${wall.color}15`,
-                    color: wall.color,
+                    bgcolor: `${color}15`,
+                    color,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -263,101 +295,25 @@ const DashboardPage = () => {
                     fontSize: '1.2rem',
                   }}
                 >
-                  {wall.name[0]}
+                  {wall.name?.[0] || '?'}
                 </Box>
                 <Typography variant="body2" fontWeight={700} sx={{ color: textPrimary, mb: 0.5 }}>
                   {wall.name}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 600 }}>
-                  {wall.earnings}
+                <Typography variant="caption" sx={{ color: isLocked ? textSecondary : '#10b981', fontWeight: 600 }}>
+                  {isLocked ? `Lv ${wall.min_level}+` : wall.type?.toUpperCase()}
                 </Typography>
               </Paper>
             </Grid>
-          ))}
+            )
+          })}
         </Grid>
       </Box>
 
       {/* Live Activity + Streak */}
       <Grid container spacing={{ xs: 2, md: 3 }}>
         <Grid item xs={12} md={8}>
-          <Paper
-            elevation={0}
-            sx={{
-              p: { xs: 2, md: 3 },
-              borderRadius: 3,
-              border: `1px solid ${cardBorder}`,
-              bgcolor: cardBg,
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <WhatshotIcon sx={{ color: '#f59e0b', fontSize: 20 }} />
-              <Typography variant="h6" fontWeight={800} sx={{ color: textPrimary }}>
-                Live Activity
-              </Typography>
-              <Box
-                sx={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  bgcolor: '#10b981',
-                  ml: 'auto',
-                  animation: 'pulse 2s infinite',
-                  '@keyframes pulse': {
-                    '0%, 100%': { opacity: 1 },
-                    '50%': { opacity: 0.3 },
-                  },
-                }}
-              />
-            </Box>
-
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {liveActivity.map((item, index) => (
-                <Fade in key={index} timeout={500 + index * 100}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      p: 1.5,
-                      borderRadius: 2,
-                      bgcolor: isDark ? '#0f172a' : '#f8fafc',
-                      '&:hover': { bgcolor: hoverBg },
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    <Avatar
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        bgcolor: isDark ? '#334155' : '#e2e8f0',
-                        color: textSecondary,
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                      }}
-                    >
-                      {item.user[0]}
-                    </Avatar>
-                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                      <Typography variant="body2" fontWeight={600} sx={{ color: textPrimary }}>
-                        {item.user}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: textSecondary }}>
-                        {item.action}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-                      <Typography variant="body2" fontWeight={700} sx={{ color: '#10b981' }}>
-                        {item.amount}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: textMuted }}>
-                        {item.time}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Fade>
-              ))}
-            </Box>
-          </Paper>
+          <LiveActivityFeed isDark={isDark} />
         </Grid>
 
         <Grid item xs={12} md={4}>
@@ -374,7 +330,7 @@ const DashboardPage = () => {
             <Box sx={{ textAlign: 'center', mb: 2 }}>
               <WhatshotIcon sx={{ color: '#f59e0b', fontSize: 40, mb: 1 }} />
               <Typography variant="h5" fontWeight={800} sx={{ color: textPrimary }}>
-                {dashboard?.streak?.current_streak || 0} Day Streak
+                {streak?.streak || 0} Day Streak
               </Typography>
               <Typography variant="body2" sx={{ color: textSecondary, mb: 2 }}>
                 Keep it going for bonus rewards!
@@ -382,6 +338,8 @@ const DashboardPage = () => {
               <Button
                 variant="contained"
                 fullWidth
+                disabled={claimingStreak || streak?.can_check_in === false}
+                onClick={handleClaimStreak}
                 sx={{
                   bgcolor: '#f59e0b',
                   textTransform: 'none',
@@ -389,9 +347,10 @@ const DashboardPage = () => {
                   borderRadius: 2,
                   py: 1.2,
                   '&:hover': { bgcolor: '#d97706' },
+                  '&.Mui-disabled': { opacity: 0.5 },
                 }}
               >
-                Claim Daily Bonus
+                {streak?.can_check_in === false ? '✓ Claimed Today' : claimingStreak ? 'Claiming...' : 'Claim Daily Bonus'}
               </Button>
             </Box>
           </Paper>

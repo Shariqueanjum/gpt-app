@@ -5,6 +5,7 @@ const { findUserById } = require('../repositories/user.repository');
 const { getNumericSetting } = require('./settings.service');
 const { TRANSACTION_TYPES, TRANSACTION_STATUS, SURVEY_CLICK_STATUS } = require('../constants/transactionTypes');
 const { checkAndUpgradeLevel } = require('./level.service');
+const { emitActivity } = require('./activityEmitter.service');
 
 const assertClickBelongsToOfferWall = (click, offerWall) => {
   if (Number(click.offer_wall_id) !== Number(offerWall.id)) {
@@ -228,6 +229,17 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
     checkAndUpgradeLevel(click.user_id).catch(err => {
       console.error(`[AutoLevel] User ${click.user_id}: ${err.message}`);
     });
+
+     // Fire real-time live activity event instantly
+    try {
+      emitActivity({
+        type:       'survey_completed',
+        username:   username,
+        offer_wall: offerWall?.name || 'Survey',
+        amount:     cpaUser ? (cpaUser / 100).toFixed(2) : null,
+        country:    user?.country || 'Unknown',
+      });
+    } catch (_) {}
 
     return {
       click_id: click.id,

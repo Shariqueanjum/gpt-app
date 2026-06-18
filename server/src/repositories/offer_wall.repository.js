@@ -11,6 +11,17 @@ const findActiveOfferWalls = async () => {
   return res.rows;
 };
 
+const findAllOfferWalls = async () => {
+  const res = await pool.query(
+    `SELECT id, name, internal_id, type, endpoint_url, iframe_url,
+            hash_algorithm, commission_rate, is_active, hash_key, callback_config,
+            created_at, updated_at
+     FROM offer_walls
+     ORDER BY id`
+  );
+  return res.rows;
+};
+
 const findByInternalId = async (internalId) => {
   const res = await pool.query(
     `SELECT id, name, internal_id, type, endpoint_url, iframe_url,
@@ -32,6 +43,90 @@ const findById = async (id) => {
   );
   return res.rows[0];
 };
+
+const findByIdAdmin = async (id) => {
+  const res = await pool.query(
+    `SELECT id, name, internal_id, type, endpoint_url, iframe_url,
+            hash_algorithm, commission_rate, is_active, hash_key, callback_config,
+            created_at, updated_at
+     FROM offer_walls
+     WHERE id = $1`,
+    [id]
+  );
+  return res.rows[0];
+};
+
+// --- Write -----
+
+const createOfferWall = async ({
+  name, internal_id, type, endpoint_url, iframe_url,
+  hash_algorithm, hash_key, commission_rate, callback_config,
+}) => {
+  const res = await pool.query(
+    `INSERT INTO offer_walls
+       (name, internal_id, type, endpoint_url, iframe_url,
+        hash_algorithm, hash_key, commission_rate, callback_config, is_active)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,true)
+     RETURNING *`,
+    [
+      name, internal_id, type,
+      endpoint_url || null,
+      iframe_url   || null,
+      hash_algorithm || null,
+      hash_key       || null,
+      commission_rate,
+      JSON.stringify(callback_config || {}),
+    ]
+  );
+  return res.rows[0];
+};
+
+const updateOfferWall = async (id, fields) => {
+  const {
+    name, internal_id, type, endpoint_url, iframe_url,
+    hash_algorithm, hash_key, commission_rate, callback_config, is_active,
+  } = fields;
+
+  const res = await pool.query(
+    `UPDATE offer_walls SET
+       name            = COALESCE($1,  name),
+       internal_id     = COALESCE($2,  internal_id),
+       type            = COALESCE($3,  type),
+       endpoint_url    = COALESCE($4,  endpoint_url),
+       iframe_url      = COALESCE($5,  iframe_url),
+       hash_algorithm  = COALESCE($6,  hash_algorithm),
+       hash_key        = COALESCE($7,  hash_key),
+       commission_rate = COALESCE($8,  commission_rate),
+       callback_config = COALESCE($9,  callback_config),
+       is_active       = COALESCE($10, is_active),
+       updated_at      = NOW()
+     WHERE id = $11
+     RETURNING *`,
+    [
+      name         || null,
+      internal_id  || null,
+      type         || null,
+      endpoint_url !== undefined ? endpoint_url : null,
+      iframe_url   !== undefined ? iframe_url   : null,
+      hash_algorithm !== undefined ? hash_algorithm : null,
+      hash_key       !== undefined ? hash_key       : null,
+      commission_rate !== undefined ? commission_rate : null,
+      callback_config !== undefined ? JSON.stringify(callback_config) : null,
+      is_active   !== undefined ? is_active : null,
+      id,
+    ]
+  );
+  return res.rows[0];
+};
+
+const toggleOfferWall = async (id, is_active) => {
+  const res = await pool.query(
+    `UPDATE offer_walls SET is_active = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+    [is_active, id]
+  );
+  return res.rows[0];
+};
+
 
 const seedOfferWalls = async () => {
   const walls = [
@@ -143,7 +238,12 @@ const seedOfferWalls = async () => {
 
 module.exports = {
   findActiveOfferWalls,
+  findAllOfferWalls,
   findByInternalId,
   findById,
+  findByIdAdmin,
+  createOfferWall,
+  updateOfferWall,
+  toggleOfferWall,
   seedOfferWalls
 };

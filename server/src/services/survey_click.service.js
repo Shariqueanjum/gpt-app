@@ -9,14 +9,82 @@ const generateTransactionId = (publicId) => {
   return `TXN-${publicId}-${timestamp}-${random}`;
 };
 
-const buildRedirectUrl = (baseUrl, publicId, transactionId) => {
-  const separator = baseUrl.includes('?') ? '&' : '?';
-  return `${baseUrl}${separator}user_id=${encodeURIComponent(publicId)}&transaction_id=${encodeURIComponent(transactionId)}`;
+/**
+ * Resolves a single url_param entry against user + transactionId.
+ *
+ * Supported sources:
+ *   "transaction_id"         → the generated TXN-... id
+ *   "user.public_id"         → user.public_id
+ *   "user.username"          → user.username
+ *   "user.email"             → user.email
+ *   "user.country"           → user.country
+ *   "user.gender"            → user.gender
+ *   "user.dob"               → user.dob (ISO string)
+ *   "user.full_name"         → user.full_name
+ *   "user.phone"             → user.phone
+ *   "user.referral_code"     → user.referral_code
+ *   "user.level_id"          → user.level_id
+ *   "static"                 → the literal value field
+ */
+
+const resolveParamValue = (source, value, user, transactionId) => {
+  switch (source) {
+    case 'transaction_id':    return transactionId;
+    case 'user.public_id':    return user.public_id  || '';
+    case 'user.username':     return user.username   || '';
+    case 'user.email':        return user.email      || '';
+    case 'user.country':      return user.country    || '';
+    case 'user.gender':       return user.gender     || '';
+    case 'user.dob':          return user.dob ? new Date(user.dob).toISOString().split('T')[0] : '';
+    case 'user.full_name':    return user.full_name  || '';
+    case 'user.phone':        return user.phone      || '';
+    case 'user.referral_code':return user.referral_code || '';
+    case 'user.level_id':     return String(user.level_id || 1);
+    case 'static':            return value || '';
+    default:                  return '';
+  }
 };
+
+/**
+ * Build entry URL from callback_config.url_params array.
+ *
+ * callback_config.url_params = [
+ *   { param: "uid",       source: "user.public_id" },
+ *   { param: "txn",       source: "transaction_id" },
+ *   { param: "gender",    source: "user.gender" },
+ *   { param: "country",   source: "user.country" },
+ *   { param: "app_name",  source: "static", value: "MySurveyApp" }
+ * ]
+ *
+ * Falls back to legacy ?user_id=&transaction_id= when url_params not configured.
+ */
+
+// const buildRedirectUrl = (baseUrl, publicId, transactionId) => {
+//   const separator = baseUrl.includes('?') ? '&' : '?';
+//   return `${baseUrl}${separator}user_id=${encodeURIComponent(publicId)}&transaction_id=${encodeURIComponent(transactionId)}`;
+// };
+
+const buildEntryUrl = (baseUrl, user, transactionId, callbackConfig) => {
+  const urlParams = callbackConfig?.url_params;
+
+  const separator = baseUrl.includes('?') ? '&' : '?';
+
+  if (!urlParams || !Array.isArray(urlParams) || urlParams.length === 0) {
+    // Legacy fallback — keeps existing integrations working
+    return `${baseUrl}${separator}user_id=${encodeURIComponent(user.public_id)}&transaction_id=${encodeURIComponent(transactionId)}`;
+  }
+
+  const parts = urlParams.map(({ param, source, value }) => {
+    const resolved = resolveParamValue(source, value, user, transactionId);
+    return `${encodeURIComponent(param)}=${encodeURIComponent(resolved)}`;
+  });
+
+  return `${baseUrl}${separator}${parts.join('&')}`;
+};
+
 
 const createSurveyClickRecord = async (userId, payload) => {
   const user = await findUserById(userId);
-  console.log("i am inside create surveyclik service");
   
   if (!user) {
     const error = new Error('User not found');
@@ -75,6 +143,8 @@ const createSurveyClickRecord = async (userId, payload) => {
     expires_at: expiresAt
   });
 
+  const callbackConfig = wall.callback_config || {};
+
   // Build return URL based on type
   let result = {
     transaction_id: transactionId,
@@ -83,14 +153,12 @@ const createSurveyClickRecord = async (userId, payload) => {
   };
 
   if (wall.type === 'api' || wall.type === 'router') {
-    const baseUrl = wall.endpoint_url;
-    result.redirect_url = buildRedirectUrl(baseUrl, user.public_id, transactionId);
+    result.redirect_url = buildEntryUrl(wall.endpoint_url, user, transactionId, callbackConfig);
   } else if (wall.type === 'iframe') {
-    const baseUrl = wall.iframe_url;
-    result.iframe_src = buildRedirectUrl(baseUrl, user.public_id, transactionId);
+    result.iframe_src = buildEntryUrl(wall.iframe_url, user, transactionId, callbackConfig);
   }
 
   return { click: result };
 };
 
-module.exports = { createSurveyClickRecord };
+module.exports = { createSurveyClickRecord, buildEntryUrl,resolveParamValue };

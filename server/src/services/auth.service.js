@@ -7,6 +7,7 @@ const { generateDeviceFingerprint } = require('../utils/device');
 const {sendVerificationEmail, sendPasswordResetEmail, sendForgotUsernameEmail} = require('../utils/email')
 const { createPending, findByToken, findByEmail, deleteByEmail } = require('../repositories/pending_registration.repository');
 const {findByEmailOrUsername, findByReferralCode, findUserByEmail, findUserByUsername, createUser, findUserById} = require('../repositories/user.repository');
+const { emitActivity } = require('./activityEmitter.service');
 const {createLoginHistory} = require('../repositories/login_history.repository');
 const { processDailyStreak } = require('./streak.service');
 const { createPasswordReset, findPasswordResetByToken, markPasswordResetUsed, deleteOldPasswordResets } = require('../repositories/password_reset.repository');
@@ -148,6 +149,15 @@ const verifyEmail = async (token, meta) => {
     await deleteByEmail(pending.email);
 
     await client.query('COMMIT');
+
+     // Fire real-time live activity — new user just joined
+    try {
+      emitActivity({
+        type:     'user_registered',
+        username: user.username,
+        country:  pending.country || 'Unknown',
+      });
+    } catch (_) {}
 
     return { message: 'Email verified successfully! You can now login.' };
 
