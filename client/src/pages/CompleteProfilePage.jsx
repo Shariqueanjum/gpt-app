@@ -1,76 +1,130 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import {
-  Box,
-  Typography,
-  Paper,
-  TextField,
-  Button,
-  Fade,
-  LinearProgress,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormHelperText,
-} from '@mui/material'
-import PersonIcon from '@mui/icons-material/Person'
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
-import WcIcon from '@mui/icons-material/Wc'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import axiosInstance from '../utils/axiosInstance'
 import { fetchCurrentUser } from '../slices/authSlice'
+
+const PersonIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+  </svg>
+)
+const CalendarIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+)
+const GenderIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" /><path d="M12 8v8" /><path d="M8 12h8" />
+  </svg>
+)
+const CheckIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+)
+const ChevronDown = () => (
+  <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+    <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
+// ── Custom dropdown — opens upward, fully contained inside card ───────────────
+const CustomSelect = ({ value, onChange, options, placeholder, hasError }) => {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const selected = options.find((o) => o.value === value)
+
+  return (
+    <div ref={ref} className="relative w-full">
+      {/* Trigger button */}
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className={`w-full bg-[#f2f3ff] rounded-2xl border px-4 py-3.5 text-base flex items-center justify-between gap-2 transition-all duration-200 focus:outline-none focus:ring-4
+          ${hasError
+            ? 'border-[#ba1a1a]/40 focus:border-[#ba1a1a] focus:ring-[#ba1a1a]/10'
+            : open
+              ? 'border-[#5312bc] ring-4 ring-[#5312bc]/10'
+              : 'border-[#cbc3d7]/40'
+          }`}
+      >
+        <span className={`truncate text-sm ${selected ? 'text-[#131b2e]' : 'text-[#494454]/50'}`}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <span className={`text-[#494454] transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`}>
+          <ChevronDown />
+        </span>
+      </button>
+
+      {/* List — always opens UPWARD (bottom-full) so it never goes below the card */}
+      {open && (
+        <ul
+          className="absolute bottom-full left-0 right-0 mb-1.5 bg-white border border-[#cbc3d7]/60 rounded-2xl shadow-xl shadow-[#5312bc]/10 overflow-y-auto z-[60]"
+          style={{ maxHeight: '160px' }}
+        >
+          {options.map((opt) => (
+            <li key={opt.value}>
+              <button
+                type="button"
+                onClick={() => { onChange(opt.value); setOpen(false) }}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 first:rounded-t-2xl last:rounded-b-2xl
+                  ${opt.value === value
+                    ? 'bg-[#5312bc]/10 text-[#5312bc] font-semibold'
+                    : 'text-[#131b2e] hover:bg-[#f2f3ff]'
+                  }`}
+              >
+                {opt.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const CompleteProfilePage = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { user, isAuthenticated } = useSelector((state) => state.auth)
+  const cardRef = useRef(null)
 
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError]     = useState('')
   const [touched, setTouched] = useState({})
-  
-  const [formData, setFormData] = useState({
-    full_name: '',
-    dob: '',
-    gender: '',
-  })
-
-  const [errors, setErrors] = useState({
-    full_name: '',
-    dob: '',
-    gender: '',
-  })
-
-  // Parse existing DOB
-  const [dobDay, setDobDay] = useState('')
+  const [formData, setFormData] = useState({ full_name: '', dob: '', gender: '' })
+  const [errors, setErrors]     = useState({ full_name: '', dob: '', gender: '' })
+  const [dobDay, setDobDay]     = useState('')
   const [dobMonth, setDobMonth] = useState('')
-  const [dobYear, setDobYear] = useState('')
+  const [dobYear, setDobYear]   = useState('')
+
+  // Keep body scroll locked — dashboard visible but frozen behind overlay
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = 'unset' }
+  }, [])
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/')
-      return
-    }
-    if (user?.profile_completion >= 30) {
-      navigate('/dashboard')
-    }
+    if (!isAuthenticated) { navigate('/'); return }
+    if (user?.profile_completion >= 30) { navigate('/dashboard') }
     if (user) {
-      setFormData((prev) => ({
-        ...prev,
-        full_name: user.full_name || '',
-        gender: user.gender || '',
-      }))
-      
-      // Parse existing DOB
+      setFormData((prev) => ({ ...prev, full_name: user.full_name || '', gender: user.gender || '' }))
       if (user.dob) {
         const dateStr = user.dob.split('T')[0]
         const parts = dateStr.split('-')
         if (parts.length === 3) {
-          setDobYear(parts[0])
-          setDobMonth(parts[1])
-          setDobDay(parts[2])
+          setDobYear(parts[0]); setDobMonth(parts[1]); setDobDay(parts[2])
           setFormData((prev) => ({ ...prev, dob: dateStr }))
         }
       }
@@ -84,17 +138,15 @@ const CompleteProfilePage = () => {
         if (value.trim().length < 3) return 'Name must be at least 3 characters'
         if (!/^[a-zA-Z\s]+$/.test(value)) return 'Name can only contain letters'
         return ''
-      case 'dob':
+      case 'dob': {
         if (!value) return 'Date of birth is required'
-        const birthDate = new Date(value)
-        const today = new Date()
-        const age = today.getFullYear() - birthDate.getFullYear()
+        const age = new Date().getFullYear() - new Date(value).getFullYear()
         if (age < 13) return 'You must be at least 13 years old'
         if (age > 100) return 'Please enter a valid date of birth'
         return ''
+      }
       case 'gender':
-        if (!value) return 'Please select your gender'
-        return ''
+        return value ? '' : 'Please select your gender'
       default:
         return ''
     }
@@ -111,26 +163,9 @@ const CompleteProfilePage = () => {
     }
   }
 
-  const handleDayChange = (e) => {
-    const value = e.target.value
-    setDobDay(value)
-    updateDob(value, dobMonth, dobYear)
-    setError('')
-  }
-
-  const handleMonthChange = (e) => {
-    const value = e.target.value
-    setDobMonth(value)
-    updateDob(dobDay, value, dobYear)
-    setError('')
-  }
-
-  const handleYearChange = (e) => {
-    const value = e.target.value
-    setDobYear(value)
-    updateDob(dobDay, dobMonth, value)
-    setError('')
-  }
+  const handleDobDay   = (val) => { setDobDay(val);   updateDob(val, dobMonth, dobYear); setError('') }
+  const handleDobMonth = (val) => { setDobMonth(val); updateDob(dobDay, val, dobYear);   setError('') }
+  const handleDobYear  = (val) => { setDobYear(val);  updateDob(dobDay, dobMonth, val);  setError('') }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -140,25 +175,27 @@ const CompleteProfilePage = () => {
     setError('')
   }
 
+  const handleGenderChange = (val) => {
+    setFormData({ ...formData, gender: val })
+    setTouched({ ...touched, gender: true })
+    setErrors({ ...errors, gender: validateField('gender', val) })
+    setError('')
+  }
+
   const validateAll = () => {
     const newErrors = {
       full_name: validateField('full_name', formData.full_name),
-      dob: validateField('dob', formData.dob),
-      gender: validateField('gender', formData.gender),
+      dob:       validateField('dob',       formData.dob),
+      gender:    validateField('gender',    formData.gender),
     }
     setErrors(newErrors)
     setTouched({ full_name: true, dob: true, gender: true })
-    return !Object.values(newErrors).some((e) => e !== '')
+    return !Object.values(newErrors).some(Boolean)
   }
 
   const handleSubmit = async () => {
-    if (!validateAll()) {
-      setError('Please fill all required fields correctly')
-      return
-    }
-
-    setLoading(true)
-    setError('')
+    if (!validateAll()) { setError('Please fill all required fields correctly'); return }
+    setLoading(true); setError('')
     try {
       await axiosInstance.put('/user/profile', formData)
       await dispatch(fetchCurrentUser()).unwrap()
@@ -170,326 +207,130 @@ const CompleteProfilePage = () => {
     }
   }
 
-  const getProgressColor = () => {
-    const completion = user?.profile_completion || 20
-    if (completion >= 80) return '#10b981'
-    if (completion >= 50) return '#f59e0b'
-    return '#ef4444'
-  }
-
-  // Generate arrays for dropdowns
-  const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'))
-  const months = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))
+  const dayOptions = Array.from({ length: 31 }, (_, i) => {
+    const v = String(i + 1).padStart(2, '0'); return { value: v, label: v }
+  })
+  const monthOptions = [
+    { value: '01', label: 'Jan' }, { value: '02', label: 'Feb' },
+    { value: '03', label: 'Mar' }, { value: '04', label: 'Apr' },
+    { value: '05', label: 'May' }, { value: '06', label: 'Jun' },
+    { value: '07', label: 'Jul' }, { value: '08', label: 'Aug' },
+    { value: '09', label: 'Sep' }, { value: '10', label: 'Oct' },
+    { value: '11', label: 'Nov' }, { value: '12', label: 'Dec' },
+  ]
   const currentYear = new Date().getFullYear()
-  const years = Array.from({ length: 100 }, (_, i) => String(currentYear - i - 13))
+  const yearOptions = Array.from({ length: 88 }, (_, i) => {
+    const y = String(currentYear - 13 - i); return { value: y, label: y }
+  })
+  const genderOptions = [
+    { value: 'male',              label: 'Male' },
+    { value: 'female',            label: 'Female' },
+    { value: 'other',             label: 'Other' },
+    { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+  ]
 
   return (
-    <Box
-      sx={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 100,
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-        p: { xs: 2, sm: 3 },
-        pt: { xs: 3, sm: 6 },
-        bgcolor: 'rgba(15, 23, 42, 0.9)',
-        overflow: 'auto',
-      }}
-    >
-      <Fade in>
-        <Paper
-          elevation={0}
-          sx={{
-            width: '100%',
-            maxWidth: 400,
-            p: { xs: 3, sm: 4 },
-            borderRadius: 4,
-            border: '1px solid rgba(226, 232, 240, 0.8)',
-            bgcolor: 'white',
-            boxShadow: '0 32px 64px -12px rgba(0, 0, 0, 0.4)',
-            position: 'relative',
-            overflow: 'visible',
-          }}
-        >
-          {/* Top gradient bar */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: -1,
-              left: 20,
-              right: 20,
-              height: 4,
-              background: 'linear-gradient(90deg, #10b981, #34d399, #059669)',
-              borderRadius: 2,
-            }}
-          />
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-24 pb-6 px-4 sm:px-6">
+      {/* Backdrop — blocks clicks on dashboard */}
+      <div className="absolute inset-0 bg-[#131b2e]/40" />
 
-          {/* Icon circle */}
-          <Box sx={{ textAlign: 'center', mb: 3, pt: 1 }}>
-            <Box
-              sx={{
-                width: 72,
-                height: 72,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-                color: '#10b981',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mb: 2,
-                boxShadow: '0 8px 24px rgba(16, 185, 129, 0.2)',
-              }}
-            >
-              <PersonIcon sx={{ fontSize: 32 }} />
-            </Box>
-            <Typography variant="h5" fontWeight={800} sx={{ color: '#0f172a', mb: 0.5, letterSpacing: '-0.02em' }}>
-              Complete Your Profile
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.875rem' }}>
-              Required before you start earning
-            </Typography>
-          </Box>
-
-          {/* Progress */}
-          <Box
-            sx={{
-              p: 2,
-              borderRadius: 3,
-              bgcolor: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              mb: 3,
-            }}
+      <div
+        ref={cardRef}
+        className="relative w-full max-w-[420px] mx-auto bg-white rounded-[2rem] border border-[#cbc3d7]/40 shadow-[0_25px_80px_-20px_rgba(83,18,188,0.2)] p-6 sm:p-8"
+      >
+        {/* Header */}
+        <div className="text-center mb-6">
+          <div className="w-14 h-14 rounded-2xl bg-[#5312bc]/10 flex items-center justify-center mx-auto mb-4 text-[#5312bc]">
+            <PersonIcon />
+          </div>
+          <h1
+            className="text-[#131b2e] text-2xl font-extrabold mb-2 tracking-tight"
+            style={{ fontFamily: 'Sora, Inter, system-ui, sans-serif' }}
           >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, alignItems: 'center' }}>
-              <Typography variant="body2" fontWeight={700} sx={{ color: '#0f172a' }}>
-                Profile Completion
-              </Typography>
-              <Typography variant="body2" fontWeight={800} sx={{ color: getProgressColor() }}>
-                {user?.profile_completion || 20}%
-              </Typography>
-            </Box>
-            <LinearProgress
-              variant="determinate"
-              value={user?.profile_completion || 20}
-              sx={{
-                height: 10,
-                borderRadius: 5,
-                bgcolor: '#e2e8f0',
-                '& .MuiLinearProgress-bar': {
-                  bgcolor: getProgressColor(),
-                  borderRadius: 5,
-                  transition: 'all 0.5s ease',
-                },
-              }}
-            />
-          </Box>
+            Complete Your Profile
+          </h1>
+          <p className="text-[#494454] text-sm font-medium">Required before you start earning</p>
+        </div>
 
-          {/* Error */}
-          {error && (
-            <Box
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                bgcolor: '#fef2f2',
-                color: '#ef4444',
-                mb: 2,
-                fontSize: '0.875rem',
-                textAlign: 'center',
-                border: '1px solid #fecaca',
-              }}
-            >
-              {error}
-            </Box>
-          )}
+        {/* Global error */}
+        {error && (
+          <div className="mb-4 p-3 bg-[#ba1a1a]/[0.08] border border-[#ba1a1a]/[0.15] rounded-xl text-[#ba1a1a] text-sm font-semibold flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ba1a1a] shrink-0" />
+            {error}
+          </div>
+        )}
 
-          {/* Form */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            {/* Full Name */}
-            <TextField
-              fullWidth
-              label="Full Name"
+        {/* Form */}
+        <div className="space-y-5">
+
+          {/* Full Name */}
+          <div>
+            <label className="flex items-center gap-2 text-xs font-semibold text-[#494454] uppercase tracking-[0.08em] mb-2.5">
+              <PersonIcon /> Full Name
+            </label>
+            <input
+              type="text"
               name="full_name"
               value={formData.full_name}
               onChange={handleChange}
-              placeholder="John Doe"
-              error={touched.full_name && !!errors.full_name}
-              helperText={touched.full_name && errors.full_name}
-              InputProps={{
-                startAdornment: (
-                  <PersonIcon sx={{ color: '#94a3b8', mr: 1, fontSize: 20 }} />
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2.5,
-                  bgcolor: '#fafafa',
-                  '& fieldset': { borderColor: '#e2e8f0' },
-                  '&:hover fieldset': { borderColor: '#10b981' },
-                  '&.Mui-focused fieldset': { borderColor: '#10b981', borderWidth: 2 },
-                  '&.Mui-error fieldset': { borderColor: '#ef4444' },
-                },
-              }}
+              placeholder="Enter your full name"
+              className={`w-full bg-[#f2f3ff] rounded-2xl border px-5 py-3.5 text-[#131b2e] placeholder-[#494454]/50 text-base transition-all duration-200 focus:outline-none focus:ring-4
+                ${touched.full_name && errors.full_name
+                  ? 'border-[#ba1a1a]/40 focus:border-[#ba1a1a] focus:ring-[#ba1a1a]/10'
+                  : 'border-[#cbc3d7]/40 focus:border-[#5312bc] focus:ring-[#5312bc]/10'}`}
             />
+            {touched.full_name && errors.full_name && (
+              <p className="mt-1.5 text-xs text-[#ba1a1a] font-medium">{errors.full_name}</p>
+            )}
+          </div>
 
-            {/* Date of Birth */}
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <CalendarTodayIcon sx={{ color: '#94a3b8', fontSize: 18 }} />
-                <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500 }}>
-                  Date of Birth *
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', gap: 1.5 }}>
-                <FormControl fullWidth error={touched.dob && !!errors.dob && !dobDay}>
-                  <InputLabel size="small">Day</InputLabel>
-                  <Select
-                    value={dobDay}
-                    onChange={handleDayChange}
-                    label="Day"
-                    size="small"
-                    sx={{
-                      borderRadius: 2.5,
-                      bgcolor: '#fafafa',
-                      '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e2e8f0' },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#10b981' },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#10b981', borderWidth: 2 },
-                    }}
-                  >
-                    <MenuItem value=""><em>DD</em></MenuItem>
-                    {days.map((d) => (
-                      <MenuItem key={d} value={d}>{d}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+          {/* Date of Birth */}
+          <div>
+            <label className="flex items-center gap-2 text-xs font-semibold text-[#494454] uppercase tracking-[0.08em] mb-2.5">
+              <CalendarIcon /> Date of Birth <span className="text-[#ba1a1a]">*</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <CustomSelect value={dobDay}   onChange={handleDobDay}   options={dayOptions}   placeholder="Day"  hasError={touched.dob && !!errors.dob} />
+              <CustomSelect value={dobMonth} onChange={handleDobMonth} options={monthOptions} placeholder="Mon"  hasError={touched.dob && !!errors.dob} />
+              <CustomSelect value={dobYear}  onChange={handleDobYear}  options={yearOptions}  placeholder="Year" hasError={touched.dob && !!errors.dob} />
+            </div>
+            {touched.dob && errors.dob && (
+              <p className="mt-1.5 text-xs text-[#ba1a1a] font-medium">{errors.dob}</p>
+            )}
+          </div>
 
-                <FormControl fullWidth error={touched.dob && !!errors.dob && !dobMonth}>
-                  <InputLabel size="small">Month</InputLabel>
-                  <Select
-                    value={dobMonth}
-                    onChange={handleMonthChange}
-                    label="Month"
-                    size="small"
-                    sx={{
-                      borderRadius: 2.5,
-                      bgcolor: '#fafafa',
-                      '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e2e8f0' },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#10b981' },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#10b981', borderWidth: 2 },
-                    }}
-                  >
-                    <MenuItem value=""><em>MM</em></MenuItem>
-                    {months.map((m) => (
-                      <MenuItem key={m} value={m}>{m}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+          {/* Gender */}
+          <div>
+            <label className="flex items-center gap-2 text-xs font-semibold text-[#494454] uppercase tracking-[0.08em] mb-2.5">
+              <GenderIcon /> Gender <span className="text-[#ba1a1a]">*</span>
+            </label>
+            <CustomSelect
+              value={formData.gender}
+              onChange={handleGenderChange}
+              options={genderOptions}
+              placeholder="Select gender"
+              hasError={touched.gender && !!errors.gender}
+            />
+            {touched.gender && errors.gender && (
+              <p className="mt-1.5 text-xs text-[#ba1a1a] font-medium">{errors.gender}</p>
+            )}
+          </div>
 
-                <FormControl fullWidth error={touched.dob && !!errors.dob && !dobYear}>
-                  <InputLabel size="small">Year</InputLabel>
-                  <Select
-                    value={dobYear}
-                    onChange={handleYearChange}
-                    label="Year"
-                    size="small"
-                    sx={{
-                      borderRadius: 2.5,
-                      bgcolor: '#fafafa',
-                      '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e2e8f0' },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#10b981' },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#10b981', borderWidth: 2 },
-                    }}
-                  >
-                    <MenuItem value=""><em>YYYY</em></MenuItem>
-                    {years.map((y) => (
-                      <MenuItem key={y} value={y}>{y}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
-              {touched.dob && errors.dob && (
-                <Typography variant="caption" sx={{ color: '#ef4444', mt: 0.5, display: 'block' }}>
-                  {errors.dob}
-                </Typography>
-              )}
-            </Box>
-
-            {/* Gender */}
-            <FormControl
-              fullWidth
-              error={touched.gender && !!errors.gender}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2.5,
-                  bgcolor: '#fafafa',
-                  '& fieldset': { borderColor: '#e2e8f0' },
-                  '&:hover fieldset': { borderColor: '#10b981' },
-                  '&.Mui-focused fieldset': { borderColor: '#10b981', borderWidth: 2 },
-                },
-              }}
-            >
-              <InputLabel id="gender-label" size="small">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <WcIcon sx={{ fontSize: 16 }} />
-                  Gender
-                </Box>
-              </InputLabel>
-              <Select
-                labelId="gender-label"
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                label="Gender"
-                size="small"
-              >
-                <MenuItem value=""><em>Select gender</em></MenuItem>
-                <MenuItem value="male">Male</MenuItem>
-                <MenuItem value="female">Female</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
-              </Select>
-              {touched.gender && errors.gender && (
-                <FormHelperText>{errors.gender}</FormHelperText>
-              )}
-            </FormControl>
-          </Box>
-
-          {/* Submit Button */}
-          <Button
-            variant="contained"
-            fullWidth
+          {/* Submit */}
+          <button
             onClick={handleSubmit}
             disabled={loading}
-            startIcon={!loading && <CheckCircleIcon />}
-            sx={{
-              mt: 4,
-              bgcolor: '#10b981',
-              textTransform: 'none',
-              fontWeight: 700,
-              borderRadius: 3,
-              py: 1.5,
-              fontSize: '1rem',
-              boxShadow: '0 8px 24px rgba(16, 185, 129, 0.3)',
-              '&:hover': {
-                bgcolor: '#059669',
-                boxShadow: '0 12px 32px rgba(16, 185, 129, 0.4)',
-                transform: 'translateY(-1px)',
-              },
-              '&:disabled': {
-                bgcolor: '#cbd5e1',
-                boxShadow: 'none',
-              },
-              transition: 'all 0.2s ease',
-            }}
+            className="w-full bg-[#5312bc] text-white rounded-full py-3.5 font-bold text-base shadow-lg shadow-[#5312bc]/20 hover:bg-[#6b38d4] active:scale-[0.97] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+            style={{ fontFamily: 'Sora, Inter, system-ui, sans-serif' }}
           >
-            {loading ? 'Saving...' : 'Complete & Continue'}
-          </Button>
-        </Paper>
-      </Fade>
-    </Box>
+            {loading
+              ? <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              : <><CheckIcon /> Complete Profile</>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 

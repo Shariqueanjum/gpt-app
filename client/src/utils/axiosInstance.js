@@ -24,10 +24,23 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
+    const isAuthEndpoint = error.config?.url?.includes('/auth/login') || 
+                           error.config?.url?.includes('/auth/register') ||
+                           error.config?.url?.includes('/auth/forgot-password') ||
+                           error.config?.url?.includes('/auth/forgot-username') ||
+                           error.config?.url?.includes('/auth/reset-password') ||
+                           error.config?.url?.includes('/auth/verify-email')
+    
+    // Only redirect on 401 if:
+    // 1. It's NOT an auth endpoint (login/register/etc)
+    // 2. We're NOT already on the login page
+    if (error.response?.status === 401 && !isAuthEndpoint) {
+      const currentPath = window.location.pathname
+      if (currentPath !== '/login') {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }
