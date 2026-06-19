@@ -18,7 +18,7 @@ function App() {
   const dispatch = useDispatch()
   const location = useLocation()
   const { isAuthenticated } = useSelector((state) => state.auth)
-  
+
   const [darkMode, setDarkMode] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
 
@@ -89,7 +89,7 @@ function App() {
       />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        
+
         <Route
           path="/login"
           element={
@@ -112,9 +112,9 @@ function App() {
             </PublicOnlyRoute>
           }
         />
-        
+
         <Route path="/verify-email" element={<VerifyEmailPage />} />
-        
+
         <Route
           path="/complete-profile"
           element={
@@ -127,16 +127,26 @@ function App() {
           }
         />
 
-        <Route
+        {/* <Route
           path="/dashboard"
           element={
-            <ProtectedRoute requireProfile>
+            <ProtectedRoute>
               <DashboardLayout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-                <DashboardPage />
+                <DashboardPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
               </DashboardLayout>
             </ProtectedRoute>
           }
+        /> */}
+
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+            </ProtectedRoute>
+          }
         />
+
         <Route
           path="/earn"
           element={
