@@ -43,7 +43,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(globalLimiter);
+//app.use(globalLimiter);
 
 // routes
 app.use('/', healthRoutes);

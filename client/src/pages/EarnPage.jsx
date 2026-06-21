@@ -37,6 +37,7 @@ const REDIRECT_CONFIG = {
   }
 }
 
+
 const EarnPage = ({ darkMode, toggleDarkMode }) => {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -157,20 +158,53 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
     const cfg = REDIRECT_CONFIG
     const overrides = cfg.overrides[wall.internal_id] || {}
 
-    // Add common params
-    const params = {
-      [overrides.user_id || cfg.common.user_id]: user?.public_id || user?.id,
-      [overrides.sub_id_1 || cfg.common.sub_id_1]: user?.public_id || user?.id,
+    // Build params based on wall.config.param_mapping (configured per client in admin panel)
+    // Each client tells us: "my param name for user_id is 'uid'", "my param for transaction_id is 'sid'"
+    const paramMapping = wall.config?.param_mapping || {}
+
+    const params = {}
+
+    // User ID param — client tells us what they call it (e.g., "uid", "user_id", "subid")
+    if (paramMapping.user_id) {
+      params[paramMapping.user_id] = user?.public_id || user?.id
     }
 
-    // Add transaction/click tracking id if available
-    if (clickData?.click_id || clickData?.id) {
-      params[overrides.transaction_id || cfg.common.transaction_id] = clickData.click_id || clickData.id
+    // Sub ID / secondary user identifier
+    if (paramMapping.sub_id) {
+      params[paramMapping.sub_id] = user?.public_id || user?.id
     }
 
-    // Add any wall-specific params from config
+    // Transaction / click tracking ID — client tells us what they call it (e.g., "sid", "transaction_id", "click_id")
+    if ((clickData?.click_id || clickData?.id) && paramMapping.transaction_id) {
+      params[paramMapping.transaction_id] = clickData.click_id || clickData.id
+    }
+
+    // Username (some clients want this)
+    if (paramMapping.username && user?.username) {
+      params[paramMapping.username] = user.username
+    }
+
+    // Email (some clients want this for profiling)
+    if (paramMapping.email && user?.email) {
+      params[paramMapping.email] = user.email
+    }
+
+    // Country
+    if (paramMapping.country && user?.country) {
+      params[paramMapping.country] = user.country
+    }
+
+    // Any extra params from config
     if (wall.config?.extra_params) {
-      Object.assign(params, wall.config.extra_params)
+      Object.entries(wall.config.extra_params).forEach(([key, value]) => {
+        const replaced = String(value)
+          .replace(/{{user_id}}/g, user?.public_id || user?.id || '')
+          .replace(/{{username}}/g, user?.username || '')
+          .replace(/{{email}}/g, user?.email || '')
+          .replace(/{{country}}/g, user?.country || '')
+          .replace(/{{click_id}}/g, clickData?.click_id || clickData?.id || '')
+        if (replaced) params[key] = replaced
+      })
     }
 
     // Append all params to URL
@@ -345,7 +379,7 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
             px: { xs: 0, md: 0 }
           }}>
             <Button
-              onClick={() => navigate('/earn')}
+              onClick={() => navigate('/dashboard')}
               startIcon={<ArrowBackIcon />}
               sx={{
                 color: COLORS.textSecondary,
@@ -354,7 +388,7 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
                 '&:hover': { bgcolor: `${COLORS.primary}08`, color: COLORS.primary }
               }}
             >
-              Back
+              Back to Dashboard
             </Button>
             <Typography sx={{
               fontWeight: 700, fontSize: '1.1rem', color: COLORS.textPrimary
@@ -365,23 +399,41 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
               bgcolor: `${COLORS.primary}12`, color: COLORS.primary,
               fontWeight: 700, fontSize: '0.65rem'
             }} />
+            <Button
+              onClick={() => window.open(iframeUrl, '_blank')}
+              size="small"
+              variant="outlined"
+              sx={{
+                ml: 'auto',
+                borderColor: COLORS.primary,
+                color: COLORS.primary,
+                fontWeight: 600,
+                textTransform: 'none',
+                fontSize: '0.75rem',
+                '&:hover': { bgcolor: `${COLORS.primary}08` }
+              }}
+            >
+              Open in New Tab
+            </Button>
           </Box>
 
           <Paper sx={{
-            width: '100%', height: '100%',
+            width: '100%', height: 'calc(100% - 50px)',
             borderRadius: 3, overflow: 'hidden',
             border: `1px solid ${COLORS.border}`,
-            bgcolor: COLORS.cardBg,
+            bgcolor: '#fff',
           }}>
             <iframe
               src={iframeUrl}
               title={selectedWall.name}
               style={{
-                width: '100%', height: '100%',
+                width: '100%',
+                height: '100%',
                 border: 'none',
-                backgroundColor: COLORS.cardBg,
+                display: 'block',
               }}
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"
+              referrerPolicy="no-referrer"
+              loading="eager"
             />
           </Paper>
         </Box>
@@ -401,7 +453,7 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
             display: 'flex', alignItems: 'center', gap: 1.5, mb: 3
           }}>
             <Button
-              onClick={() => navigate('/earn')}
+              onClick={() => navigate('/dashboard')}
               startIcon={<ArrowBackIcon />}
               sx={{
                 color: COLORS.textSecondary,
@@ -410,7 +462,7 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
                 '&:hover': { bgcolor: `${COLORS.primary}08`, color: COLORS.primary }
               }}
             >
-              Back
+              Back to Dashboard
             </Button>
             <Typography sx={{
               fontWeight: 700, fontSize: '1.2rem', color: COLORS.textPrimary
@@ -604,7 +656,7 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
           </Button>
           <Box sx={{ mt: 2 }}>
             <Button
-              onClick={() => navigate('/earn')}
+              onClick={() => navigate('/dashboard')}
               sx={{
                 color: COLORS.textSecondary,
                 textTransform: 'none',
