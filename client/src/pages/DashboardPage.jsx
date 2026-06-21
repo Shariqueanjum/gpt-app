@@ -525,7 +525,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                 const color = WALL_COLORS[idx % WALL_COLORS.length]
                 const isLocked = wall.min_level && user?.level_id < wall.min_level
                 return (
-                  <Paper key={wall.id} elevation={0} onClick={() => !isLocked && navigate(`/earn?wall=${wall.id}`)} sx={{ borderRadius: 3, p: 2.5, border: `1px solid ${COLORS.border}`, bgcolor: COLORS.cardBg, cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1, transition: 'all 0.2s', '&:active': !isLocked && { transform: 'scale(0.98)' } }}>
+                  <Paper key={wall.id} elevation={0} onClick={() => !isLocked && navigate(`/earn?wall=${wall.internal_id || wall.id}`)} sx={{ borderRadius: 3, p: 2.5, border: `1px solid ${COLORS.border}`, bgcolor: COLORS.cardBg, cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1, transition: 'all 0.2s', '&:active': !isLocked && { transform: 'scale(0.98)' } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                       <Box sx={{ width: 48, height: 48, borderRadius: 2.5, bgcolor: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <StarIcon sx={{ fontSize: 24, color }} />
@@ -776,7 +776,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                     const color = WALL_COLORS[idx % WALL_COLORS.length]
                     const isLocked = wall.min_level && user?.level_id < wall.min_level
                     return (
-                      <Paper key={wall.id} elevation={0} onClick={() => !isLocked && navigate(`/earn?wall=${wall.id}`)} sx={{ borderRadius: 3, p: 3, border: `1px solid ${COLORS.border}`, bgcolor: COLORS.cardBg, cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1, transition: 'all 0.25s ease', '&:hover': !isLocked && { boxShadow: '0 8px 30px rgba(83,18,188,0.08)', transform: 'translateY(-2px)', borderColor: `${COLORS.primary}30` } }}>
+                      <Paper key={wall.id} elevation={0} onClick={() => !isLocked && navigate(`/earn?wall=${wall.internal_id || wall.id}`)} sx={{ borderRadius: 3, p: 3, border: `1px solid ${COLORS.border}`, bgcolor: COLORS.cardBg, cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1, transition: 'all 0.25s ease', '&:hover': !isLocked && { boxShadow: '0 8px 30px rgba(83,18,188,0.08)', transform: 'translateY(-2px)', borderColor: `${COLORS.primary}30` } }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Box sx={{ width: 52, height: 52, borderRadius: 2.5, bgcolor: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <StarIcon sx={{ fontSize: 26, color }} />

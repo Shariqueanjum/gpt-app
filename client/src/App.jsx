@@ -3,13 +3,33 @@ import { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ThemeProvider, createTheme, Box, Typography, GlobalStyles } from '@mui/material'
 import CssBaseline from '@mui/material/CssBaseline'
+
+// Public pages
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
 import CompleteProfilePage from './pages/CompleteProfilePage'
+
+// Dashboard & protected pages
 import DashboardPage from './pages/DashboardPage'
-import DashboardLayout from './components/Layout/DashboardLayout'
+import EarnPage from './pages/EarnPage'
+import WithdrawPage from './pages/WithdrawPage'
+import HistoryPage from './pages/HistoryPage'
+import ReferralsPage from './pages/ReferralsPage'
+import SupportPage from './pages/SupportPage'
+import ProfilePage from './pages/ProfilePage'
+
+// Admin pages
+import AdminDashboardPage from './pages/admin/AdminDashboardPage'
+import AdminUsersPage from './pages/admin/AdminUsersPage'
+import AdminWithdrawalsPage from './pages/admin/AdminWithdrawalsPage'
+import AdminTicketsPage from './pages/admin/AdminTicketsPage'
+import AdminOfferWallsPage from './pages/admin/AdminOfferWallsPage'
+import AdminTransactionsPage from './pages/admin/AdminTransactionsPage'
+import AdminSettingsPage from './pages/admin/AdminSettingsPage'
+
+// Components
 import ProtectedRoute from './components/ProtectedRoute'
 import PublicOnlyRoute from './components/PublicOnlyRoute'
 import { fetchCurrentUser, restoreAuth } from './slices/authSlice'
@@ -17,7 +37,7 @@ import { fetchCurrentUser, restoreAuth } from './slices/authSlice'
 function App() {
   const dispatch = useDispatch()
   const location = useLocation()
-  const { isAuthenticated } = useSelector((state) => state.auth)
+  const { isAuthenticated, user } = useSelector((state) => state.auth)
 
   const [darkMode, setDarkMode] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
@@ -64,9 +84,9 @@ function App() {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <GlobalStyles styles={{ body: { bgcolor: theme.palette.background.default } }} />
-        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="h6" sx={{ color: '#64748b' }}>Loading...</Typography>
+        <GlobalStyles styles={{ body: { backgroundColor: theme.palette.background.default } }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+          <Typography>Loading...</Typography>
         </Box>
       </ThemeProvider>
     )
@@ -75,138 +95,93 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <GlobalStyles
-        styles={{
-          body: {
-            backgroundColor: theme.palette.background.default,
-            transition: 'background-color 0.3s ease',
-          },
-          html: {
-            backgroundColor: theme.palette.background.default,
-            transition: 'background-color 0.3s ease',
-          },
-        }}
-      />
+      <GlobalStyles styles={{ body: { backgroundColor: theme.palette.background.default } }} />
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
-
-        <Route
-          path="/login"
-          element={
-            <PublicOnlyRoute>
-              <>
-                <HomePage />
-                <LoginPage />
-              </>
-            </PublicOnlyRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <PublicOnlyRoute>
-              <>
-                <HomePage />
-                <RegisterPage />
-              </>
-            </PublicOnlyRoute>
-          }
-        />
-
+        <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+        <Route path="/register" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/complete-profile" element={<ProtectedRoute requireProfile={false}><CompleteProfilePage /></ProtectedRoute>} />
 
-        <Route
-          path="/complete-profile"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-                <DashboardPage />
-                <CompleteProfilePage />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
+        {/* Protected User Routes (require profile completion) */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute requireProfile={true}>
+            <DashboardPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/earn" element={
+          <ProtectedRoute requireProfile={true}>
+            <EarnPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/withdraw" element={
+          <ProtectedRoute requireProfile={true}>
+            <WithdrawPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/history" element={
+          <ProtectedRoute requireProfile={true}>
+            <HistoryPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/referrals" element={
+          <ProtectedRoute requireProfile={true}>
+            <ReferralsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/support" element={
+          <ProtectedRoute requireProfile={true}>
+            <SupportPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute requireProfile={true}>
+            <ProfilePage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute requireProfile={true}>
+            <ProfilePage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
 
-        {/* <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-                <DashboardPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        /> */}
-
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/earn"
-          element={
-            <ProtectedRoute requireProfile>
-              <DashboardLayout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-                <Box sx={{ p: 4 }}><Typography>Earn Page - Coming Soon</Typography></Box>
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/withdraw"
-          element={
-            <ProtectedRoute requireProfile>
-              <DashboardLayout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-                <Box sx={{ p: 4 }}><Typography>Withdraw Page - Coming Soon</Typography></Box>
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/referrals"
-          element={
-            <ProtectedRoute requireProfile>
-              <DashboardLayout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-                <Box sx={{ p: 4 }}><Typography>Referrals Page - Coming Soon</Typography></Box>
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/history"
-          element={
-            <ProtectedRoute requireProfile>
-              <DashboardLayout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-                <Box sx={{ p: 4 }}><Typography>History Page - Coming Soon</Typography></Box>
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/support"
-          element={
-            <ProtectedRoute requireProfile>
-              <DashboardLayout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-                <Box sx={{ p: 4 }}><Typography>Support Page - Coming Soon</Typography></Box>
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute requireProfile>
-              <DashboardLayout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-                <Box sx={{ p: 4 }}><Typography>Profile Page - Coming Soon</Typography></Box>
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
+        {/* Admin Routes */}
+        <Route path="/admin" element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminDashboardPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/users" element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminUsersPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/withdrawals" element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminWithdrawalsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/tickets" element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminTicketsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/offer-walls" element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminOfferWallsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/transactions" element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminTransactionsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/settings" element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminSettingsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
       </Routes>
     </ThemeProvider>
   )
