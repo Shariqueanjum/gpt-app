@@ -37,7 +37,7 @@ const ReferralsPage = ({ darkMode, toggleDarkMode }) => {
       setLoading(true)
       const res = await axiosInstance.get('/referrals/')
       setReferralData(res.data.data || {})
-      setReferredUsers(res.data.data?.referred_users || [])
+      setReferredUsers(res.data.data?.referrals || [])
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load referral data')
     } finally {
@@ -81,9 +81,9 @@ const ReferralsPage = ({ darkMode, toggleDarkMode }) => {
 
   return (
     <PageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-      <Box sx={{ maxWidth: 900, mx: 'auto' }}>
+      <Box sx={{ maxWidth: 900, mx: 'auto', px: isMobile ? 2 : 0 }}>
         {/* Header */}
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 3, mt: isMobile ? 1 : 0 }}>
           <Typography sx={{
             fontWeight: 800, fontSize: '1.4rem', color: COLORS.textPrimary, mb: 0.5
           }}>
@@ -191,12 +191,11 @@ const ReferralsPage = ({ darkMode, toggleDarkMode }) => {
         {/* Stats Cards */}
         <Box sx={{
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+          gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(2, 1fr)' },
           gap: 2, mb: 3
         }}>
           {loading ? (
             <>
-              <Skeleton variant="rounded" height={100} sx={{ borderRadius: 3 }} />
               <Skeleton variant="rounded" height={100} sx={{ borderRadius: 3 }} />
               <Skeleton variant="rounded" height={100} sx={{ borderRadius: 3 }} />
             </>
@@ -212,7 +211,7 @@ const ReferralsPage = ({ darkMode, toggleDarkMode }) => {
                 <Typography sx={{
                   fontWeight: 800, fontSize: '1.6rem', color: COLORS.textPrimary
                 }}>
-                  {referralData?.total_referred || 0}
+                  {referralData?.total_referrals || 0}
                 </Typography>
                 <Typography sx={{ fontSize: '0.8rem', color: COLORS.textSecondary }}>
                   Friends Referred
@@ -235,30 +234,13 @@ const ReferralsPage = ({ darkMode, toggleDarkMode }) => {
                   Points Earned
                 </Typography>
               </Paper>
-
-              <Paper sx={{
-                p: 2.5, borderRadius: 3,
-                bgcolor: COLORS.cardBg,
-                border: `1px solid ${COLORS.border}`,
-                textAlign: 'center'
-              }}>
-                <TrendingUpIcon sx={{ fontSize: '1.8rem', color: COLORS.accent, mb: 1 }} />
-                <Typography sx={{
-                  fontWeight: 800, fontSize: '1.6rem', color: COLORS.textPrimary
-                }}>
-                  {referralData?.active_referrals || 0}
-                </Typography>
-                <Typography sx={{ fontSize: '0.8rem', color: COLORS.textSecondary }}>
-                  Active Referrals
-                </Typography>
-              </Paper>
             </>
           )}
         </Box>
 
         {/* Referred Users List */}
         <Paper sx={{
-          p: 3, borderRadius: 3,
+          p: isMobile ? 2 : 3, borderRadius: 3,
           bgcolor: COLORS.cardBg,
           border: `1px solid ${COLORS.border}`,
         }}>
@@ -286,7 +268,9 @@ const ReferralsPage = ({ darkMode, toggleDarkMode }) => {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {referredUsers.map((ref, idx) => (
                 <Paper key={ref.id || idx} sx={{
-                  p: 2, borderRadius: 2,
+                  p: isMobile ? 1.2 : 2,
+                  px: isMobile ? 1.5 : 2,
+                  borderRadius: 2,
                   bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
                   border: `1px solid ${COLORS.border}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',

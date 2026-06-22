@@ -88,6 +88,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
 
   const { user } = useSelector((state) => state.auth)
   const [dashboard, setDashboard] = useState(null)
+  const [performance, setPerformance] = useState(null)
   const [offerWalls, setOfferWalls] = useState([])
   const [streak, setStreak] = useState(null)
   const [liveActivity, setLiveActivity] = useState([])
@@ -108,6 +109,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
   useEffect(() => {
     dispatch(fetchCurrentUser())
     fetchDashboard()
+    fetchPerformance()
     fetchOfferWalls()
     fetchStreakAndAutoCheckIn()
     fetchLiveActivity()
@@ -144,9 +146,9 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
             if (exists) return prev
             return [data, ...prev].slice(0, 20)
           })
-        } catch {}
+        } catch { }
       })
-      sse.addEventListener('heartbeat', () => {})
+      sse.addEventListener('heartbeat', () => { })
       sse.onerror = () => { sse.close(); setTimeout(connectSSE, 8000) }
     } catch (err) { console.error('SSE connection failed:', err) }
   }
@@ -157,6 +159,13 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
       setDashboard(response.data.data)
     } catch (err) { console.error('Dashboard fetch failed:', err) }
     finally { setLoading(false) }
+  }
+
+  const fetchPerformance = async () => {
+    try {
+      const response = await axiosInstance.get('/performance/')
+      setPerformance(response.data.data)
+    } catch (err) { console.error('Performance fetch failed:', err) }
   }
 
   const fetchOfferWalls = async () => {
@@ -459,7 +468,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                 <Box sx={{ bgcolor: 'rgba(255,255,255,0.12)', width: '1px', height: '100%', mx: 'auto' }} />
                 <Box sx={{ px: 1 }}>
                   <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.5 }}>This Month</Typography>
-                  <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.15rem', lineHeight: 1.2 }}>{loading ? <Skeleton width={55} height={20} sx={{ bgcolor: 'rgba(255,255,255,0.15)' }} /> : formatDollar((dashboard?.lifetime?.total_earned || 0) / 100)}</Typography>
+                  <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.15rem', lineHeight: 1.2 }}>{loading ? <Skeleton width={55} height={20} sx={{ bgcolor: 'rgba(255,255,255,0.15)' }} /> : formatDollar((performance?.monthly_breakdown?.[0]?.earnings || 0) / 100)}</Typography>
                   <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem', mt: 0.2 }}>Earnings</Typography>
                 </Box>
               </Box>
@@ -494,14 +503,19 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
             <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
               <PollIcon sx={{ fontSize: 24, color: COLORS.primary, mb: 0.8 }} />
-              <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={40} sx={{ mx: 'auto' }} /> : (dashboard?.lifetime?.total_surveys_completed || 0)}</Typography>
+              <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={40} sx={{ mx: 'auto' }} /> : (performance?.surveys?.total_clicks || 0)}</Typography>
               <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted, mt: 0.3 }}>Surveys clicked</Typography>
             </Paper>
-            <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
+            {/* <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
               <MonetizationOnIcon sx={{ fontSize: 24, color: COLORS.accent, mb: 0.8 }} />
               <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={40} sx={{ mx: 'auto' }} /> : formatPoints(dashboard?.lifetime?.total_earned)}</Typography>
               <Typography sx={{ fontSize: '0.8rem', color: COLORS.accent, fontWeight: 700, mt: 0.2 }}>≈ {formatDollar((dashboard?.lifetime?.total_earned || 0) / 100)}</Typography>
               <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted, mt: 0.2 }}>Total earnings</Typography>
+            </Paper> */}
+            <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
+              <PollIcon sx={{ fontSize: 24, color: COLORS.primary, mb: 0.8 }} />
+              <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={40} sx={{ mx: 'auto' }} /> : (performance?.surveys?.completed || 0)}</Typography>
+              <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted, mt: 0.2 }}>Surveys Completed</Typography>
             </Paper>
           </Box>
         </Box>
@@ -711,7 +725,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                 {/* This Month */}
                 <Box sx={{ px: 2, py: 0.5 }}>
                   <Typography sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.6 }}>This Month</Typography>
-                  <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.5rem', lineHeight: 1.2 }}>{loading ? <Skeleton width={90} height={30} sx={{ bgcolor: 'rgba(255,255,255,0.12)' }} /> : formatDollar((dashboard?.lifetime?.total_earned || 0) / 100)}</Typography>
+                  <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.5rem', lineHeight: 1.2 }}>{loading ? <Skeleton width={90} height={30} sx={{ bgcolor: 'rgba(255,255,255,0.12)' }} /> : formatDollar((performance?.monthly_breakdown?.[0]?.earnings || 0) / 100)}</Typography>
                   <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', mt: 0.4 }}>Earnings this month</Typography>
                 </Box>
               </Box>
@@ -743,14 +757,19 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
               <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2.5, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
                 <PollIcon sx={{ fontSize: 26, color: COLORS.primary, mb: 0.8 }} />
-                <Typography sx={{ fontWeight: 800, fontSize: '1.5rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={50} sx={{ mx: 'auto' }} /> : (dashboard?.lifetime?.total_surveys_completed || 0)}</Typography>
+                <Typography sx={{ fontWeight: 800, fontSize: '1.5rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={50} sx={{ mx: 'auto' }} /> : (performance?.surveys?.total_clicks || 0)}</Typography>
                 <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted, mt: 0.3 }}>Surveys clicked</Typography>
               </Paper>
-              <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2.5, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
+              {/* <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2.5, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
                 <MonetizationOnIcon sx={{ fontSize: 26, color: COLORS.accent, mb: 0.8 }} />
                 <Typography sx={{ fontWeight: 800, fontSize: '1.5rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={50} sx={{ mx: 'auto' }} /> : formatPoints(dashboard?.lifetime?.total_earned)}</Typography>
-                <Typography sx={{ fontSize: '0.85rem', color: COLORS.accent, fontWeight: 700, mt: 0.2 }}>≈ {formatDollar((dashboard?.lifetime?.total_earned || 0) / 100)}</Typography>
+                <Typography sx={{ fontSize: '0.85rem', color: COLORS.accent, fontWeight: 700, mt: 0.2 }}>≈ {formatDollar((performance?.monthly_breakdown?.[0]?.earnings || 0) / 100)}</Typography>
                 <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted, mt: 0.2 }}>Total earnings</Typography>
+              </Paper> */}
+              <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
+                <PollIcon sx={{ fontSize: 24, color: COLORS.primary, mb: 0.8 }} />
+                <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={40} sx={{ mx: 'auto' }} /> : (performance?.surveys?.completed || 0)}</Typography>
+                <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted, mt: 0.2 }}>Surveys Completed</Typography>
               </Paper>
             </Box>
           </Box>

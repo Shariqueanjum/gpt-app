@@ -1,23 +1,29 @@
 // ============================================================
-// ProfilePage.jsx — View & Edit Profile, Change Password
+// ProfilePage.jsx — View & Edit Profile (v4: Password Dialog Fixed)
 // ============================================================
 import { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import {
   Box, Typography, Paper, Button, TextField, Avatar, Chip,
   Dialog, DialogTitle, DialogContent, DialogActions, Alert,
-  Skeleton, Divider, useTheme, useMediaQuery, CircularProgress,
-  Tabs, Tab
+  Skeleton, useTheme, useMediaQuery, CircularProgress,
+  LinearProgress, IconButton, InputAdornment
 } from '@mui/material'
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'
-import EditIcon from '@mui/icons-material/Edit'
-import LockIcon from '@mui/icons-material/Lock'
 import StarIcon from '@mui/icons-material/Star'
-import WhatshotIcon from '@mui/icons-material/Whatshot'
-import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
+import LockIcon from '@mui/icons-material/Lock'
+import VisibilityIcon from '@mui/icons-material/Visibility'
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
+import MenuItem from '@mui/material/MenuItem'
 import axiosInstance from '../utils/axiosInstance'
 import { fetchCurrentUser } from '../slices/authSlice'
 import { PageWrapper, getColors } from '../components/Layout/SharedLayout'
+
+const GENDER_OPTIONS = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
+]
 
 const ProfilePage = ({ darkMode, toggleDarkMode }) => {
   const dispatch = useDispatch()
@@ -30,29 +36,23 @@ const ProfilePage = ({ darkMode, toggleDarkMode }) => {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
-  const [activeTab, setActiveTab] = useState(0)
 
-  // Profile data
   const [profile, setProfile] = useState({
-    username: '', email: '', first_name: '', last_name: '',
-    country: '', city: '', phone: '', bio: '',
+    full_name: '', email: '', phone: '', dob: '', gender: '',
+    address: '', country: '', upi_id: '',
   })
 
-  // Password change
+  // Password dialog
   const [passwordOpen, setPasswordOpen] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showCurrent, setShowCurrent] = useState(false)
+  const [showNew, setShowNew] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [pwdErrors, setPwdErrors] = useState({})
 
-  // Level & streak data
-  const [levelData, setLevelData] = useState(null)
-  const [streakData, setStreakData] = useState(null)
-
-  useEffect(() => {
-    fetchProfile()
-    fetchLevelProgress()
-    fetchStreakStatus()
-  }, [])
+  useEffect(() => { fetchProfile() }, [])
 
   const fetchProfile = async () => {
     try {
@@ -60,14 +60,9 @@ const ProfilePage = ({ darkMode, toggleDarkMode }) => {
       const res = await axiosInstance.get('/user/profile')
       const u = res.data.user || {}
       setProfile({
-        username: u.username || '',
-        email: u.email || '',
-        first_name: u.first_name || '',
-        last_name: u.last_name || '',
-        country: u.country || '',
-        city: u.city || '',
-        phone: u.phone || '',
-        bio: u.bio || '',
+        full_name: u.full_name || '', email: u.email || '', phone: u.phone || '',
+        dob: u.dob || '', gender: u.gender || '', address: u.address || '',
+        country: u.country || '', upi_id: u.upi_id || '',
       })
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load profile')
@@ -76,98 +71,70 @@ const ProfilePage = ({ darkMode, toggleDarkMode }) => {
     }
   }
 
-  const fetchLevelProgress = async () => {
-    try {
-      const res = await axiosInstance.get('/levels/progress')
-      setLevelData(res.data.data)
-    } catch (err) {
-      console.error('Level fetch failed:', err)
-    }
-  }
-
-  const fetchStreakStatus = async () => {
-    try {
-      const res = await axiosInstance.get('/streak/status')
-      setStreakData(res.data.data)
-    } catch (err) {
-      console.error('Streak fetch failed:', err)
-    }
-  }
-
   const handleSaveProfile = async () => {
     try {
-      setSaving(true)
-      setError(null)
-
+      setSaving(true); setError(null)
       await axiosInstance.put('/user/profile', {
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        country: profile.country,
-        city: profile.city,
-        phone: profile.phone,
-        bio: profile.bio,
+        full_name: profile.full_name, phone: profile.phone,
+        dob: profile.dob || undefined, gender: profile.gender || undefined,
+        address: profile.address, country: profile.country, upi_id: profile.upi_id,
       })
-
       dispatch(fetchCurrentUser())
       setSuccess('Profile updated successfully!')
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update profile')
-    } finally {
-      setSaving(false)
-    }
+    } finally { setSaving(false) }
+  }
+
+  const validatePasswordFields = () => {
+    const errs = {}
+    if (!currentPassword.trim()) errs.currentPassword = 'Current password is required'
+    if (!newPassword.trim()) errs.newPassword = 'New password is required'
+    else if (newPassword.length < 8) errs.newPassword = 'Must be at least 8 characters'
+    if (!confirmPassword.trim()) errs.confirmPassword = 'Please confirm your password'
+    else if (newPassword !== confirmPassword) errs.confirmPassword = 'Passwords do not match'
+    setPwdErrors(errs)
+    return Object.keys(errs).length === 0
   }
 
   const handleChangePassword = async () => {
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters')
-      return
-    }
-
+    if (!validatePasswordFields()) return
     try {
-      setSaving(true)
-      setError(null)
-
+      setSaving(true); setError(null)
       await axiosInstance.post('/user/change-password', {
-        current_password: currentPassword,
-        new_password: newPassword,
+        current_password: currentPassword, new_password: newPassword,
       })
-
       setSuccess('Password changed successfully!')
       setPasswordOpen(false)
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
+      setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); setPwdErrors({})
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to change password')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const formatPoints = (val) => {
-    if (val === undefined || val === null) return '0'
-    return Math.floor(val).toLocaleString()
+    } finally { setSaving(false) }
   }
 
   const getMemberSince = () => {
     if (!user?.created_at) return 'New member'
-    const date = new Date(user.created_at)
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    return new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  }
+
+  const getInitials = (name) => {
+    if (!name) return 'U'
+    const parts = name.trim().split(/\s+/)
+    if (parts.length === 1) return parts[0][0].toUpperCase()
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   }
 
   return (
     <PageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-      <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-        {/* Header */}
-        <Box sx={{ mb: 3 }}>
+      <Box sx={{ maxWidth: 900, mx: 'auto', px: isMobile ? 2 : 0 }}>
+
+        {/* HEADER */}
+        <Box sx={{ mb: 3, mt: isMobile ? 1 : 0 }}>
           <Typography sx={{
-            fontWeight: 800, fontSize: '1.4rem', color: COLORS.textPrimary, mb: 0.5
+            fontWeight: 800, fontSize: isMobile ? '1.3rem' : '1.6rem',
+            color: COLORS.textPrimary, mb: 0.5, letterSpacing: '-0.02em'
           }}>
             Profile
           </Typography>
@@ -176,433 +143,427 @@ const ProfilePage = ({ darkMode, toggleDarkMode }) => {
           </Typography>
         </Box>
 
-        {/* Profile Header Card */}
+        {/* TOP CARD */}
         <Paper sx={{
-          p: 3, borderRadius: 3, mb: 3,
+          p: isMobile ? 2.5 : 3.5,
+          borderRadius: 3, mb: 3,
           bgcolor: COLORS.cardBg,
           border: `1px solid ${COLORS.border}`,
-          background: `linear-gradient(135deg, ${COLORS.primary}10 0%, ${COLORS.primary}02 100%)`,
+          background: `linear-gradient(135deg, ${COLORS.primary}12 0%, ${COLORS.primary}03 100%)`,
         }}>
           <Box sx={{
-            display: 'flex', alignItems: 'center', gap: 2.5,
-            flexDirection: { xs: 'column', sm: 'row' },
-            textAlign: { xs: 'center', sm: 'left' }
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'center' : 'center',
+            gap: isMobile ? 2.5 : 3,
+            textAlign: isMobile ? 'center' : 'left',
           }}>
             <Avatar sx={{
-              width: 72, height: 72,
-              bgcolor: COLORS.primary, color: '#fff',
-              fontWeight: 800, fontSize: '1.8rem'
+              width: isMobile ? 72 : 84, height: isMobile ? 72 : 84,
+              bgcolor: `${COLORS.primary}20`, color: COLORS.primary,
+              fontSize: isMobile ? '1.6rem' : '1.8rem', fontWeight: 800,
+              border: `3px solid ${COLORS.primary}30`,
             }}>
-              {user?.username?.[0]?.toUpperCase() || 'U'}
+              {getInitials(user?.full_name || user?.username)}
             </Avatar>
+
             <Box sx={{ flex: 1 }}>
               <Typography sx={{
-                fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary
+                fontWeight: 800, fontSize: isMobile ? '1.3rem' : '1.5rem',
+                color: COLORS.textPrimary, mb: 0.3
               }}>
-                {user?.username || 'User'}
+                {user?.full_name || user?.username || 'User'}
               </Typography>
-              <Typography sx={{ fontSize: '0.85rem', color: COLORS.textSecondary, mb: 1 }}>
+              <Typography sx={{ fontSize: '0.85rem', color: COLORS.textSecondary, mb: 1.2 }}>
                 {user?.email || ''} · ID: #{user?.public_id || '---'}
               </Typography>
               <Box sx={{
-                display: 'flex', alignItems: 'center', gap: 1,
-                justifyContent: { xs: 'center', sm: 'flex-start' },
-                flexWrap: 'wrap'
+                display: 'flex', flexWrap: 'wrap', gap: 1,
+                justifyContent: isMobile ? 'center' : 'flex-start',
               }}>
-                <Chip size="small" icon={<StarIcon sx={{ fontSize: '0.8rem !important' }} />}
-                  label={`Level ${user?.level_id || 1}`} sx={{
-                    bgcolor: `${COLORS.gold}12`, color: COLORS.gold,
-                    fontWeight: 700, fontSize: '0.72rem'
-                  }} />
-                <Chip size="small" icon={<WhatshotIcon sx={{ fontSize: '0.8rem !important' }} />}
-                  label={`${streakData?.current_streak || 0} Day Streak`} sx={{
-                    bgcolor: `${COLORS.danger}10`, color: COLORS.danger,
-                    fontWeight: 700, fontSize: '0.72rem'
-                  }} />
-                <Chip size="small" label={getMemberSince()} sx={{
-                  bgcolor: `${COLORS.primary}08`, color: COLORS.primary,
-                  fontWeight: 600, fontSize: '0.72rem'
-                }} />
+                <Chip
+                  icon={<StarIcon sx={{ fontSize: '0.85rem !important' }} />}
+                  label={`Level ${user?.level || 1}`}
+                  size="small"
+                  sx={{ bgcolor: `${COLORS.gold}15`, color: COLORS.gold,
+                    fontWeight: 700, fontSize: '0.72rem' }}
+                />
+                <Chip
+                  icon={<CalendarTodayIcon sx={{ fontSize: '0.85rem !important' }} />}
+                  label={`Since ${getMemberSince()}`}
+                  size="small"
+                  sx={{ bgcolor: `${COLORS.primary}12`, color: COLORS.primary,
+                    fontWeight: 600, fontSize: '0.72rem' }}
+                />
               </Box>
             </Box>
+
             <Button
-              onClick={() => setPasswordOpen(true)}
+              onClick={() => { setPasswordOpen(true); setError(null); setPwdErrors({}) }}
               variant="outlined"
-              startIcon={<LockIcon sx={{ fontSize: '0.9rem' }} />}
+              startIcon={<LockIcon />}
               size="small"
               sx={{
-                borderColor: COLORS.border, color: COLORS.textSecondary,
-                textTransform: 'none', fontWeight: 600, borderRadius: 2,
-                '&:hover': { borderColor: COLORS.primary, color: COLORS.primary }
+                color: COLORS.textSecondary, borderColor: COLORS.border,
+                borderRadius: 2, textTransform: 'none', fontWeight: 600,
+                '&:hover': { borderColor: COLORS.primary, color: COLORS.primary },
+                flexShrink: 0,
               }}
             >
               Change Password
             </Button>
           </Box>
+
+          <Box sx={{ mt: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.6 }}>
+              <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted, fontWeight: 600 }}>
+                Profile Completion
+              </Typography>
+              <Typography sx={{ fontSize: '0.75rem', color: COLORS.primary, fontWeight: 700 }}>
+                {user?.profile_completion || 20}%
+              </Typography>
+            </Box>
+            <LinearProgress
+              variant="determinate"
+              value={user?.profile_completion || 20}
+              sx={{
+                height: 6, borderRadius: 3,
+                bgcolor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                '& .MuiLinearProgress-bar': { bgcolor: COLORS.primary, borderRadius: 3 }
+              }}
+            />
+          </Box>
         </Paper>
 
-        {/* Tabs */}
+        {/* EDIT PROFILE FORM */}
         <Paper sx={{
-          borderRadius: 3, overflow: 'hidden',
+          p: isMobile ? 2 : 3,
+          borderRadius: 3,
           bgcolor: COLORS.cardBg,
           border: `1px solid ${COLORS.border}`,
         }}>
-          <Tabs
-            value={activeTab}
-            onChange={(_, v) => setActiveTab(v)}
-            sx={{
-              borderBottom: `1px solid ${COLORS.border}`,
-              '& .MuiTabs-indicator': { bgcolor: COLORS.primary },
-              '& .MuiTab-root': {
-                color: COLORS.textSecondary,
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                '&.Mui-selected': { color: COLORS.primary, fontWeight: 700 }
-              }
-            }}
-          >
-            <Tab label="Edit Profile" />
-            <Tab label="Level & Progress" />
-          </Tabs>
-
-          {/* Edit Profile Tab */}
-          {activeTab === 0 && (
-            <Box sx={{ p: 3 }}>
-              {error && (
-                <Alert severity="error" sx={{ borderRadius: 2, mb: 2, fontSize: '0.82rem' }} onClose={() => setError(null)}>
-                  {error}
-                </Alert>
-              )}
-              {success && (
-                <Alert severity="success" sx={{ borderRadius: 2, mb: 2, fontSize: '0.82rem' }} onClose={() => setSuccess(null)}>
-                  {success}
-                </Alert>
-              )}
-
-              {loading ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {[1, 2, 3, 4].map(i => <Skeleton key={i} variant="rounded" height={56} sx={{ borderRadius: 2 }} />)}
-                </Box>
-              ) : (
-                <Box sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-                  gap: 2.5
-                }}>
-                  <TextField
-                    label="Username" value={profile.username}
-                    disabled fullWidth size="small"
-                    helperText="Username cannot be changed"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-                      }
-                    }}
-                  />
-                  <TextField
-                    label="Email" value={profile.email}
-                    disabled fullWidth size="small"
-                    helperText="Email cannot be changed"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-                      }
-                    }}
-                  />
-                  <TextField
-                    label="First Name" value={profile.first_name}
-                    onChange={(e) => setProfile(p => ({ ...p, first_name: e.target.value }))}
-                    fullWidth size="small"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                      }
-                    }}
-                  />
-                  <TextField
-                    label="Last Name" value={profile.last_name}
-                    onChange={(e) => setProfile(p => ({ ...p, last_name: e.target.value }))}
-                    fullWidth size="small"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                      }
-                    }}
-                  />
-                  <TextField
-                    label="Country" value={profile.country}
-                    onChange={(e) => setProfile(p => ({ ...p, country: e.target.value }))}
-                    fullWidth size="small"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                      }
-                    }}
-                  />
-                  <TextField
-                    label="City" value={profile.city}
-                    onChange={(e) => setProfile(p => ({ ...p, city: e.target.value }))}
-                    fullWidth size="small"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                      }
-                    }}
-                  />
-                  <TextField
-                    label="Phone" value={profile.phone}
-                    onChange={(e) => setProfile(p => ({ ...p, phone: e.target.value }))}
-                    fullWidth size="small"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                      }
-                    }}
-                  />
-                  <TextField
-                    label="Bio" value={profile.bio}
-                    onChange={(e) => setProfile(p => ({ ...p, bio: e.target.value }))}
-                    fullWidth size="small" multiline rows={2}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                      }
-                    }}
-                  />
-                </Box>
-              )}
-
-              <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-                <Button
-                  onClick={handleSaveProfile}
-                  disabled={saving || loading}
-                  variant="contained"
-                  startIcon={saving ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <EditIcon />}
-                  sx={{
-                    bgcolor: COLORS.primary, color: '#fff',
-                    fontWeight: 700, textTransform: 'none', borderRadius: 2,
-                    px: 4, py: 1,
-                    '&:hover': { bgcolor: COLORS.primaryDark },
-                    boxShadow: 'none',
-                  }}
-                >
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </Box>
-            </Box>
+          {error && (
+            <Alert severity="error" sx={{ borderRadius: 2, mb: 2, fontSize: '0.85rem' }}
+              onClose={() => setError(null)}>{error}</Alert>
+          )}
+          {success && (
+            <Alert severity="success" sx={{ borderRadius: 2, mb: 2, fontSize: '0.85rem' }}
+              onClose={() => setSuccess(null)}>{success}</Alert>
           )}
 
-          {/* Level & Progress Tab */}
-          {activeTab === 1 && (
-            <Box sx={{ p: 3 }}>
-              {levelData ? (
-                <Box>
-                  <Box sx={{
-                    display: 'flex', alignItems: 'center', gap: 2, mb: 3
-                  }}>
-                    <Box sx={{
-                      width: 56, height: 56, borderRadius: 2,
-                      bgcolor: `${COLORS.gold}15`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: COLORS.gold
+          {loading ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {[1,2,3,4].map(i => <Skeleton key={i} variant="rounded" height={48} sx={{ borderRadius: 2 }} />)}
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.2 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 2.2 }}>
+                {[
+                  { label: 'Full Name', key: 'full_name', placeholder: 'Your full name' },
+                  { label: 'Email', key: 'email', placeholder: '', disabled: true },
+                  { label: 'Phone', key: 'phone', placeholder: '10-15 digit phone number' },
+                  { label: 'Date of Birth', key: 'dob', type: 'date' },
+                  { label: 'Gender', key: 'gender', type: 'select', options: GENDER_OPTIONS },
+                  { label: 'Country', key: 'country', placeholder: 'Your country' },
+                ].map(field => (
+                  <Box key={field.key} sx={{ gridColumn: field.key === 'address' || field.key === 'upi_id' ? (isMobile ? '1' : '1 / -1') : undefined }}>
+                    <Typography sx={{
+                      fontSize: '0.75rem', color: COLORS.textMuted,
+                      fontWeight: 600, mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.06em'
                     }}>
-                      <StarIcon sx={{ fontSize: '1.8rem' }} />
-                    </Box>
-                    <Box>
-                      <Typography sx={{
-                        fontWeight: 800, fontSize: '1.2rem', color: COLORS.textPrimary
-                      }}>
-                        Level {levelData.current_level || user?.level_id || 1}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary }}>
-                        {levelData.next_level
-                          ? `${formatPoints(levelData.points_to_next)} pts to Level ${levelData.next_level}`
-                          : 'You have reached the maximum level!'
-                        }
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  {/* Progress Bar */}
-                  {levelData.next_level && (
-                    <Box sx={{ mb: 3 }}>
-                      <Box sx={{
-                        width: '100%', height: 10, borderRadius: 5,
-                        bgcolor: darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
-                        overflow: 'hidden'
-                      }}>
-                        <Box sx={{
-                          width: `${Math.min(100, (levelData.current_points / (levelData.current_points + levelData.points_to_next)) * 100)}%`,
-                          height: '100%',
-                          borderRadius: 5,
-                          bgcolor: COLORS.gold,
-                          transition: 'width 0.5s ease'
+                      {field.label}
+                    </Typography>
+                    {field.type === 'select' ? (
+                      <TextField select value={profile[field.key]} onChange={(e) => setProfile(p => ({ ...p, [field.key]: e.target.value }))}
+                        fullWidth size="small" sx={{
+                          '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', fontSize: '0.9rem', fontWeight: 500, color: COLORS.textPrimary }
+                        }}>
+                        <MenuItem value="" sx={{ fontSize: '0.9rem' }}>Select gender</MenuItem>
+                        {field.options.map(g => <MenuItem key={g.value} value={g.value} sx={{ fontSize: '0.9rem' }}>{g.label}</MenuItem>)}
+                      </TextField>
+                    ) : (
+                      <TextField value={profile[field.key]} onChange={(e) => setProfile(p => ({ ...p, [field.key]: e.target.value }))}
+                        fullWidth size="small" placeholder={field.placeholder} disabled={field.disabled} type={field.type || 'text'}
+                        InputLabelProps={field.type === 'date' ? { shrink: true } : undefined}
+                        sx={{
+                          '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', fontSize: '0.9rem', fontWeight: 500, color: COLORS.textPrimary },
+                          '& .Mui-disabled': { color: COLORS.textMuted }
                         }} />
-                      </Box>
-                      <Box sx={{
-                        display: 'flex', justifyContent: 'space-between', mt: 0.8
-                      }}>
-                        <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted }}>
-                          {formatPoints(levelData.current_points || 0)} pts
-                        </Typography>
-                        <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted }}>
-                          {formatPoints((levelData.current_points || 0) + (levelData.points_to_next || 0))} pts
-                        </Typography>
-                      </Box>
-                    </Box>
-                  )}
-
-                  {/* Stats */}
-                  <Box sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-                    gap: 2
-                  }}>
-                    <Paper sx={{
-                      p: 2.5, borderRadius: 2,
-                      bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
-                      border: `1px solid ${COLORS.border}`,
-                      textAlign: 'center'
-                    }}>
-                      <TrendingUpIcon sx={{ fontSize: '1.5rem', color: COLORS.primary, mb: 0.5 }} />
-                      <Typography sx={{
-                        fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary
-                      }}>
-                        {formatPoints(levelData.total_earned_points || 0)}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.78rem', color: COLORS.textSecondary }}>
-                        Total Points Earned
-                      </Typography>
-                    </Paper>
-
-                    <Paper sx={{
-                      p: 2.5, borderRadius: 2,
-                      bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
-                      border: `1px solid ${COLORS.border}`,
-                      textAlign: 'center'
-                    }}>
-                      <WhatshotIcon sx={{ fontSize: '1.5rem', color: COLORS.danger, mb: 0.5 }} />
-                      <Typography sx={{
-                        fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary
-                      }}>
-                        {streakData?.current_streak || 0}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.78rem', color: COLORS.textSecondary }}>
-                        Current Streak
-                      </Typography>
-                    </Paper>
-
-                    <Paper sx={{
-                      p: 2.5, borderRadius: 2,
-                      bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
-                      border: `1px solid ${COLORS.border}`,
-                      textAlign: 'center'
-                    }}>
-                      <StarIcon sx={{ fontSize: '1.5rem', color: COLORS.gold, mb: 0.5 }} />
-                      <Typography sx={{
-                        fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary
-                      }}>
-                        {levelData.current_level || user?.level_id || 1}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.78rem', color: COLORS.textSecondary }}>
-                        Current Level
-                      </Typography>
-                    </Paper>
+                    )}
                   </Box>
+                ))}
+                {/* Address */}
+                <Box sx={{ gridColumn: isMobile ? '1' : '1 / -1' }}>
+                  <Typography sx={{
+                    fontSize: '0.75rem', color: COLORS.textMuted,
+                    fontWeight: 600, mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.06em'
+                  }}>Address</Typography>
+                  <TextField value={profile.address} onChange={(e) => setProfile(p => ({ ...p, address: e.target.value }))}
+                    fullWidth size="small" placeholder="Your address"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', fontSize: '0.9rem', fontWeight: 500, color: COLORS.textPrimary } }} />
                 </Box>
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Skeleton variant="rounded" height={80} sx={{ borderRadius: 2 }} />
-                  <Skeleton variant="rounded" height={10} sx={{ borderRadius: 5 }} />
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
-                    <Skeleton variant="rounded" height={100} sx={{ borderRadius: 2 }} />
-                    <Skeleton variant="rounded" height={100} sx={{ borderRadius: 2 }} />
-                    <Skeleton variant="rounded" height={100} sx={{ borderRadius: 2 }} />
-                  </Box>
+                {/* UPI ID */}
+                <Box sx={{ gridColumn: isMobile ? '1' : '1 / -1' }}>
+                  <Typography sx={{
+                    fontSize: '0.75rem', color: COLORS.textMuted,
+                    fontWeight: 600, mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.06em'
+                  }}>UPI ID</Typography>
+                  <TextField value={profile.upi_id} onChange={(e) => setProfile(p => ({ ...p, upi_id: e.target.value }))}
+                    fullWidth size="small" placeholder="name@upi"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', fontSize: '0.9rem', fontWeight: 500, color: COLORS.textPrimary } }} />
                 </Box>
-              )}
+              </Box>
+
+              <Button onClick={handleSaveProfile} disabled={saving} variant="contained"
+                sx={{
+                  bgcolor: COLORS.primary, color: '#fff', fontWeight: 700, textTransform: 'none',
+                  borderRadius: 2, px: 3, py: 1, mt: 1,
+                  boxShadow: `0 4px 14px ${COLORS.primary}40`,
+                  '&:hover': { bgcolor: COLORS.primaryDark },
+                }}>
+                {saving ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : 'Save Changes'}
+              </Button>
             </Box>
           )}
         </Paper>
 
-        {/* Change Password Dialog */}
-        <Dialog open={passwordOpen} onClose={() => setPasswordOpen(false)} maxWidth="xs" fullWidth PaperProps={{
-          sx: { borderRadius: 3, bgcolor: COLORS.cardBg }
-        }}>
-          <DialogTitle sx={{ color: COLORS.textPrimary, fontWeight: 700 }}>
-            Change Password
-          </DialogTitle>
-          <DialogContent>
+        {/* ═══════════════════════════════════════════════════════
+            CHANGE PASSWORD DIALOG — Attractive, eye icons, field errors
+        ═══════════════════════════════════════════════════════ */}
+        <Dialog
+          open={passwordOpen}
+          onClose={() => {
+            if (!saving) {
+              setPasswordOpen(false); setError(null); setPwdErrors({})
+              setCurrentPassword(''); setNewPassword(''); setConfirmPassword('')
+            }
+          }}
+          maxWidth="xs"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 3,
+              bgcolor: COLORS.cardBg,
+              border: `1px solid ${COLORS.border}`,
+              overflow: 'hidden',
+            }
+          }}
+        >
+          {/* Header */}
+          <Box sx={{
+            p: 3, pb: 2,
+            bgcolor: darkMode ? 'rgba(83,18,188,0.08)' : 'rgba(83,18,188,0.04)',
+            borderBottom: `1px solid ${COLORS.border}`,
+            display: 'flex', alignItems: 'center', gap: 1.5,
+          }}>
+            <Box sx={{
+              width: 40, height: 40, borderRadius: 2,
+              bgcolor: `${COLORS.primary}15`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: COLORS.primary,
+            }}>
+              <LockIcon sx={{ fontSize: '1.3rem' }} />
+            </Box>
+            <Box>
+              <DialogTitle sx={{
+                color: COLORS.textPrimary, fontWeight: 800,
+                fontSize: '1.15rem', p: 0,
+              }}>
+                Change Password
+              </DialogTitle>
+              <Typography sx={{ fontSize: '0.8rem', color: COLORS.textSecondary }}>
+                Update your account password
+              </Typography>
+            </Box>
+          </Box>
+
+          <DialogContent sx={{ px: 3, py: 3 }}>
             {error && (
-              <Alert severity="error" sx={{ borderRadius: 2, mb: 2, fontSize: '0.82rem' }} onClose={() => setError(null)}>
-                {error}
-              </Alert>
+              <Alert severity="error" sx={{ borderRadius: 2, mb: 2.5, fontSize: '0.85rem' }}
+                onClose={() => setError(null)}>{error}</Alert>
             )}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
-              <TextField
-                label="Current Password" type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                fullWidth size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                  }
-                }}
-              />
-              <TextField
-                label="New Password" type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                fullWidth size="small"
-                helperText="At least 6 characters"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                  }
-                }}
-              />
-              <TextField
-                label="Confirm New Password" type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                fullWidth size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                  }
-                }}
-              />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+
+              {/* Current Password */}
+              <Box>
+                <Typography sx={{
+                  fontSize: '0.75rem', color: COLORS.textMuted,
+                  fontWeight: 600, mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.06em'
+                }}>
+                  Current Password <Typography component="span" sx={{ color: COLORS.danger }}>*</Typography>
+                </Typography>
+                <TextField
+                  type={showCurrent ? 'text' : 'password'}
+                  value={currentPassword}
+                  onChange={(e) => {
+                    setCurrentPassword(e.target.value)
+                    if (pwdErrors.currentPassword) setPwdErrors(p => ({ ...p, currentPassword: '' }))
+                  }}
+                  fullWidth size="small"
+                  placeholder="Enter current password"
+                  error={!!pwdErrors.currentPassword}
+                  helperText={pwdErrors.currentPassword || ''}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowCurrent(!showCurrent)}
+                          edge="end" size="small"
+                          sx={{ color: COLORS.textMuted }}
+                        >
+                          {showCurrent
+                            ? <VisibilityOffIcon sx={{ fontSize: '1.1rem' }} />
+                            : <VisibilityIcon sx={{ fontSize: '1.1rem' }} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                      fontSize: '0.9rem', fontWeight: 500, color: COLORS.textPrimary,
+                    },
+                    '& .MuiFormHelperText-root': {
+                      color: COLORS.danger,
+                      fontSize: '0.75rem',
+                      marginLeft: '4px',
+                      marginTop: '4px',
+                    },
+                  }}
+                />
+              </Box>
+
+              {/* New Password */}
+              <Box>
+                <Typography sx={{
+                  fontSize: '0.75rem', color: COLORS.textMuted,
+                  fontWeight: 600, mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.06em'
+                }}>
+                  New Password <Typography component="span" sx={{ color: COLORS.danger }}>*</Typography>
+                </Typography>
+                <TextField
+                  type={showNew ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value)
+                    if (pwdErrors.newPassword) setPwdErrors(p => ({ ...p, newPassword: '' }))
+                  }}
+                  fullWidth size="small"
+                  placeholder="Enter new password"
+                  error={!!pwdErrors.newPassword}
+                  helperText={pwdErrors.newPassword || 'At least 8 characters'}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowNew(!showNew)}
+                          edge="end" size="small"
+                          sx={{ color: COLORS.textMuted }}
+                        >
+                          {showNew
+                            ? <VisibilityOffIcon sx={{ fontSize: '1.1rem' }} />
+                            : <VisibilityIcon sx={{ fontSize: '1.1rem' }} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                      fontSize: '0.9rem', fontWeight: 500, color: COLORS.textPrimary,
+                    },
+                    '& .MuiFormHelperText-root': {
+                      color: pwdErrors.newPassword ? COLORS.danger : COLORS.textMuted,
+                      fontSize: '0.75rem',
+                      marginLeft: '4px',
+                      marginTop: '4px',
+                    },
+                  }}
+                />
+              </Box>
+
+              {/* Confirm Password */}
+              <Box>
+                <Typography sx={{
+                  fontSize: '0.75rem', color: COLORS.textMuted,
+                  fontWeight: 600, mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.06em'
+                }}>
+                  Confirm Password <Typography component="span" sx={{ color: COLORS.danger }}>*</Typography>
+                </Typography>
+                <TextField
+                  type={showConfirm ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value)
+                    if (pwdErrors.confirmPassword) setPwdErrors(p => ({ ...p, confirmPassword: '' }))
+                  }}
+                  fullWidth size="small"
+                  placeholder="Confirm new password"
+                  error={!!pwdErrors.confirmPassword}
+                  helperText={pwdErrors.confirmPassword || ''}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowConfirm(!showConfirm)}
+                          edge="end" size="small"
+                          sx={{ color: COLORS.textMuted }}
+                        >
+                          {showConfirm
+                            ? <VisibilityOffIcon sx={{ fontSize: '1.1rem' }} />
+                            : <VisibilityIcon sx={{ fontSize: '1.1rem' }} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                      fontSize: '0.9rem', fontWeight: 500, color: COLORS.textPrimary,
+                    },
+                    '& .MuiFormHelperText-root': {
+                      color: COLORS.danger,
+                      fontSize: '0.75rem',
+                      marginLeft: '4px',
+                      marginTop: '4px',
+                    },
+                  }}
+                />
+              </Box>
+
             </Box>
           </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setPasswordOpen(false)} sx={{
-              color: COLORS.textSecondary, textTransform: 'none', fontWeight: 600
-            }}>
+          <DialogActions sx={{ px: 3, pb: 2.5, pt: 1 }}>
+            <Button
+              onClick={() => {
+                setPasswordOpen(false); setError(null); setPwdErrors({})
+                setCurrentPassword(''); setNewPassword(''); setConfirmPassword('')
+              }}
+              disabled={saving}
+              sx={{
+                color: COLORS.textSecondary, textTransform: 'none', fontWeight: 600,
+                borderRadius: 2, px: 2,
+              }}
+            >
               Cancel
             </Button>
             <Button
               onClick={handleChangePassword}
-              disabled={saving || !currentPassword || !newPassword || !confirmPassword}
+              disabled={saving}
               variant="contained"
               sx={{
-                bgcolor: COLORS.primary, color: '#fff', textTransform: 'none', fontWeight: 700,
-                borderRadius: 2, '&:hover': { bgcolor: COLORS.primaryDark },
-                '&:disabled': { bgcolor: COLORS.textMuted }
+                bgcolor: COLORS.primary, color: '#fff',
+                textTransform: 'none', fontWeight: 700,
+                borderRadius: 2, px: 3,
+                boxShadow: `0 4px 12px ${COLORS.primary}40`,
+                '&:hover': { bgcolor: COLORS.primaryDark },
+                '&:disabled': { bgcolor: COLORS.textMuted, color: '#fff' },
               }}
             >
-              {saving ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : 'Change Password'}
+              {saving ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : 'Update Password'}
             </Button>
           </DialogActions>
         </Dialog>
