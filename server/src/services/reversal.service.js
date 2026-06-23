@@ -161,7 +161,8 @@ const processSingleReversal = async (transactionId, reason, source, adminId, adm
             reason: `Referral reversal: ${reason}`,
             source: source,
             admin_id: adminId,
-            from_user_id: click.user_id
+            from_user_id: click.user_id,
+            from_username: click.username
           }
         });
       }

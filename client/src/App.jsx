@@ -10,6 +10,9 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
 import CompleteProfilePage from './pages/CompleteProfilePage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
+import ForgotUsernamePage from './pages/ForgotUsernamePage'
 
 // Dashboard & protected pages
 import DashboardPage from './pages/DashboardPage'
@@ -19,6 +22,7 @@ import HistoryPage from './pages/HistoryPage'
 import ReferralsPage from './pages/ReferralsPage'
 import SupportPage from './pages/SupportPage'
 import ProfilePage from './pages/ProfilePage'
+import ProgressPage from './pages/ProgressPage'
 
 // Admin pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
@@ -103,6 +107,9 @@ function App() {
         <Route path="/register" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/complete-profile" element={<ProtectedRoute requireProfile={false}><CompleteProfilePage /></ProtectedRoute>} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/forgot-username" element={<ForgotUsernamePage />} />
 
         {/* Protected User Routes (require profile completion) */}
         <Route path="/dashboard" element={
@@ -143,6 +150,12 @@ function App() {
         <Route path="/settings" element={
           <ProtectedRoute requireProfile={true}>
             <ProfilePage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/progress" element={
+          <ProtectedRoute requireProfile={true}>
+            <ProgressPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
           </ProtectedRoute>
         } />
 

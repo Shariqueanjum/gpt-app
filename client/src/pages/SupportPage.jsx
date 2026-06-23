@@ -195,6 +195,7 @@ const SupportPage = ({ darkMode, toggleDarkMode }) => {
           borderRadius: 3, mb: 3,
           bgcolor: COLORS.cardBg,
           border: `1px solid ${COLORS.border}`,
+          background: `linear-gradient(135deg, ${COLORS.primary}12 0%, ${COLORS.primary}03 100%)`,
         }}>
           <Box sx={{
             display: 'flex',

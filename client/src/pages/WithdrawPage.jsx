@@ -230,14 +230,9 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
           borderRadius: 3, mb: 3,
           bgcolor: COLORS.cardBg,
           border: `1px solid ${COLORS.border}`,
+          background: `linear-gradient(135deg, ${COLORS.primary}12 0%, ${COLORS.primary}03 100%)`,
           position: 'relative', overflow: 'hidden',
         }}>
-          <Box sx={{
-            position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-            background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.primaryLight}, ${COLORS.accent})`,
-            borderRadius: '3px 3px 0 0'
-          }} />
-
           <Box sx={{
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
@@ -488,9 +483,9 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
                 {selectedMethod && requiredFields.length > 0 && (
                   <Box sx={{
                     p: 2.5, borderRadius: 2.5,
-                    bgcolor: darkMode ? 'rgba(83,18,188,0.08)' : 'rgba(83,18,188,0.04)',
-                    border: `1px solid ${darkMode ? 'rgba(83,18,188,0.2)' : 'rgba(83,18,188,0.12)'}`,
-                    borderLeft: `4px solid ${COLORS.primary}`,
+                    bgcolor: COLORS.cardBg,
+                    border: `1px solid ${COLORS.border}`,
+                    background: `linear-gradient(135deg, ${COLORS.primary}12 0%, ${COLORS.primary}03 100%)`,
                   }}>
                     <Typography sx={{
                       fontSize: '0.8rem', color: COLORS.primary,

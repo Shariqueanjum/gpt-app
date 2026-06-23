@@ -66,8 +66,8 @@ const verifyEmailByToken = async (req, res, next) => {
 
 const forgotPasswordRequest = async (req, res, next) => {
   try {
-    const { email } = req.body;
-    const result = await forgotPassword(email);
+    const { email_or_username } = req.body;
+    const result = await forgotPassword(email_or_username);
 
     res.json({
       success: true,

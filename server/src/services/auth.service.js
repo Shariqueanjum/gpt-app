@@ -241,12 +241,13 @@ const loginUser = async (payload, meta) => {
 const forgotPassword = async (identifier) => {
   const trimmed = identifier.trim();
   const user = await findUserByEmailOrUsername(trimmed); 
-  
+
   if (!user) {
     const error = new Error('No account found with this email');
     error.status = 404;
     throw error;
   }
+    const {email} = user;
 
   // Delete old reset tokens for this email
   await deleteOldPasswordResets(email);
