@@ -23,6 +23,7 @@ import ReferralsPage from './pages/ReferralsPage'
 import SupportPage from './pages/SupportPage'
 import ProfilePage from './pages/ProfilePage'
 import ProgressPage from './pages/ProgressPage'
+import NotificationsPage from './pages/NotificationsPage'
 
 // Admin pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
@@ -38,6 +39,8 @@ import ProtectedRoute from './components/ProtectedRoute'
 import PublicOnlyRoute from './components/PublicOnlyRoute'
 import { fetchCurrentUser, restoreAuth } from './slices/authSlice'
 
+const AUTH_MODAL_ROUTES = ['/login', '/register', '/forgot-password', '/forgot-username']
+
 function App() {
   const dispatch = useDispatch()
   const location = useLocation()
@@ -45,6 +48,9 @@ function App() {
 
   const [darkMode, setDarkMode] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
+
+  // Check if current route is an auth modal route
+  const isAuthModalRoute = AUTH_MODAL_ROUTES.includes(location.pathname)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -100,6 +106,14 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <GlobalStyles styles={{ body: { backgroundColor: theme.palette.background.default } }} />
+      {/* Background layer: Render HomePage behind auth modals */}
+      {isAuthModalRoute && (
+        <Box sx={{ position: 'fixed', inset: 0, zIndex: 0, overflow: 'hidden' }}>
+          <Box sx={{ height: '100%', overflow: 'auto' }}>
+            <HomePage />
+          </Box>
+        </Box>
+      )}
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
@@ -158,6 +172,11 @@ function App() {
             <ProgressPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
           </ProtectedRoute>
         } />
+
+        <Route path="/notifications" element={
+          <ProtectedRoute requireProfile={true}>
+            <NotificationsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          </ProtectedRoute>} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={

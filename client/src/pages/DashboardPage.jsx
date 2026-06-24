@@ -413,7 +413,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
               <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: COLORS.textPrimary, letterSpacing: '-0.01em' }}>WABCASH</Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <IconButton size="small" sx={{ color: COLORS.textSecondary }}>
+              <IconButton onClick={() => navigate('/notifications')} size="small" sx={{ color: COLORS.textSecondary }}>
                 <Badge badgeContent={0} color="error"><NotificationsNoneOutlinedIcon sx={{ fontSize: 22 }} /></Badge>
               </IconButton>
               <IconButton size="small" onClick={toggleDarkMode} sx={{ color: COLORS.textSecondary }}>
@@ -667,7 +667,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Tooltip title="Notifications">
-                <IconButton sx={{ color: COLORS.textSecondary, '&:hover': { color: COLORS.primary } }}>
+                <IconButton onClick={() => navigate('/notifications')} sx={{ color: COLORS.textSecondary, '&:hover': { color: COLORS.primary } }}>
                   <Badge badgeContent={0} color="error"><NotificationsNoneOutlinedIcon sx={{ fontSize: 24 }} /></Badge>
                 </IconButton>
               </Tooltip>

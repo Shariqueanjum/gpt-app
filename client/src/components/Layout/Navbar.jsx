@@ -85,7 +85,7 @@ const Navbar = () => {
         position="fixed"
         elevation={scrolled ? 1 : 0}
         sx={{
-          bgcolor: '#ffffff',
+          bgcolor: '#f2f3ff',
           borderBottom: mobileOpen ? 'none' : '1px solid #e2e8f0',
           transition: 'box-shadow 0.3s ease',
           zIndex: 1300,

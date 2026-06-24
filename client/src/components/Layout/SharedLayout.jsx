@@ -242,6 +242,7 @@ export const Sidebar = ({ darkMode, moreExpanded, setMoreExpanded }) => {
 export const TopBar = ({ darkMode, toggleDarkMode, scrolled }) => {
   const { user } = useSelector((state) => state.auth)
   const COLORS = getColors(darkMode)
+  const navigate = useNavigate()
 
   const getGreeting = () => {
     const hour = new Date().getHours()
@@ -271,7 +272,7 @@ export const TopBar = ({ darkMode, toggleDarkMode, scrolled }) => {
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Tooltip title="Notifications">
-            <IconButton sx={{ color: COLORS.textSecondary, '&:hover': { color: COLORS.primary } }}>
+            <IconButton onClick={() => navigate('/notifications')} sx={{ color: COLORS.textSecondary, '&:hover': { color: COLORS.primary } }}>
               <Badge badgeContent={0} color="error">
                 <NotificationsNoneOutlinedIcon sx={{ fontSize: 24 }} />
               </Badge>
@@ -309,7 +310,7 @@ export const MobileTopBar = ({ darkMode, toggleDarkMode, scrolled }) => {
           <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: COLORS.textPrimary, letterSpacing: '-0.01em' }}>WABCASH</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <IconButton size="small" sx={{ color: COLORS.textSecondary }}>
+          <IconButton onClick={() => navigate('/notifications')} size="small" sx={{ color: COLORS.textSecondary }}>
             <Badge badgeContent={0} color="error">
               <NotificationsNoneOutlinedIcon sx={{ fontSize: 22 }} />
             </Badge>

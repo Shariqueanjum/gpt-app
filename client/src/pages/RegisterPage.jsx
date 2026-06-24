@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { registerUser, clearError, clearMessage } from '../slices/authSlice'
 
@@ -62,6 +62,7 @@ const TickIcon = () => (
 const RegisterPage = () => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  const [searchParams] = useSearchParams()
   const { loading, error, message } = useSelector((state) => state.auth)
   const cardRef = useRef(null)
 
@@ -71,6 +72,8 @@ const RegisterPage = () => {
   const [errors, setErrors] = useState({})
   const [securityQuestion, setSecurityQuestion] = useState({ num1: 0, num2: 0, operator: '+', answer: 0, userAnswer: '' })
   const [submitted, setSubmitted] = useState(false)
+
+  const referralCode = searchParams.get('ref') || ''
 
   // NO isAuthenticated redirect here — after register, user must verify email first
 
@@ -157,6 +160,10 @@ const RegisterPage = () => {
     e.preventDefault()
     if (!validateAll()) return
     const { agreeTerms, ...registerData } = formData
+
+    if (referralCode) {
+      registerData.referred_by_code = referralCode
+    }
     dispatch(registerUser(registerData))
   }
 
@@ -176,7 +183,7 @@ const RegisterPage = () => {
   // Success screen — NO countdown, just "Go to Login" button
   if (submitted) {
     return (
-      <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-24 pb-6 px-4 sm:px-6" onClick={handleBackdropClick}>
+      <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 sm:pt-24 pb-6 px-4 sm:px-6" onClick={handleBackdropClick}>
         <div className="absolute inset-0 bg-[#131b2e]/70" />
         <div ref={cardRef} className="relative w-full max-w-[400px] mx-auto bg-white rounded-[2rem] border border-[#cbc3d7]/40 shadow-[0_25px_80px_-20px_rgba(83,18,188,0.25)] p-6 sm:p-8 text-center">
           <button onClick={handleClose} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-[#f2f3ff] hover:bg-[#e9ddff] flex items-center justify-center text-[#494454] hover:text-[#5312bc] transition-all duration-200">
@@ -218,7 +225,7 @@ const RegisterPage = () => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-24 pb-6 px-4 sm:px-6" onClick={handleBackdropClick}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-18 pb-6 px-4 sm:px-6" onClick={handleBackdropClick}>
       <div className="absolute inset-0 bg-[#131b2e]/70" />
       <div ref={cardRef} className="relative w-full max-w-[400px] mx-auto bg-white rounded-[2rem] border border-[#cbc3d7]/40 shadow-[0_25px_80px_-20px_rgba(83,18,188,0.25)] p-6 sm:p-8">
         <button onClick={handleClose} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-[#f2f3ff] hover:bg-[#e9ddff] flex items-center justify-center text-[#494454] hover:text-[#5312bc] transition-all duration-200">
@@ -261,7 +268,7 @@ const RegisterPage = () => {
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5312bc]/60"><LockIcon /></div>
               <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange} placeholder="Password" minLength={8} maxLength={50} className={`${inputBase} ${touched.password && errors.password ? inputError : inputNormal} pr-12`} />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#7b7486] hover:text-[#5312bc] transition-colors p-1" title={showPassword ? 'Hide password' : 'Show password'}>
-                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                {showPassword ? <EyeIcon /> : <EyeOffIcon />}
               </button>
             </div>
             {touched.password && errors.password && (
