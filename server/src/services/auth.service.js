@@ -202,6 +202,11 @@ const loginUser = async (payload, meta) => {
     error.status = 401;
     throw error;
   }
+  if(!user.is_active){
+    const error = new Error('Please contact admin to unban your account');
+    error.status = 401;
+    throw error;
+  }
 
   const vpnData = await checkVPN(meta.ip);
   if (vpnData && (vpnData.is_vpn || vpnData.is_proxy || vpnData.is_tor)) {

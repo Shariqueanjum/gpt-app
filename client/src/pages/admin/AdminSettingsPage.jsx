@@ -1,52 +1,61 @@
-import { useEffect, useState } from 'react'
-import {
-  Box, Typography, Paper, Button, TextField, Switch,
-  Alert, CircularProgress, Divider
-} from '@mui/material'
+import { useState, useEffect, useCallback } from 'react'
+import { Box, Typography, TextField, Button, Paper, Skeleton, Snackbar, Alert } from '@mui/material'
 import SaveIcon from '@mui/icons-material/Save'
-import axiosInstance from '../../utils/axiosInstance'
 import { AdminPageWrapper } from '../../components/Layout/AdminLayout'
 import { getColors } from '../../components/Layout/SharedLayout'
+import adminAxiosInstance from '../../utils/adminAxiosInstance'
+import { ErrorState } from '../../components/Admin/AdminUiKit'
+
+// Every field here mirrors ALLOWED_SETTINGS_KEYS on the backend exactly —
+// nothing here is invented, and nothing else can be sent.
+const FIELDS = [
+  { key: 'site_name', label: 'Site name', type: 'text', help: 'Shown across emails and the public site' },
+  { key: 'min_withdrawal_points', label: 'Minimum withdrawal (points)', type: 'number', help: 'Lowest amount a user can request' },
+  { key: 'lock_threshold_points', label: 'Balance lock threshold (points)', type: 'number', help: 'Above this, new earnings are held for review' },
+  { key: 'referral_commission_percent', label: 'Referral commission (%)', type: 'number', help: 'Cut a referrer earns from their referrals' },
+  { key: 'daily_bonus_points', label: 'Daily login bonus (points)', type: 'number', help: 'Awarded once per day on login' },
+  { key: 'points_to_dollar_rate', label: 'Points per ₹1', type: 'number', help: 'Conversion rate used everywhere money is shown' },
+]
 
 const AdminSettingsPage = ({ darkMode, toggleDarkMode }) => {
   const COLORS = getColors(darkMode)
-  const [settings, setSettings] = useState({
-    site_name: 'WWABCASH',
-    site_tagline: 'Earn Rewards Daily',
-    min_withdrawal: 1000,
-    referral_percentage: 10,
-    maintenance_mode: false,
-    allow_registration: true,
-  })
+  const [values, setValues] = useState({})
+  const [original, setOriginal] = useState({})
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState(null)
 
-  useEffect(() => { fetchSettings() }, [])
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
+    setLoading(true); setError(null)
     try {
-      const res = await axiosInstance.get('/settings/')
-      if (res.data.data) {
-        setSettings(prev => ({ ...prev, ...res.data.data }))
-      }
+      const res = await adminAxiosInstance.get('/settings')
+      const data = res.data?.data || {}
+      const asStrings = Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)]))
+      setValues(asStrings)
+      setOriginal(asStrings)
     } catch (err) {
-      console.error('Failed to load settings:', err)
+      setError(err.response?.data?.message || 'Could not load settings')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => { fetchSettings() }, [fetchSettings])
+
+  const changedKeys = Object.keys(values).filter((k) => values[k] !== original[k])
+  const hasChanges = changedKeys.length > 0
 
   const handleSave = async () => {
+    if (!hasChanges) return
+    setSaving(true)
     try {
-      setSaving(true)
-      setError(null)
-      await axiosInstance.put('/admin/settings', settings)
-      setSuccess('Settings saved successfully')
-      setTimeout(() => setSuccess(null), 3000)
+      const settings = Object.fromEntries(changedKeys.map((k) => [k, values[k]]))
+      await adminAxiosInstance.put('/admin/settings', { settings })
+      setOriginal((prev) => ({ ...prev, ...settings }))
+      setToast({ type: 'success', msg: 'Settings updated successfully' })
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save settings')
+      setToast({ type: 'error', msg: err.response?.data?.message || 'Failed to save settings' })
     } finally {
       setSaving(false)
     }
@@ -54,117 +63,70 @@ const AdminSettingsPage = ({ darkMode, toggleDarkMode }) => {
 
   return (
     <AdminPageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-      <Box sx={{ maxWidth: 700 }}>
-        <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary, mb: 3 }}>
-          Site Settings
-        </Typography>
-
-        {error && (
-          <Alert severity="error" sx={{ borderRadius: 2, mb: 2, fontSize: '0.82rem' }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ borderRadius: 2, mb: 2, fontSize: '0.82rem' }} onClose={() => setSuccess(null)}>
-            {success}
-          </Alert>
-        )}
-
-        <Paper sx={{
-          p: 3, borderRadius: 3,
-          bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`,
-        }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <TextField
-              label="Site Name" value={settings.site_name}
-              onChange={(e) => setSettings(p => ({ ...p, site_name: e.target.value }))}
-              fullWidth size="small"
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-            />
-
-            <TextField
-              label="Site Tagline" value={settings.site_tagline}
-              onChange={(e) => setSettings(p => ({ ...p, site_tagline: e.target.value }))}
-              fullWidth size="small"
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-            />
-
-            <TextField
-              label="Minimum Withdrawal (points)" type="number"
-              value={settings.min_withdrawal}
-              onChange={(e) => setSettings(p => ({ ...p, min_withdrawal: parseInt(e.target.value) || 0 }))}
-              fullWidth size="small"
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-            />
-
-            <TextField
-              label="Referral Percentage (%)" type="number"
-              value={settings.referral_percentage}
-              onChange={(e) => setSettings(p => ({ ...p, referral_percentage: parseInt(e.target.value) || 0 }))}
-              fullWidth size="small"
-              helperText="Percentage of referral earnings you pay out"
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-            />
-
-            <Divider sx={{ my: 1, borderColor: COLORS.border }} />
-
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: COLORS.textPrimary }}>
-                  Maintenance Mode
-                </Typography>
-                <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary }}>
-                  Disable site access for non-admin users
-                </Typography>
-              </Box>
-              <Switch
-                checked={settings.maintenance_mode}
-                onChange={(e) => setSettings(p => ({ ...p, maintenance_mode: e.target.checked }))}
-                sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': { color: COLORS.primary },
-                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: `${COLORS.primary}50` },
-                }}
-              />
-            </Box>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: COLORS.textPrimary }}>
-                  Allow Registration
-                </Typography>
-                <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary }}>
-                  Let new users create accounts
-                </Typography>
-              </Box>
-              <Switch
-                checked={settings.allow_registration}
-                onChange={(e) => setSettings(p => ({ ...p, allow_registration: e.target.checked }))}
-                sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': { color: COLORS.primary },
-                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: `${COLORS.primary}50` },
-                }}
-              />
-            </Box>
-
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-              <Button
-                onClick={handleSave}
-                disabled={saving}
-                variant="contained"
-                startIcon={saving ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <SaveIcon />}
-                sx={{
-                  bgcolor: COLORS.primary, color: '#fff',
-                  fontWeight: 700, textTransform: 'none', borderRadius: 2, px: 4,
-                  '&:hover': { bgcolor: COLORS.primaryDark },
-                  boxShadow: 'none',
-                }}
-              >
-                {saving ? 'Saving...' : 'Save Settings'}
-              </Button>
-            </Box>
-          </Box>
-        </Paper>
+      <Box sx={{ mb: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
+        <Box>
+          <Typography sx={{ fontWeight: 800, fontSize: '1.25rem', color: COLORS.textPrimary }}>
+            Platform Settings
+          </Typography>
+          <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>
+            Live values used across the entire platform — changes apply immediately
+          </Typography>
+        </Box>
+        <Button
+          onClick={handleSave}
+          disabled={!hasChanges || saving}
+          startIcon={<SaveIcon />}
+          variant="contained"
+          sx={{
+            textTransform: 'none', fontWeight: 700, borderRadius: 2.5, px: 3,
+            bgcolor: COLORS.primary, '&:hover': { bgcolor: COLORS.primary },
+          }}
+        >
+          {saving ? 'Saving…' : hasChanges ? `Save ${changedKeys.length} change${changedKeys.length > 1 ? 's' : ''}` : 'Saved'}
+        </Button>
       </Box>
+
+      {error ? (
+        <ErrorState label={error} onRetry={fetchSettings} COLORS={COLORS} />
+      ) : (
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+          {FIELDS.map((field) => (
+            <Paper key={field.key} elevation={0} sx={{
+              p: 2.2, borderRadius: 3, border: `1px solid ${COLORS.border}`, bgcolor: COLORS.cardBg,
+            }}>
+              {loading ? (
+                <Skeleton variant="rounded" height={70} />
+              ) : (
+                <>
+                  <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: COLORS.textPrimary, mb: 0.3 }}>
+                    {field.label}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.74rem', color: COLORS.textMuted, mb: 1.2 }}>
+                    {field.help}
+                  </Typography>
+                  <TextField
+                    fullWidth size="small" type={field.type}
+                    value={values[field.key] ?? ''}
+                    onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderColor: values[field.key] !== original[field.key] ? COLORS.primary : undefined,
+                      },
+                    }}
+                  />
+                </>
+              )}
+            </Paper>
+          ))}
+        </Box>
+      )}
+
+      <Snackbar open={!!toast} autoHideDuration={3500} onClose={() => setToast(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert severity={toast?.type} variant="filled" onClose={() => setToast(null)} sx={{ borderRadius: 2 }}>
+          {toast?.msg}
+        </Alert>
+      </Snackbar>
     </AdminPageWrapper>
   )
 }

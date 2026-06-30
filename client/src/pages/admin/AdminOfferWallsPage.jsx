@@ -1,757 +1,463 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
-  Box, Typography, Paper, Chip, Skeleton, Switch, Divider,
-  IconButton, Dialog, DialogTitle, DialogContent,
-  DialogActions, Button, Alert, CircularProgress,
-  TextField, MenuItem, Tabs, Tab, Accordion, AccordionSummary, AccordionDetails
+  Box, Typography, Button, TextField, Select, MenuItem, Switch, Skeleton,
+  Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Divider,
+  Tabs, Tab, CircularProgress, Alert, Tooltip,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import axiosInstance from '../../utils/axiosInstance'
+import CloseIcon from '@mui/icons-material/Close'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined'
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
+import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined'
 import { AdminPageWrapper } from '../../components/Layout/AdminLayout'
 import { getColors } from '../../components/Layout/SharedLayout'
+import adminAxiosInstance from '../../utils/adminAxiosInstance'
+import { EmptyState, ErrorState, TableShell, TableScroll } from '../../components/Admin/AdminUiKit'
 
-const WALL_TYPES = [
-  { value: 'iframe', label: 'Iframe' },
-  { value: 'api', label: 'API' },
-  { value: 'router', label: 'Router' },
+const TYPE_OPTIONS = [
+  { value: 'api', label: 'API (server-to-server)' },
+  { value: 'router', label: 'Router (redirect link)' },
+  { value: 'iframe', label: 'Iframe (embedded)' },
 ]
 
-const AUTH_METHODS = [
-  { value: 'none', label: 'No Auth' },
-  { value: 'api_key', label: 'API Key (Header or Query)' },
-  { value: 'bearer', label: 'Bearer Token' },
-  { value: 'basic', label: 'Basic Auth' },
-  { value: 'oauth2', label: 'OAuth 2.0 (Two-step)' },
+// Every field that can feed an outgoing URL param — matches resolveParamValue
+// on the backend exactly. Adding anything not in this list would silently
+// resolve to an empty string server-side.
+const SOURCE_OPTIONS = [
+  { value: 'transaction_id', label: 'Transaction ID' },
+  { value: 'user.public_id', label: 'User · Public ID' },
+  { value: 'user.username', label: 'User · Username' },
+  { value: 'user.email', label: 'User · Email' },
+  { value: 'user.country', label: 'User · Country' },
+  { value: 'user.gender', label: 'User · Gender' },
+  { value: 'user.dob', label: 'User · Date of birth' },
+  { value: 'user.full_name', label: 'User · Full name' },
+  { value: 'user.phone', label: 'User · Phone' },
+  { value: 'user.referral_code', label: 'User · Referral code' },
+  { value: 'user.level_id', label: 'User · Level' },
+  { value: 'static', label: 'Static value' },
 ]
+
+const emptyForm = {
+  name: '', internal_id: '', type: 'api', endpoint_url: '', iframe_url: '',
+  hash_algorithm: '', hash_key: '', commission_rate: 20,
+  url_params: [{ param: 'user_id', source: 'user.public_id', value: '' }, { param: 'transaction_id', source: 'transaction_id', value: '' }],
+  s2s: { transaction_id_field: 'transaction_id', sub_id_field: '', status_field: 'status', payout_field: 'payout', status_map: [{ key: 'completed', value: 'success' }, { key: 'rejected', value: 'failed' }] },
+  browser: { transaction_id_field: 'transaction_id', sub_id_field: '', payout_field: 'payout', signature_field: 'hash', hash_fields: 'transaction_id, payout, status' },
+}
+
+const fieldSx = { '& .MuiOutlinedInput-root': { borderRadius: 2 } }
 
 const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
   const COLORS = getColors(darkMode)
-  const [offerWalls, setOfferWalls] = useState([])
+  const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(null)
+  const [togglingId, setTogglingId] = useState(null)
 
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState(0)
-  const [editingWall, setEditingWall] = useState(null)
-
-  // Basic fields
-  const [formData, setFormData] = useState({
-    name: '', internal_id: '', type: 'api', endpoint_url: '', iframe_url: '',
-    description: '', category: 'survey', min_level: 0, is_active: true,
-    // API Integration config (for zero-code deployment)
-    config: {
-      auth_method: 'none',
-      api_key: '',
-      api_key_location: 'header', // 'header' or 'query'
-      api_key_header_name: 'X-API-Key',
-      bearer_token: '',
-      username: '', // basic auth
-      password: '', // basic auth
-      // Two-step OAuth
-      token_url: '',
-      token_method: 'POST',
-      token_headers: '', // JSON string
-      token_body: '', // JSON string
-      token_response_path: 'access_token', // e.g., "data.token" or "access_token"
-      // Request config
-      request_method: 'GET',
-      request_headers: '', // JSON string
-      request_params: '', // JSON string - {user_id: "{{user_id}}", country: "{{country}}"}
-      // Response mapping
-      response_path: '', // e.g., "data.surveys" or "surveys"
-      field_mapping: {
-        survey_id: 'survey_id',
-        survey_name: 'survey_name',
-        title: 'title',
-        description: 'description',
-        cpa: 'cpa',
-        payout: 'payout',
-        reward: 'reward',
-        loi: 'loi',
-        length_of_interview: 'length_of_interview',
-        estimated_time: 'estimated_time',
-        category: 'category',
-        country: 'country',
-        survey_url: 'survey_url', // or 'url' or 'link'
-        url: 'url',
-        link: 'link',
-      },
-      // Postback config (moves from callback_config)
-      postback_config: {
-        transaction_id_field: 'transaction_id',
-        sub_id_field: 'sub_id',
-        status_field: 'status',
-        payout_field: 'payout',
-        status_map: { completed: 'success', rejected: 'failed' },
-      }
-    }
-  })
+  const [editingId, setEditingId] = useState(null)
+  const [tab, setTab] = useState(0)
+  const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
-  useEffect(() => { fetchOfferWalls() }, [])
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewResult, setPreviewResult] = useState(null)
 
-  const fetchOfferWalls = async () => {
+  const fetchData = useCallback(async () => {
+    setLoading(true); setError(null)
     try {
-      setLoading(true)
-      const res = await axiosInstance.get('/admin/offer-walls')
-      setOfferWalls(res.data.data || [])
+      const res = await adminAxiosInstance.get('/admin/offer-walls')
+      setRows(res.data?.data || [])
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load offer walls')
+      setError(err.response?.data?.message || 'Could not load offer walls')
     } finally {
       setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  const handleToggle = async (wall) => {
+    setTogglingId(wall.id)
+    try {
+      await adminAxiosInstance.patch(`/admin/offer-walls/${wall.id}/toggle`)
+      setRows((prev) => prev.map((r) => r.id === wall.id ? { ...r, is_active: !r.is_active } : r))
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to toggle offer wall')
+    } finally {
+      setTogglingId(null)
+    }
+  }
+
+  const openCreate = () => {
+    setEditingId(null)
+    setForm(emptyForm)
+    setTab(0)
+    setPreviewResult(null)
+    setSaveError('')
+    setDialogOpen(true)
+  }
+
+  const openEdit = (wall) => {
+    const cfg = wall.callback_config || {}
+    setEditingId(wall.id)
+    setForm({
+      name: wall.name || '', internal_id: wall.internal_id || '', type: wall.type || 'api',
+      endpoint_url: wall.endpoint_url || '', iframe_url: wall.iframe_url || '',
+      hash_algorithm: wall.hash_algorithm || '', hash_key: wall.hash_key || '',
+      commission_rate: wall.commission_rate ?? 20,
+      url_params: cfg.url_params?.length ? cfg.url_params : emptyForm.url_params,
+      s2s: {
+        transaction_id_field: cfg.s2s?.transaction_id_field || '',
+        sub_id_field: cfg.s2s?.sub_id_field || '',
+        status_field: cfg.s2s?.status_field || '',
+        payout_field: cfg.s2s?.payout_field || '',
+        status_map: cfg.s2s?.status_map
+          ? Object.entries(cfg.s2s.status_map).map(([key, value]) => ({ key, value }))
+          : [{ key: '', value: '' }],
+      },
+      browser: {
+        transaction_id_field: cfg.browser?.transaction_id_field || '',
+        sub_id_field: cfg.browser?.sub_id_field || '',
+        payout_field: cfg.browser?.payout_field || '',
+        signature_field: cfg.browser?.signature_field || '',
+        hash_fields: Array.isArray(cfg.browser?.hash_fields) ? cfg.browser.hash_fields.join(', ') : '',
+      },
+    })
+    setTab(0)
+    setPreviewResult(null)
+    setSaveError('')
+    setDialogOpen(true)
+  }
+
+  const buildPayload = () => {
+    const status_map = Object.fromEntries(
+      form.s2s.status_map.filter((r) => r.key.trim()).map((r) => [r.key.trim(), r.value.trim()])
+    )
+    const hash_fields = form.browser.hash_fields.split(',').map((s) => s.trim()).filter(Boolean)
+    return {
+      name: form.name.trim(),
+      internal_id: form.internal_id.trim().toLowerCase().replace(/\s+/g, '_'),
+      type: form.type,
+      endpoint_url: form.type !== 'iframe' ? form.endpoint_url.trim() || null : null,
+      iframe_url: form.type === 'iframe' ? form.iframe_url.trim() || null : null,
+      hash_algorithm: form.hash_algorithm.trim() || null,
+      hash_key: form.hash_key.trim() || null,
+      commission_rate: Number(form.commission_rate),
+      callback_config: {
+        url_params: form.url_params.filter((p) => p.param.trim()),
+        s2s: {
+          transaction_id_field: form.s2s.transaction_id_field.trim(),
+          sub_id_field: form.s2s.sub_id_field.trim() || undefined,
+          status_field: form.s2s.status_field.trim(),
+          payout_field: form.s2s.payout_field.trim(),
+          status_map,
+        },
+        browser: {
+          transaction_id_field: form.browser.transaction_id_field.trim(),
+          sub_id_field: form.browser.sub_id_field.trim() || undefined,
+          payout_field: form.browser.payout_field.trim(),
+          signature_field: form.browser.signature_field.trim(),
+          hash_fields,
+        },
+      },
     }
   }
 
   const handleSave = async () => {
+    if (!form.name.trim() || !form.internal_id.trim()) { setTab(0); setSaveError('Name and internal ID are required'); return }
+    setSaving(true); setSaveError('')
     try {
-      setSaving(true)
-      setError(null)
-
-      const payload = {
-        name: formData.name,
-        internal_id: formData.internal_id,
-        type: formData.type,
-        endpoint_url: formData.endpoint_url,
-        iframe_url: formData.iframe_url,
-        description: formData.description,
-        category: formData.category,
-        min_level: parseInt(formData.min_level) || 0,
-        is_active: formData.is_active,
-        config: formData.config,
-      }
-
-      if (editingWall) {
-        await axiosInstance.put(`/admin/offer-walls/${editingWall.id}`, payload)
-        setSuccess('Offer wall updated successfully')
+      const payload = buildPayload()
+      if (editingId) {
+        await adminAxiosInstance.put(`/admin/offer-walls/${editingId}`, payload)
       } else {
-        await axiosInstance.post('/admin/offer-walls', payload)
-        setSuccess('Offer wall created successfully')
+        await adminAxiosInstance.post('/admin/offer-walls', payload)
       }
-
       setDialogOpen(false)
-      setEditingWall(null)
-      fetchOfferWalls()
-      setTimeout(() => setSuccess(null), 3000)
+      fetchData()
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save offer wall')
+      setSaveError(err.response?.data?.message || 'Failed to save offer wall')
     } finally {
       setSaving(false)
     }
   }
 
-  const handleToggleActive = async (wall) => {
+  const handlePreview = async () => {
+    if (!editingId) return
+    setPreviewLoading(true); setPreviewResult(null)
     try {
-      await axiosInstance.put(`/admin/offer-walls/${wall.id}`, {
-        is_active: !wall.is_active
-      })
-      setSuccess(`Offer wall ${!wall.is_active ? 'activated' : 'deactivated'}`)
-      fetchOfferWalls()
-      setTimeout(() => setSuccess(null), 3000)
+      const res = await adminAxiosInstance.post(`/admin/offer-walls/${editingId}/preview-url`, {})
+      setPreviewResult({ type: 'success', url: res.data?.data?.preview_url })
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update offer wall')
+      setPreviewResult({ type: 'error', msg: err.response?.data?.message || 'Preview failed' })
+    } finally {
+      setPreviewLoading(false)
     }
   }
 
-  const openCreate = () => {
-    setEditingWall(null)
-    setFormData({
-      name: '', internal_id: '', type: 'api', endpoint_url: '', iframe_url: '',
-      description: '', category: 'survey', min_level: 0, is_active: true,
-      config: {
-        auth_method: 'none',
-        api_key: '',
-        api_key_location: 'header',
-        api_key_header_name: 'X-API-Key',
-        bearer_token: '',
-        username: '',
-        password: '',
-        token_url: '',
-        token_method: 'POST',
-        token_headers: '',
-        token_body: '',
-        token_response_path: 'access_token',
-        request_method: 'GET',
-        request_headers: '',
-        request_params: '',
-        response_path: '',
-        field_mapping: {
-          survey_id: 'survey_id',
-          survey_name: 'survey_name',
-          title: 'title',
-          description: 'description',
-          cpa: 'cpa',
-          payout: 'payout',
-          reward: 'reward',
-          loi: 'loi',
-          length_of_interview: 'length_of_interview',
-          estimated_time: 'estimated_time',
-          category: 'category',
-          country: 'country',
-          survey_url: 'survey_url',
-          url: 'url',
-          link: 'link',
-        },
-        postback_config: {
-          transaction_id_field: 'transaction_id',
-          sub_id_field: 'sub_id',
-          status_field: 'status',
-          payout_field: 'payout',
-          status_map: { completed: 'success', rejected: 'failed' },
-        }
-      }
-    })
-    setActiveTab(0)
-    setDialogOpen(true)
-  }
+  // --- URL params row helpers ---
+  const updateParamRow = (i, key, value) => setForm((f) => ({
+    ...f, url_params: f.url_params.map((row, idx) => idx === i ? { ...row, [key]: value } : row),
+  }))
+  const addParamRow = () => setForm((f) => ({ ...f, url_params: [...f.url_params, { param: '', source: 'static', value: '' }] }))
+  const removeParamRow = (i) => setForm((f) => ({ ...f, url_params: f.url_params.filter((_, idx) => idx !== i) }))
 
-  const openEdit = (wall) => {
-    setEditingWall(wall)
-    setFormData({
-      name: wall.name || '',
-      internal_id: wall.internal_id || '',
-      type: wall.type || 'api',
-      endpoint_url: wall.endpoint_url || '',
-      iframe_url: wall.iframe_url || '',
-      description: wall.description || '',
-      category: wall.category || 'survey',
-      min_level: wall.min_level || 0,
-      is_active: wall.is_active !== false,
-      config: wall.config || {
-        auth_method: 'none',
-        api_key: '',
-        api_key_location: 'header',
-        api_key_header_name: 'X-API-Key',
-        bearer_token: '',
-        username: '',
-        password: '',
-        token_url: '',
-        token_method: 'POST',
-        token_headers: '',
-        token_body: '',
-        token_response_path: 'access_token',
-        request_method: 'GET',
-        request_headers: '',
-        request_params: '',
-        response_path: '',
-        field_mapping: {
-          survey_id: 'survey_id',
-          survey_name: 'survey_name',
-          title: 'title',
-          description: 'description',
-          cpa: 'cpa',
-          payout: 'payout',
-          reward: 'reward',
-          loi: 'loi',
-          length_of_interview: 'length_of_interview',
-          estimated_time: 'estimated_time',
-          category: 'category',
-          country: 'country',
-          survey_url: 'survey_url',
-          url: 'url',
-          link: 'link',
-        },
-        postback_config: {
-          transaction_id_field: 'transaction_id',
-          sub_id_field: 'sub_id',
-          status_field: 'status',
-          payout_field: 'payout',
-          status_map: { completed: 'success', rejected: 'failed' },
-        }
-      }
-    })
-    setActiveTab(0)
-    setDialogOpen(true)
-  }
-
-  const updateConfig = (path, value) => {
-    setFormData(prev => {
-      const keys = path.split('.')
-      const newConfig = { ...prev.config }
-      let current = newConfig
-      for (let i = 0; i < keys.length - 1; i++) {
-        current[keys[i]] = { ...current[keys[i]] }
-        current = current[keys[i]]
-      }
-      current[keys[keys.length - 1]] = value
-      return { ...prev, config: newConfig }
-    })
-  }
-
-  const updateFieldMapping = (key, value) => {
-    setFormData(prev => ({
-      ...prev,
-      config: {
-        ...prev.config,
-        field_mapping: {
-          ...prev.config.field_mapping,
-          [key]: value
-        }
-      }
-    }))
-  }
-
-  const updatePostbackConfig = (key, value) => {
-    setFormData(prev => ({
-      ...prev,
-      config: {
-        ...prev.config,
-        postback_config: {
-          ...prev.config.postback_config,
-          [key]: value
-        }
-      }
-    }))
-  }
+  // --- status_map row helpers ---
+  const updateMapRow = (i, key, value) => setForm((f) => ({
+    ...f, s2s: { ...f.s2s, status_map: f.s2s.status_map.map((row, idx) => idx === i ? { ...row, [key]: value } : row) },
+  }))
+  const addMapRow = () => setForm((f) => ({ ...f, s2s: { ...f.s2s, status_map: [...f.s2s.status_map, { key: '', value: '' }] } }))
+  const removeMapRow = (i) => setForm((f) => ({ ...f, s2s: { ...f.s2s, status_map: f.s2s.status_map.filter((_, idx) => idx !== i) } }))
 
   return (
     <AdminPageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-      <Box sx={{ maxWidth: 1200 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary }}>
+      <Box sx={{ mb: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
+        <Box>
+          <Typography sx={{ fontWeight: 800, fontSize: '1.25rem', color: COLORS.textPrimary }}>
             Offer Walls
           </Typography>
-          <Button
-            onClick={openCreate}
-            variant="contained"
-            startIcon={<AddIcon />}
-            sx={{
-              bgcolor: COLORS.primary, color: '#fff',
-              fontWeight: 700, textTransform: 'none', borderRadius: 2,
-              '&:hover': { bgcolor: COLORS.primaryDark },
-              boxShadow: 'none',
-            }}
-          >
-            Add Offer Wall
-          </Button>
+          <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>
+            {rows.length} configured · onboard a new survey provider without touching code
+          </Typography>
         </Box>
-
-        {error && (
-          <Alert severity="error" sx={{ borderRadius: 2, mb: 2, fontSize: '0.82rem' }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ borderRadius: 2, mb: 2, fontSize: '0.82rem' }} onClose={() => setSuccess(null)}>
-            {success}
-          </Alert>
-        )}
-
-        <Paper sx={{ borderRadius: 3, overflow: 'hidden', bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
-          {loading ? (
-            <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} variant="rounded" height={60} />)}
-            </Box>
-          ) : offerWalls.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 6 }}>
-              <Typography sx={{ color: COLORS.textSecondary }}>No offer walls configured</Typography>
-            </Box>
-          ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              {offerWalls.map((wall) => (
-                <Box key={wall.id} sx={{
-                  p: 2.5,
-                  borderBottom: `1px solid ${COLORS.border}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  flexWrap: 'wrap', gap: 2,
-                  '&:last-child': { borderBottom: 'none' },
-                  '&:hover': { bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' }
-                }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-                    <Box sx={{
-                      width: 40, height: 40, borderRadius: 2,
-                      bgcolor: `${COLORS.primary}12`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: COLORS.primary, fontWeight: 700, fontSize: '0.9rem'
-                    }}>
-                      {wall.name?.[0]?.toUpperCase()}
-                    </Box>
-                    <Box>
-                      <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: COLORS.textPrimary }}>
-                        {wall.name}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.78rem', color: COLORS.textMuted }}>
-                        {wall.internal_id} · {wall.type} · Min Level {wall.min_level || 0}
-                        {wall.config?.auth_method && wall.config.auth_method !== 'none' && ` · Auth: ${wall.config.auth_method}`}
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Chip size="small" label={wall.type.toUpperCase()} sx={{
-                      bgcolor: wall.type === 'iframe' ? `${COLORS.primary}12` : wall.type === 'api' ? `${COLORS.accent}12` : `${COLORS.gold}12`,
-                      color: wall.type === 'iframe' ? COLORS.primary : wall.type === 'api' ? COLORS.accent : COLORS.gold,
-                      fontWeight: 700, fontSize: '0.65rem'
-                    }} />
-                    <Switch
-                      checked={wall.is_active !== false}
-                      onChange={() => handleToggleActive(wall)}
-                      size="small"
-                      sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': { color: COLORS.primary },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: `${COLORS.primary}50` },
-                      }}
-                    />
-                    <IconButton size="small" onClick={() => openEdit(wall)} sx={{ color: COLORS.primary }}>
-                      <EditIcon sx={{ fontSize: '1.1rem' }} />
-                    </IconButton>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          )}
-        </Paper>
-
-        {/* Create/Edit Dialog */}
-        <Dialog open={dialogOpen} onClose={() => !saving && setDialogOpen(false)} maxWidth="md" fullWidth PaperProps={{
-          sx: { borderRadius: 3, bgcolor: COLORS.cardBg }
+        <Button onClick={openCreate} startIcon={<AddIcon />} variant="contained" sx={{
+          textTransform: 'none', fontWeight: 700, borderRadius: 2.5, px: 2.5,
+          bgcolor: COLORS.primary, '&:hover': { bgcolor: COLORS.primary },
         }}>
-          <DialogTitle sx={{ color: COLORS.textPrimary, fontWeight: 700 }}>
-            {editingWall ? 'Edit Offer Wall' : 'Add Offer Wall'}
-          </DialogTitle>
+          Add offer wall
+        </Button>
+      </Box>
 
-          <Tabs
-            value={activeTab}
-            onChange={(_, v) => setActiveTab(v)}
-            sx={{
-              borderBottom: `1px solid ${COLORS.border}`,
-              px: 3,
-              '& .MuiTabs-indicator': { bgcolor: COLORS.primary },
-              '& .MuiTab-root': {
-                color: COLORS.textSecondary,
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                '&.Mui-selected': { color: COLORS.primary, fontWeight: 700 }
-              }
-            }}
-          >
-            <Tab label="Basic Info" />
-            <Tab label="API Integration" />
-            <Tab label="Field Mapping" />
-            <Tab label="Postback" />
-          </Tabs>
-
-          <DialogContent>
-            {/* Tab 1: Basic Info */}
-            {activeTab === 0 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
-                <TextField
-                  label="Name" value={formData.name}
-                  onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
-                  fullWidth size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-                <TextField
-                  label="Internal ID" value={formData.internal_id}
-                  onChange={(e) => setFormData(p => ({ ...p, internal_id: e.target.value }))}
-                  fullWidth size="small" disabled={!!editingWall}
-                  helperText="Unique identifier, cannot be changed later. Used in URL: /earn?wall=xxx"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-                <TextField
-                  select label="Type" value={formData.type}
-                  onChange={(e) => setFormData(p => ({ ...p, type: e.target.value }))}
-                  fullWidth size="small"
-                  helperText="API = fetch surveys from their API. Iframe = embed their page. Router = redirect to their URL."
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                >
-                  {WALL_TYPES.map(t => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
-                </TextField>
-                <TextField
-                  label="Endpoint URL" value={formData.endpoint_url}
-                  onChange={(e) => setFormData(p => ({ ...p, endpoint_url: e.target.value }))}
-                  fullWidth size="small"
-                  placeholder="https://api.client.com/surveys"
-                  helperText="For API/Router: the URL to call. For Iframe: leave empty."
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-                <TextField
-                  label="Iframe URL" value={formData.iframe_url}
-                  onChange={(e) => setFormData(p => ({ ...p, iframe_url: e.target.value }))}
-                  fullWidth size="small"
-                  placeholder="https://client.com/iframe"
-                  helperText="Only for iframe type. The URL to load in the iframe."
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-                <TextField
-                  label="Description" value={formData.description}
-                  onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))}
-                  fullWidth size="small" multiline rows={2}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-                <TextField
-                  label="Category" value={formData.category}
-                  onChange={(e) => setFormData(p => ({ ...p, category: e.target.value }))}
-                  fullWidth size="small"
-                  helperText="survey, game, offer, etc."
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-                <TextField
-                  label="Minimum Level" type="number" value={formData.min_level}
-                  onChange={(e) => setFormData(p => ({ ...p, min_level: parseInt(e.target.value) || 0 }))}
-                  fullWidth size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-              </Box>
-            )}
-
-            {/* Tab 2: API Integration */}
-            {activeTab === 1 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
-                <Alert severity="info" sx={{ borderRadius: 2, fontSize: '0.82rem' }}>
-                  Configure how to call the client API. This enables zero-code deployment — no backend changes needed for new clients.
-                </Alert>
-
-                <TextField
-                  select label="Authentication Method" value={formData.config.auth_method}
-                  onChange={(e) => updateConfig('auth_method', e.target.value)}
-                  fullWidth size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                >
-                  {AUTH_METHODS.map(a => <MenuItem key={a.value} value={a.value}>{a.label}</MenuItem>)}
-                </TextField>
-
-                {formData.config.auth_method === 'api_key' && (
-                  <>
-                    <TextField
-                      label="API Key" value={formData.config.api_key}
-                      onChange={(e) => updateConfig('api_key', e.target.value)}
-                      fullWidth size="small" type="password"
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                    />
-                    <TextField
-                      select label="API Key Location" value={formData.config.api_key_location}
-                      onChange={(e) => updateConfig('api_key_location', e.target.value)}
-                      fullWidth size="small"
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                    >
-                      <MenuItem value="header">HTTP Header</MenuItem>
-                      <MenuItem value="query">Query Parameter</MenuItem>
-                    </TextField>
-                    <TextField
-                      label="Header/Param Name" value={formData.config.api_key_header_name}
-                      onChange={(e) => updateConfig('api_key_header_name', e.target.value)}
-                      fullWidth size="small"
-                      placeholder="X-API-Key or api_key"
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                    />
-                  </>
-                )}
-
-                {formData.config.auth_method === 'bearer' && (
-                  <TextField
-                    label="Bearer Token" value={formData.config.bearer_token}
-                    onChange={(e) => updateConfig('bearer_token', e.target.value)}
-                    fullWidth size="small" type="password"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                  />
-                )}
-
-                {formData.config.auth_method === 'basic' && (
-                  <>
-                    <TextField
-                      label="Username" value={formData.config.username}
-                      onChange={(e) => updateConfig('username', e.target.value)}
-                      fullWidth size="small"
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                    />
-                    <TextField
-                      label="Password" value={formData.config.password}
-                      onChange={(e) => updateConfig('password', e.target.value)}
-                      fullWidth size="small" type="password"
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                    />
-                  </>
-                )}
-
-                {formData.config.auth_method === 'oauth2' && (
-                  <>
-                    <Alert severity="warning" sx={{ borderRadius: 2, fontSize: '0.82rem' }}>
-                      Two-step OAuth: First call token_url to get access_token, then call the main API with that token.
-                    </Alert>
-                    <TextField
-                      label="Token URL" value={formData.config.token_url}
-                      onChange={(e) => updateConfig('token_url', e.target.value)}
-                      fullWidth size="small"
-                      placeholder="https://api.client.com/oauth/token"
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                    />
-                    <TextField
-                      select label="Token Request Method" value={formData.config.token_method}
-                      onChange={(e) => updateConfig('token_method', e.target.value)}
-                      fullWidth size="small"
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                    >
-                      <MenuItem value="GET">GET</MenuItem>
-                      <MenuItem value="POST">POST</MenuItem>
-                    </TextField>
-                    <TextField
-                      label="Token Request Headers (JSON)" value={formData.config.token_headers}
-                      onChange={(e) => updateConfig('token_headers', e.target.value)}
-                      fullWidth size="small" multiline rows={2}
-                      placeholder='{"Content-Type": "application/json"}'
-                      helperText="JSON object of headers for token request"
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                    />
-                    <TextField
-                      label="Token Request Body (JSON)" value={formData.config.token_body}
-                      onChange={(e) => updateConfig('token_body', e.target.value)}
-                      fullWidth size="small" multiline rows={2}
-                      placeholder='{"grant_type": "client_credentials", "client_id": "xxx", "client_secret": "xxx"}'
-                      helperText="JSON body for POST token request"
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                    />
-                    <TextField
-                      label="Token Response Path" value={formData.config.token_response_path}
-                      onChange={(e) => updateConfig('token_response_path', e.target.value)}
-                      fullWidth size="small"
-                      placeholder="access_token or data.token"
-                      helperText="Dot-notation path to extract token from response. E.g., 'data.access_token' or just 'access_token'"
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                    />
-                  </>
-                )}
-
-                <Divider sx={{ my: 1, borderColor: COLORS.border }} />
-
-                <TextField
-                  select label="Request Method" value={formData.config.request_method}
-                  onChange={(e) => updateConfig('request_method', e.target.value)}
-                  fullWidth size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                >
-                  <MenuItem value="GET">GET</MenuItem>
-                  <MenuItem value="POST">POST</MenuItem>
-                </TextField>
-
-                <TextField
-                  label="Request Headers (JSON)" value={formData.config.request_headers}
-                  onChange={(e) => updateConfig('request_headers', e.target.value)}
-                  fullWidth size="small" multiline rows={2}
-                  placeholder='{"Accept": "application/json"}'
-                  helperText="Additional headers for the survey API call"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-
-                <TextField
-                  label="Request Params (JSON)" value={formData.config.request_params}
-                  onChange={(e) => updateConfig('request_params', e.target.value)}
-                  fullWidth size="small" multiline rows={3}
-                  placeholder='{"user_id": "{{user_id}}", "country": "{{country}}", "age": "{{age}}"}'
-                  helperText="Use {{user_id}}, {{country}}, {{age}}, {{gender}} as placeholders. They will be replaced with actual user data."
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-
-                <TextField
-                  label="Response Data Path" value={formData.config.response_path}
-                  onChange={(e) => updateConfig('response_path', e.target.value)}
-                  fullWidth size="small"
-                  placeholder="data.surveys or surveys"
-                  helperText="Dot-notation path to the array of surveys in the response. Leave empty if response IS the array."
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-              </Box>
-            )}
-
-            {/* Tab 3: Field Mapping */}
-            {activeTab === 2 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
-                <Alert severity="info" sx={{ borderRadius: 2, fontSize: '0.82rem' }}>
-                  Map the client's API response fields to our standard fields. This tells the backend how to read their survey data.
-                </Alert>
-
-                <Box sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-                  gap: 2
-                }}>
-                  {Object.entries(formData.config.field_mapping).map(([key, value]) => (
-                    <TextField
-                      key={key}
-                      label={key.replace(/_/g, ' ').replace(/\w/g, l => l.toUpperCase())}
-                      value={value}
-                      onChange={(e) => updateFieldMapping(key, e.target.value)}
-                      size="small"
-                      placeholder={`Their field name for ${key}`}
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                    />
+      <TableShell COLORS={COLORS}>
+        {error ? (
+          <ErrorState label={error} onRetry={fetchData} COLORS={COLORS} />
+        ) : !loading && rows.length === 0 ? (
+          <EmptyState label="No offer walls configured yet" COLORS={COLORS} />
+        ) : (
+          <TableScroll>
+            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse', minWidth: 800 }}>
+              <Box component="thead">
+                <Box component="tr" sx={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                  {['Name', 'Internal ID', 'Type', 'Commission', 'Status', ''].map((h) => (
+                    <Box component="th" key={h} sx={{
+                      textAlign: 'left', px: 2, py: 1.4, fontSize: '0.74rem', fontWeight: 700,
+                      color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap',
+                    }}>{h}</Box>
                   ))}
                 </Box>
               </Box>
-            )}
-
-            {/* Tab 4: Postback */}
-            {activeTab === 3 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
-                <Alert severity="info" sx={{ borderRadius: 2, fontSize: '0.82rem' }}>
-                  Configure how to receive and validate postback/callback notifications from the client when a survey completes.
-                </Alert>
-
-                <TextField
-                  label="Transaction ID Field" value={formData.config.postback_config.transaction_id_field}
-                  onChange={(e) => updatePostbackConfig('transaction_id_field', e.target.value)}
-                  fullWidth size="small"
-                  helperText="The field name they send in postback that contains our transaction ID"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-                <TextField
-                  label="Sub ID Field" value={formData.config.postback_config.sub_id_field}
-                  onChange={(e) => updatePostbackConfig('sub_id_field', e.target.value)}
-                  fullWidth size="small"
-                  helperText="The field containing our sub_id (usually user_id)"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-                <TextField
-                  label="Status Field" value={formData.config.postback_config.status_field}
-                  onChange={(e) => updatePostbackConfig('status_field', e.target.value)}
-                  fullWidth size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-                <TextField
-                  label="Payout Field" value={formData.config.postback_config.payout_field}
-                  onChange={(e) => updatePostbackConfig('payout_field', e.target.value)}
-                  fullWidth size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
-                <TextField
-                  label="Status Map (JSON)" value={JSON.stringify(formData.config.postback_config.status_map)}
-                  onChange={(e) => {
-                    try {
-                      const parsed = JSON.parse(e.target.value)
-                      updatePostbackConfig('status_map', parsed)
-                    } catch { /* ignore invalid JSON */ }
-                  }}
-                  fullWidth size="small" multiline rows={2}
-                  helperText='Map their status values to ours: {"completed": "success", "rejected": "failed"}'
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' } }}
-                />
+              <Box component="tbody">
+                {loading
+                  ? [...Array(4)].map((_, i) => (
+                    <Box component="tr" key={i} sx={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                      <Box component="td" colSpan={6} sx={{ px: 2, py: 1.6 }}><Skeleton variant="rounded" height={30} /></Box>
+                    </Box>
+                  ))
+                  : rows.map((wall) => (
+                    <Box component="tr" key={wall.id} sx={{
+                      borderBottom: `1px solid ${COLORS.border}`,
+                      '&:hover': { bgcolor: `${COLORS.primary}05` },
+                    }}>
+                      <Box component="td" sx={{ px: 2, py: 1.4, fontSize: '0.86rem', fontWeight: 700, color: COLORS.textPrimary }}>
+                        {wall.name}
+                      </Box>
+                      <Box component="td" sx={{ px: 2, py: 1.4, fontSize: '0.8rem', color: COLORS.textMuted, fontFamily: 'monospace' }}>
+                        {wall.internal_id}
+                      </Box>
+                      <Box component="td" sx={{ px: 2, py: 1.4 }}>
+                        <Typography sx={{
+                          fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', display: 'inline-block',
+                          color: COLORS.primary, bgcolor: `${COLORS.primary}12`, px: 1, py: 0.3, borderRadius: 4,
+                        }}>
+                          {wall.type}
+                        </Typography>
+                      </Box>
+                      <Box component="td" sx={{ px: 2, py: 1.4, fontSize: '0.83rem', color: COLORS.textSecondary }}>
+                        {wall.commission_rate}%
+                      </Box>
+                      <Box component="td" sx={{ px: 2, py: 1.4 }}>
+                        <Switch size="small" checked={!!wall.is_active} disabled={togglingId === wall.id}
+                          onChange={() => handleToggle(wall)} />
+                      </Box>
+                      <Box component="td" sx={{ px: 1, py: 1.4, textAlign: 'right' }}>
+                        <IconButton size="small" onClick={() => openEdit(wall)}>
+                          <EditIcon fontSize="small" sx={{ color: COLORS.textMuted }} />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  ))}
               </Box>
-            )}
-          </DialogContent>
+            </Box>
+          </TableScroll>
+        )}
+      </TableShell>
 
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setDialogOpen(false)} disabled={saving} sx={{
-              color: COLORS.textSecondary, textTransform: 'none', fontWeight: 600
-            }}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={saving || !formData.name || !formData.internal_id}
-              variant="contained"
-              sx={{
-                bgcolor: COLORS.primary, color: '#fff', textTransform: 'none', fontWeight: 700,
-                borderRadius: 2, '&:hover': { bgcolor: COLORS.primaryDark },
-                '&:disabled': { bgcolor: COLORS.textMuted }
-              }}
-            >
-              {saving ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : (editingWall ? 'Save Changes' : 'Create')}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+      <Dialog open={dialogOpen} onClose={() => !saving && setDialogOpen(false)} maxWidth="md" fullWidth
+        PaperProps={{ sx: { borderRadius: 3, bgcolor: COLORS.cardBg } }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700, color: COLORS.textPrimary }}>
+          {editingId ? `Edit — ${form.name}` : 'New offer wall'}
+          <IconButton size="small" onClick={() => setDialogOpen(false)} disabled={saving}><CloseIcon fontSize="small" /></IconButton>
+        </DialogTitle>
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 3, borderBottom: `1px solid ${COLORS.border}`, minHeight: 40 }}>
+          <Tab label="Basics" sx={{ textTransform: 'none', fontSize: '0.83rem', minHeight: 40 }} />
+          <Tab label="URL parameters" sx={{ textTransform: 'none', fontSize: '0.83rem', minHeight: 40 }} />
+          <Tab label="S2S callback" sx={{ textTransform: 'none', fontSize: '0.83rem', minHeight: 40 }} />
+          <Tab label="Browser callback" sx={{ textTransform: 'none', fontSize: '0.83rem', minHeight: 40 }} />
+        </Tabs>
+        <DialogContent sx={{ pt: 2.5 }}>
+          {tab === 0 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.8 }}>
+                <TextField label="Display name" size="small" value={form.name} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+                <TextField label="Internal ID (slug)" size="small" value={form.internal_id} sx={fieldSx}
+                  helperText="lowercase, no spaces — used internally to identify this wall"
+                  onChange={(e) => setForm((f) => ({ ...f, internal_id: e.target.value }))} />
+              </Box>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.8 }}>
+                <Select size="small" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} sx={fieldSx}>
+                  {TYPE_OPTIONS.map((o) => <MenuItem key={o.value} value={o.value} sx={{ fontSize: '0.85rem' }}>{o.label}</MenuItem>)}
+                </Select>
+                <TextField label="Commission rate (%)" type="number" size="small" value={form.commission_rate} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, commission_rate: e.target.value }))} />
+              </Box>
+              {form.type === 'iframe' ? (
+                <TextField label="Iframe URL" size="small" value={form.iframe_url} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, iframe_url: e.target.value }))} />
+              ) : (
+                <TextField label="Endpoint URL" size="small" value={form.endpoint_url} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, endpoint_url: e.target.value }))} />
+              )}
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.8 }}>
+                <TextField label="Hash algorithm (optional)" size="small" placeholder="md5, sha256…" value={form.hash_algorithm} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, hash_algorithm: e.target.value }))} />
+                <TextField label="Hash key / secret (optional)" size="small" value={form.hash_key} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, hash_key: e.target.value }))} />
+              </Box>
+            </Box>
+          )}
+
+          {tab === 1 && (
+            <Box>
+              <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted, mb: 1.5 }}>
+                Build the outgoing URL by mapping each query parameter the provider expects to a field on our side.
+              </Typography>
+              {form.url_params.map((row, i) => (
+                <Box key={i} sx={{ display: 'flex', gap: 1, mb: 1.2, alignItems: 'center' }}>
+                  <TextField size="small" placeholder="param name (e.g. ssid)" value={row.param}
+                    onChange={(e) => updateParamRow(i, 'param', e.target.value)} sx={{ ...fieldSx, flex: 1 }} />
+                  <Select size="small" value={row.source} onChange={(e) => updateParamRow(i, 'source', e.target.value)} sx={{ ...fieldSx, flex: 1.3 }}>
+                    {SOURCE_OPTIONS.map((o) => <MenuItem key={o.value} value={o.value} sx={{ fontSize: '0.83rem' }}>{o.label}</MenuItem>)}
+                  </Select>
+                  {row.source === 'static' && (
+                    <TextField size="small" placeholder="value" value={row.value}
+                      onChange={(e) => updateParamRow(i, 'value', e.target.value)} sx={{ ...fieldSx, flex: 1 }} />
+                  )}
+                  <IconButton size="small" onClick={() => removeParamRow(i)}><DeleteOutlineIcon fontSize="small" sx={{ color: '#ef4444' }} /></IconButton>
+                </Box>
+              ))}
+              <Button onClick={addParamRow} startIcon={<AddIcon />} size="small" sx={{ textTransform: 'none', mt: 0.5 }}>
+                Add parameter
+              </Button>
+
+              {editingId && (
+                <Box sx={{ mt: 2.5, pt: 2, borderTop: `1px solid ${COLORS.border}` }}>
+                  <Button onClick={handlePreview} disabled={previewLoading} startIcon={<VisibilityOutlinedIcon />} size="small"
+                    sx={{ textTransform: 'none', fontWeight: 700 }}>
+                    {previewLoading ? <CircularProgress size={16} /> : 'Preview entry URL'}
+                  </Button>
+                  {previewResult?.type === 'success' && (
+                    <Box sx={{ mt: 1.2, p: 1.3, borderRadius: 2, bgcolor: `${COLORS.primary}08`, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography sx={{ fontSize: '0.78rem', color: COLORS.textSecondary, wordBreak: 'break-all', flex: 1 }}>
+                        {previewResult.url}
+                      </Typography>
+                      <Tooltip title="Copy">
+                        <IconButton size="small" onClick={() => navigator.clipboard?.writeText(previewResult.url)}>
+                          <ContentCopyOutlinedIcon sx={{ fontSize: '0.95rem' }} />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  )}
+                  {previewResult?.type === 'error' && <Alert severity="error" sx={{ mt: 1.2, fontSize: '0.8rem' }}>{previewResult.msg}</Alert>}
+                </Box>
+              )}
+            </Box>
+          )}
+
+          {tab === 2 && (
+            <Box>
+              <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted, mb: 1.5 }}>
+                Server-to-server postback the provider sends when a survey completes — field names as the provider sends them.
+              </Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.8, mb: 1.8 }}>
+                <TextField label="Transaction ID field" size="small" value={form.s2s.transaction_id_field} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, transaction_id_field: e.target.value } }))} />
+                <TextField label="Sub ID field (optional)" size="small" value={form.s2s.sub_id_field} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, sub_id_field: e.target.value } }))} />
+                <TextField label="Status field" size="small" value={form.s2s.status_field} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, status_field: e.target.value } }))} />
+                <TextField label="Payout field" size="small" value={form.s2s.payout_field} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, payout_field: e.target.value } }))} />
+              </Box>
+              <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: COLORS.textPrimary, mb: 1 }}>
+                Status mapping (their value → our value)
+              </Typography>
+              {form.s2s.status_map.map((row, i) => (
+                <Box key={i} sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center' }}>
+                  <TextField size="small" placeholder="their status (e.g. completed)" value={row.key}
+                    onChange={(e) => updateMapRow(i, 'key', e.target.value)} sx={{ ...fieldSx, flex: 1 }} />
+                  <Select size="small" value={row.value || ''} onChange={(e) => updateMapRow(i, 'value', e.target.value)} sx={{ ...fieldSx, flex: 1 }}>
+                    <MenuItem value="success" sx={{ fontSize: '0.83rem' }}>success</MenuItem>
+                    <MenuItem value="failed" sx={{ fontSize: '0.83rem' }}>failed</MenuItem>
+                    <MenuItem value="quota_full" sx={{ fontSize: '0.83rem' }}>quota_full</MenuItem>
+                  </Select>
+                  <IconButton size="small" onClick={() => removeMapRow(i)}><DeleteOutlineIcon fontSize="small" sx={{ color: '#ef4444' }} /></IconButton>
+                </Box>
+              ))}
+              <Button onClick={addMapRow} startIcon={<AddIcon />} size="small" sx={{ textTransform: 'none' }}>
+                Add status mapping
+              </Button>
+            </Box>
+          )}
+
+          {tab === 3 && (
+            <Box>
+              <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted, mb: 1.5 }}>
+                Browser redirect postback (used as a fallback/confirmation alongside S2S, or as the only signal for iframe walls).
+              </Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.8, mb: 1.8 }}>
+                <TextField label="Transaction ID field" size="small" value={form.browser.transaction_id_field} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, transaction_id_field: e.target.value } }))} />
+                <TextField label="Sub ID field (optional)" size="small" value={form.browser.sub_id_field} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, sub_id_field: e.target.value } }))} />
+                <TextField label="Payout field" size="small" value={form.browser.payout_field} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, payout_field: e.target.value } }))} />
+                <TextField label="Signature field" size="small" value={form.browser.signature_field} sx={fieldSx}
+                  onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, signature_field: e.target.value } }))} />
+              </Box>
+              <TextField fullWidth label="Hash fields (comma-separated, in signature order)" size="small"
+                value={form.browser.hash_fields} sx={fieldSx}
+                onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, hash_fields: e.target.value } }))} />
+            </Box>
+          )}
+
+          {saveError && <Alert severity="error" sx={{ mt: 2 }}>{saveError}</Alert>}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setDialogOpen(false)} disabled={saving} sx={{ textTransform: 'none', color: COLORS.textSecondary }}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={saving} variant="contained" sx={{
+            textTransform: 'none', fontWeight: 700, borderRadius: 2, px: 3, bgcolor: COLORS.primary, '&:hover': { bgcolor: COLORS.primary },
+          }}>
+            {saving ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : editingId ? 'Save changes' : 'Create offer wall'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </AdminPageWrapper>
   )
 }

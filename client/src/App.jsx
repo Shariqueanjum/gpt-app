@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ThemeProvider, createTheme, Box, Typography, GlobalStyles } from '@mui/material'
 import CssBaseline from '@mui/material/CssBaseline'
@@ -25,19 +25,51 @@ import ProfilePage from './pages/ProfilePage'
 import ProgressPage from './pages/ProgressPage'
 import NotificationsPage from './pages/NotificationsPage'
 
-// Admin pages
-import AdminDashboardPage from './pages/admin/AdminDashboardPage'
-import AdminUsersPage from './pages/admin/AdminUsersPage'
-import AdminWithdrawalsPage from './pages/admin/AdminWithdrawalsPage'
-import AdminTicketsPage from './pages/admin/AdminTicketsPage'
-import AdminOfferWallsPage from './pages/admin/AdminOfferWallsPage'
-import AdminTransactionsPage from './pages/admin/AdminTransactionsPage'
-import AdminSettingsPage from './pages/admin/AdminSettingsPage'
+// Admin pages — lazy loaded so admin code (and recharts) never ships in the
+// public bundle a normal user downloads.
+import AdminLoginPage from './pages/admin/AdminLoginPage'
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'))
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'))
+const AdminWithdrawalsPage = lazy(() => import('./pages/admin/AdminWithdrawalsPage'))
+const AdminTicketsPage = lazy(() => import('./pages/admin/AdminTicketsPage'))
+const AdminOfferWallsPage = lazy(() => import('./pages/admin/AdminOfferWallsPage'))
+// const AdminTransactionsPage = lazy(() => import('./pages/admin/AdminTransactionsPage'))
+const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'))
+const AdminPaymentProofsPage = lazy(() => import('./pages/admin/AdminPaymentProofsPage'))
+const AdminTrafficLogsPage = lazy(() => import('./pages/admin/AdminTrafficLogsPage'))
+const AdminAnnouncementsPage = lazy(() => import('./pages/admin/AdminAnnouncementsPage'))
+const AdminAuditLogsPage = lazy(() => import('./pages/admin/AdminAuditLogsPage'))
+const AdminFraudPage = lazy(() => import('./pages/admin/AdminFraudPage'))
+const AdminReversalsPage = lazy(() => import('./pages/admin/AdminReversalsPage'))
+
+
+// import AdminUsersPage from './pages/admin/AdminUsersPage'
+// import AdminWithdrawalsPage from './pages/admin/AdminWithdrawalsPage'
+// import AdminTicketsPage from './pages/admin/AdminTicketsPage'
+// import AdminOfferWallsPage from './pages/admin/AdminOfferWallsPage'
+// import AdminTransactionsPage from './pages/admin/AdminTransactionsPage'
+// import AdminSettingsPage from './pages/admin/AdminSettingsPage'
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminProtectedRoute from './components/AdminProtectedRoute'
 import PublicOnlyRoute from './components/PublicOnlyRoute'
 import { fetchCurrentUser, restoreAuth } from './slices/authSlice'
+import { restoreAdminAuth } from './slices/adminAuthSlice'
+
+const AdminPageLoader = () => (
+  <Box sx={{
+    minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    bgcolor: '#0d0a1f',
+  }}>
+    <Box sx={{
+      width: 36, height: 36, borderRadius: '50%',
+      border: '3px solid rgba(255,255,255,0.12)', borderTopColor: '#8b5cf6',
+      animation: 'admin-spin 0.8s linear infinite',
+    }} />
+    <GlobalStyles styles={{ '@keyframes admin-spin': { from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } } }} />
+  </Box>
+)
 
 const AUTH_MODAL_ROUTES = ['/login', '/register', '/forgot-password', '/forgot-username']
 
@@ -62,6 +94,7 @@ function App() {
     } else {
       setAuthChecked(true)
     }
+    dispatch(restoreAdminAuth())
   }, [dispatch])
 
   useEffect(() => {
@@ -177,43 +210,74 @@ function App() {
           <ProtectedRoute requireProfile={true}>
             <NotificationsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
           </ProtectedRoute>} />
-
         {/* Admin Routes */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin" element={
-          <ProtectedRoute adminOnly={true}>
-            <AdminDashboardPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-          </ProtectedRoute>
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminDashboardPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
         } />
         <Route path="/admin/users" element={
-          <ProtectedRoute adminOnly={true}>
-            <AdminUsersPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-          </ProtectedRoute>
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminUsersPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
         } />
         <Route path="/admin/withdrawals" element={
-          <ProtectedRoute adminOnly={true}>
-            <AdminWithdrawalsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-          </ProtectedRoute>
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminWithdrawalsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
         } />
         <Route path="/admin/tickets" element={
-          <ProtectedRoute adminOnly={true}>
-            <AdminTicketsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-          </ProtectedRoute>
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminTicketsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
         } />
         <Route path="/admin/offer-walls" element={
-          <ProtectedRoute adminOnly={true}>
-            <AdminOfferWallsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-          </ProtectedRoute>
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminOfferWallsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
         } />
-        <Route path="/admin/transactions" element={
-          <ProtectedRoute adminOnly={true}>
-            <AdminTransactionsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-          </ProtectedRoute>
-        } />
+        {/* <Route path="/admin/transactions" element={
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminTransactionsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
+        } /> */}
         <Route path="/admin/settings" element={
-          <ProtectedRoute adminOnly={true}>
-            <AdminSettingsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-          </ProtectedRoute>
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminSettingsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
         } />
+        <Route path="/admin/payment-proofs" element={
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminPaymentProofsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
+        } />
+        <Route path="/admin/traffic-logs" element={
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminTrafficLogsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
+        } />
+        <Route path="/admin/announcements" element={
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminAnnouncementsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
+        } />
+        <Route path="/admin/audit-logs" element={
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminAuditLogsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
+        } />
+        <Route path="/admin/fraud" element={
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminFraudPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
+        } />
+        <Route path="/admin/reversals" element={
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminReversalsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
+        } />
+       
       </Routes>
     </ThemeProvider>
   )

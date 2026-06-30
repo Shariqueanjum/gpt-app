@@ -1,300 +1,266 @@
-import { useEffect, useState } from 'react'
-import {
-  Box, Typography, Paper, Chip, Skeleton, Pagination,
-  TextField, MenuItem, IconButton, Dialog, DialogTitle,
-  DialogContent, DialogActions, Button, Alert, CircularProgress,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow
-} from '@mui/material'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import CancelIcon from '@mui/icons-material/Cancel'
-import VisibilityIcon from '@mui/icons-material/Visibility'
-import axiosInstance from '../../utils/axiosInstance'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Box, Typography, Avatar, IconButton, TextField, Skeleton, Tooltip } from '@mui/material'
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined'
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined'
+import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined'
 import { AdminPageWrapper } from '../../components/Layout/AdminLayout'
 import { getColors } from '../../components/Layout/SharedLayout'
+import adminAxiosInstance from '../../utils/adminAxiosInstance'
+import {
+  FilterSelect, PaginationFooter, EmptyState, ErrorState, ActionDialog,
+  TableShell, TableScroll,
+} from '../../components/Admin/AdminUiKit'
 
-const STATUS_CONFIG = {
-  pending: { bg: '#fef3c7', color: '#d97706' },
-  approved: { bg: '#d1fae5', color: '#059669' },
-  rejected: { bg: '#fee2e2', color: '#dc2626' },
-  completed: { bg: '#dbeafe', color: '#2563eb' },
+const formatMoney = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+const formatDate = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'
+
+// method_details is a free-form JSON blob (upi_id, bank_account+ifsc, paypal_email…)
+// Render whatever keys are actually present — never assume a fixed shape.
+const MethodDetails = ({ details, COLORS }) => {
+  if (!details || typeof details !== 'object') return <Typography sx={{ fontSize: '0.78rem', color: COLORS.textMuted }}>—</Typography>
+  const entries = Object.entries(details)
+  if (entries.length === 0) return <Typography sx={{ fontSize: '0.78rem', color: COLORS.textMuted }}>—</Typography>
+
+  const copy = (val) => navigator.clipboard?.writeText(String(val))
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+      {entries.map(([key, val]) => (
+        <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Typography sx={{ fontSize: '0.74rem', color: COLORS.textMuted, textTransform: 'capitalize' }}>
+            {key.replace(/_/g, ' ')}:
+          </Typography>
+          <Typography sx={{ fontSize: '0.78rem', color: COLORS.textPrimary, fontWeight: 600 }}>
+            {String(val)}
+          </Typography>
+          <IconButton size="small" onClick={() => copy(val)} sx={{ p: 0.2 }}>
+            <ContentCopyOutlinedIcon sx={{ fontSize: '0.78rem', color: COLORS.textMuted }} />
+          </IconButton>
+        </Box>
+      ))}
+    </Box>
+  )
 }
 
 const AdminWithdrawalsPage = ({ darkMode, toggleDarkMode }) => {
   const COLORS = getColors(darkMode)
-  const [withdrawals, setWithdrawals] = useState([])
-  const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 })
+
+  const [methodFilter, setMethodFilter] = useState('')
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(20)
+
+  const [rows, setRows] = useState([])
+  const [meta, setMeta] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState('pending')
-  const [selectedWithdrawal, setSelectedWithdrawal] = useState(null)
-  const [detailOpen, setDetailOpen] = useState(false)
-  const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(null)
 
-  useEffect(() => { fetchWithdrawals(1) }, [statusFilter])
+  const [approveTarget, setApproveTarget] = useState(null)
+  const [rejectTarget, setRejectTarget] = useState(null)
+  const [bankTxnId, setBankTxnId] = useState('')
+  const [rejectReason, setRejectReason] = useState('')
+  const [actionLoading, setActionLoading] = useState(false)
+  const [actionError, setActionError] = useState('')
 
-  const fetchWithdrawals = async (page) => {
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
     try {
-      setLoading(true)
-      setError(null)
-      const params = new URLSearchParams()
-      params.set('page', page)
-      params.set('limit', 20)
-      params.set('sort_by', 'created_at')
-      params.set('sort_order', 'desc')
-      if (statusFilter) params.set('status', statusFilter)
-
-      const res = await axiosInstance.get(`/admin/withdrawals?${params.toString()}`)
-      setWithdrawals(res.data.data || [])
-      setMeta(res.data.meta || { page: 1, totalPages: 1, total: 0 })
+      const params = { page, limit }
+      if (methodFilter) params.method = methodFilter
+      const res = await adminAxiosInstance.get('/admin/withdrawals/pending', { params })
+      setRows(res.data?.data || [])
+      setMeta(res.data?.meta || null)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load withdrawals')
+      setError(err.response?.data?.message || 'Could not load withdrawals')
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, limit, methodFilter])
 
-  const handleAction = async (id, action) => {
+  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => { setPage(1) }, [methodFilter])
+
+  // Method filter options derived from what's actually on the current page —
+  // there's no admin endpoint listing all configured methods, so we don't fake one.
+  const methodOptions = useMemo(() => {
+    const set = new Set(rows.map((w) => w.method).filter(Boolean))
+    return [{ value: '', label: 'All methods' }, ...[...set].map((m) => ({ value: m, label: m.toUpperCase() }))]
+  }, [rows])
+
+  const handleApprove = async () => {
+    if (!bankTxnId.trim()) return
+    setActionLoading(true); setActionError('')
     try {
-      setActionLoading(true)
-      await axiosInstance.post(`/admin/withdrawals/${id}/${action}`)
-      setSuccess(`Withdrawal ${action}d successfully`)
-      fetchWithdrawals(meta.page)
-      setDetailOpen(false)
-      setTimeout(() => setSuccess(null), 3000)
+      await adminAxiosInstance.put(`/admin/withdrawals/${approveTarget.id}/approve`, {
+        bank_transaction_id: bankTxnId.trim(),
+      })
+      setApproveTarget(null); setBankTxnId('')
+      fetchData()
     } catch (err) {
-      setError(err.response?.data?.message || 'Action failed')
+      setActionError(err.response?.data?.message || 'Failed to approve withdrawal')
     } finally {
       setActionLoading(false)
     }
   }
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return 'N/A'
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
-    })
-  }
-
-  const formatPoints = (val) => {
-    if (val === undefined || val === null) return '0'
-    return Math.floor(val).toLocaleString()
+  const handleReject = async () => {
+    if (!rejectReason.trim()) return
+    setActionLoading(true); setActionError('')
+    try {
+      await adminAxiosInstance.put(`/admin/withdrawals/${rejectTarget.id}/reject`, {
+        reason: rejectReason.trim(),
+      })
+      setRejectTarget(null); setRejectReason('')
+      fetchData()
+    } catch (err) {
+      setActionError(err.response?.data?.message || 'Failed to reject withdrawal')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   return (
     <AdminPageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-      <Box sx={{ maxWidth: 1200 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary }}>
-            Withdrawals
-          </Typography>
-          <Typography sx={{ fontSize: '0.85rem', color: COLORS.textSecondary }}>
-            {meta.total} total
-          </Typography>
-        </Box>
+      <Box sx={{ mb: 2.5 }}>
+        <Typography sx={{ fontWeight: 800, fontSize: '1.25rem', color: COLORS.textPrimary }}>
+          Pending Withdrawals
+        </Typography>
+        <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>
+          {meta ? `${meta.total} awaiting approval` : 'Loading…'}
+        </Typography>
+      </Box>
 
-        <Paper sx={{
-          p: 2, borderRadius: 3, mb: 2,
-          bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`,
-          display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center'
-        }}>
-          <TextField
-            select label="Status" size="small" value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            sx={{
-              minWidth: 160,
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-              }
-            }}
-          >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="pending">Pending</MenuItem>
-            <MenuItem value="approved">Approved</MenuItem>
-            <MenuItem value="rejected">Rejected</MenuItem>
-            <MenuItem value="completed">Completed</MenuItem>
-          </TextField>
-        </Paper>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
+        <FilterSelect value={methodFilter} onChange={setMethodFilter} options={methodOptions} COLORS={COLORS} />
+      </Box>
 
-        {error && (
-          <Alert severity="error" sx={{ borderRadius: 2, mb: 2, fontSize: '0.82rem' }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ borderRadius: 2, mb: 2, fontSize: '0.82rem' }} onClose={() => setSuccess(null)}>
-            {success}
-          </Alert>
-        )}
-
-        <Paper sx={{ borderRadius: 3, overflow: 'hidden', bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
-          {loading ? (
-            <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} variant="rounded" height={50} />)}
-            </Box>
-          ) : withdrawals.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 6 }}>
-              <Typography sx={{ color: COLORS.textSecondary }}>No withdrawals found</Typography>
-            </Box>
-          ) : (
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' }}>
-                    <TableCell sx={{ color: COLORS.textMuted, fontWeight: 700, fontSize: '0.75rem' }}>User</TableCell>
-                    <TableCell sx={{ color: COLORS.textMuted, fontWeight: 700, fontSize: '0.75rem' }}>Amount</TableCell>
-                    <TableCell sx={{ color: COLORS.textMuted, fontWeight: 700, fontSize: '0.75rem' }}>Method</TableCell>
-                    <TableCell sx={{ color: COLORS.textMuted, fontWeight: 700, fontSize: '0.75rem' }}>Status</TableCell>
-                    <TableCell sx={{ color: COLORS.textMuted, fontWeight: 700, fontSize: '0.75rem' }}>Date</TableCell>
-                    <TableCell sx={{ color: COLORS.textMuted, fontWeight: 700, fontSize: '0.75rem' }} align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {withdrawals.map((w) => (
-                    <TableRow key={w.id} sx={{ '&:hover': { bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' } }}>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <Box sx={{
-                            width: 32, height: 32, borderRadius: '50%',
-                            bgcolor: `${COLORS.primary}12`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: COLORS.primary, fontWeight: 700, fontSize: '0.8rem'
-                          }}>
-                            {w.user?.username?.[0]?.toUpperCase() || 'U'}
-                          </Box>
-                          <Box>
-                            <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: COLORS.textPrimary }}>
-                              {w.user?.username || 'Unknown'}
+      <TableShell COLORS={COLORS}>
+        {error ? (
+          <ErrorState label={error} onRetry={fetchData} COLORS={COLORS} />
+        ) : !loading && rows.length === 0 ? (
+          <EmptyState label="No pending withdrawals right now" COLORS={COLORS} />
+        ) : (
+          <TableScroll>
+            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse', minWidth: 950 }}>
+              <Box component="thead">
+                <Box component="tr" sx={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                  {['User', 'Amount', 'Method', 'Pay to', 'Requested', ''].map((h) => (
+                    <Box component="th" key={h} sx={{
+                      textAlign: 'left', px: 2, py: 1.4, fontSize: '0.74rem', fontWeight: 700,
+                      color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap',
+                    }}>{h}</Box>
+                  ))}
+                </Box>
+              </Box>
+              <Box component="tbody">
+                {loading
+                  ? [...Array(6)].map((_, i) => (
+                    <Box component="tr" key={i} sx={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                      <Box component="td" colSpan={6} sx={{ px: 2, py: 1.8 }}><Skeleton variant="rounded" height={32} /></Box>
+                    </Box>
+                  ))
+                  : rows.map((w) => (
+                    <Box component="tr" key={w.id} sx={{
+                      borderBottom: `1px solid ${COLORS.border}`,
+                      '&:hover': { bgcolor: `${COLORS.primary}05` },
+                    }}>
+                      <Box component="td" sx={{ px: 2, py: 1.4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                          <Avatar sx={{ width: 30, height: 30, fontSize: '0.78rem', bgcolor: COLORS.primary }}>
+                            {w.username?.[0]?.toUpperCase() || '?'}
+                          </Avatar>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography sx={{ fontSize: '0.83rem', fontWeight: 700, color: COLORS.textPrimary }} noWrap>
+                              {w.username}
                             </Typography>
-                            <Typography sx={{ fontSize: '0.72rem', color: COLORS.textMuted }}>
-                              #{w.user?.public_id}
+                            <Typography sx={{ fontSize: '0.72rem', color: COLORS.textMuted }} noWrap>
+                              {w.email}
                             </Typography>
                           </Box>
                         </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: COLORS.primary }}>
-                          {formatPoints(w.amount)} pts
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ color: COLORS.textSecondary, fontSize: '0.82rem' }}>
-                        {w.method_name || w.method_code}
-                      </TableCell>
-                      <TableCell>
-                        <Chip size="small" label={w.status} sx={{
-                          bgcolor: STATUS_CONFIG[w.status]?.bg || '#f3f4f6',
-                          color: STATUS_CONFIG[w.status]?.color || '#6b7280',
-                          fontWeight: 700, fontSize: '0.65rem', textTransform: 'capitalize',
-                        }} />
-                      </TableCell>
-                      <TableCell sx={{ color: COLORS.textMuted, fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
-                        {formatDate(w.created_at)}
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" onClick={() => {
-                          setSelectedWithdrawal(w)
-                          setDetailOpen(true)
-                        }} sx={{ color: COLORS.primary }}>
-                          <VisibilityIcon sx={{ fontSize: '1.1rem' }} />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-
-          {meta.totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-              <Pagination
-                count={meta.totalPages}
-                page={meta.page}
-                onChange={(_, page) => fetchWithdrawals(page)}
-                color="primary"
-                size="small"
-                sx={{ '& .MuiPaginationItem-root': { color: COLORS.textSecondary } }}
-              />
-            </Box>
-          )}
-        </Paper>
-
-        <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="sm" fullWidth PaperProps={{
-          sx: { borderRadius: 3, bgcolor: COLORS.cardBg }
-        }}>
-          <DialogTitle sx={{ color: COLORS.textPrimary, fontWeight: 700 }}>
-            Withdrawal Details
-          </DialogTitle>
-          <DialogContent>
-            {selectedWithdrawal && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                  <Paper sx={{ p: 2, borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)', border: `1px solid ${COLORS.border}` }}>
-                    <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted, mb: 0.5 }}>Amount</Typography>
-                    <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: COLORS.primary }}>{formatPoints(selectedWithdrawal.amount)} pts</Typography>
-                  </Paper>
-                  <Paper sx={{ p: 2, borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)', border: `1px solid ${COLORS.border}` }}>
-                    <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted, mb: 0.5 }}>Status</Typography>
-                    <Chip size="small" label={selectedWithdrawal.status} sx={{
-                      bgcolor: STATUS_CONFIG[selectedWithdrawal.status]?.bg || '#f3f4f6',
-                      color: STATUS_CONFIG[selectedWithdrawal.status]?.color || '#6b7280',
-                      fontWeight: 700, fontSize: '0.7rem', textTransform: 'capitalize',
-                    }} />
-                  </Paper>
-                </Box>
-
-                <Box>
-                  <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: COLORS.textPrimary, mb: 1 }}>Payment Details</Typography>
-                  <Paper sx={{ p: 2, borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)', border: `1px solid ${COLORS.border}` }}>
-                    {selectedWithdrawal.method_details && Object.entries(selectedWithdrawal.method_details).map(([key, value]) => (
-                      <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
-                        <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary, textTransform: 'capitalize' }}>{key.replace(/_/g, ' ')}</Typography>
-                        <Typography sx={{ fontSize: '0.82rem', color: COLORS.textPrimary, fontWeight: 600 }}>{value}</Typography>
                       </Box>
-                    ))}
-                  </Paper>
-                </Box>
-
-                {selectedWithdrawal.payment_proof_url && (
-                  <Box>
-                    <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: COLORS.textPrimary, mb: 1 }}>Payment Proof</Typography>
-                    <Box component="img" src={selectedWithdrawal.payment_proof_url} alt="Payment Proof" sx={{
-                      maxWidth: '100%', maxHeight: 400, borderRadius: 2, border: `1px solid ${COLORS.border}`, cursor: 'pointer'
-                    }} onClick={() => window.open(selectedWithdrawal.payment_proof_url, '_blank')} />
-                  </Box>
-                )}
-
-                <Box>
-                  <Typography sx={{ fontSize: '0.78rem', color: COLORS.textMuted }}>Requested: {formatDate(selectedWithdrawal.created_at)}</Typography>
-                  <Typography sx={{ fontSize: '0.78rem', color: COLORS.textMuted }}>User: {selectedWithdrawal.user?.username} ({selectedWithdrawal.user?.email})</Typography>
-                </Box>
+                      <Box component="td" sx={{ px: 2, py: 1.4, whiteSpace: 'nowrap' }}>
+                        <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: COLORS.textPrimary }}>
+                          {formatMoney(w.amount)}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted }}>
+                          bal: {formatMoney(w.balance_available)}
+                        </Typography>
+                      </Box>
+                      <Box component="td" sx={{ px: 2, py: 1.4 }}>
+                        <Typography sx={{
+                          fontSize: '0.74rem', fontWeight: 700, color: COLORS.primary, textTransform: 'uppercase',
+                          bgcolor: `${COLORS.primary}12`, px: 1, py: 0.3, borderRadius: 4, display: 'inline-block',
+                        }}>
+                          {w.method}
+                        </Typography>
+                      </Box>
+                      <Box component="td" sx={{ px: 2, py: 1.4, minWidth: 200 }}>
+                        <MethodDetails details={w.method_details} COLORS={COLORS} />
+                      </Box>
+                      <Box component="td" sx={{ px: 2, py: 1.4, fontSize: '0.78rem', color: COLORS.textMuted, whiteSpace: 'nowrap' }}>
+                        {formatDate(w.created_at)}
+                      </Box>
+                      <Box component="td" sx={{ px: 1, py: 1.4 }}>
+                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                          <Tooltip title="Approve & mark paid">
+                            <IconButton size="small" onClick={() => setApproveTarget(w)} sx={{ color: '#10b981' }}>
+                              <CheckCircleOutlineIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Reject & refund">
+                            <IconButton size="small" onClick={() => setRejectTarget(w)} sx={{ color: '#ef4444' }}>
+                              <CancelOutlinedIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </Box>
+                    </Box>
+                  ))}
               </Box>
-            )}
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            {selectedWithdrawal?.status === 'pending' && (
-              <>
-                <Button onClick={() => handleAction(selectedWithdrawal.id, 'reject')} disabled={actionLoading} sx={{
-                  color: '#ef4444', textTransform: 'none', fontWeight: 700
-                }}>
-                  {actionLoading ? <CircularProgress size={16} /> : 'Reject'}
-                </Button>
-                <Button onClick={() => handleAction(selectedWithdrawal.id, 'approve')} disabled={actionLoading} variant="contained" sx={{
-                  bgcolor: '#10b981', color: '#fff', textTransform: 'none', fontWeight: 700,
-                  borderRadius: 2, '&:hover': { bgcolor: '#059669' }
-                }}>
-                  {actionLoading ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : 'Approve'}
-                </Button>
-              </>
-            )}
-            <Button onClick={() => setDetailOpen(false)} sx={{
-              color: COLORS.textSecondary, textTransform: 'none', fontWeight: 600
-            }}>
-              Close
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+            </Box>
+          </TableScroll>
+        )}
+        {!error && <PaginationFooter meta={meta} onPageChange={setPage} onLimitChange={(v) => { setLimit(v); setPage(1) }} COLORS={COLORS} />}
+      </TableShell>
+
+      <ActionDialog
+        open={!!approveTarget}
+        onClose={() => { setApproveTarget(null); setActionError('') }}
+        title={`Approve withdrawal — ${formatMoney(approveTarget?.amount)}`}
+        onConfirm={handleApprove}
+        confirmLabel="Mark as paid"
+        loading={actionLoading}
+        confirmDisabled={!bankTxnId.trim()}
+        COLORS={COLORS}
+        error={actionError}
+      >
+        <Typography sx={{ fontSize: '0.84rem', color: COLORS.textSecondary, mb: 1.5 }}>
+          Pay <strong>{approveTarget?.username}</strong> via {approveTarget?.method?.toUpperCase()} first, then enter the
+          transaction / UTR reference to confirm.
+        </Typography>
+        <TextField fullWidth size="small" label="Bank / transaction reference ID"
+          value={bankTxnId} onChange={(e) => setBankTxnId(e.target.value)} autoFocus />
+      </ActionDialog>
+
+      <ActionDialog
+        open={!!rejectTarget}
+        onClose={() => { setRejectTarget(null); setActionError('') }}
+        title={`Reject withdrawal — ${formatMoney(rejectTarget?.amount)}`}
+        onConfirm={handleReject}
+        confirmLabel="Reject & refund"
+        danger
+        loading={actionLoading}
+        confirmDisabled={!rejectReason.trim()}
+        COLORS={COLORS}
+        error={actionError}
+      >
+        <Typography sx={{ fontSize: '0.84rem', color: COLORS.textSecondary, mb: 1.5 }}>
+          The full amount is refunded to <strong>{rejectTarget?.username}</strong>'s balance automatically.
+        </Typography>
+        <TextField fullWidth multiline minRows={2} size="small" label="Reason"
+          value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} autoFocus />
+      </ActionDialog>
     </AdminPageWrapper>
   )
 }
