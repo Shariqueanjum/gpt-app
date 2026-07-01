@@ -21,9 +21,6 @@ const TYPE_OPTIONS = [
   { value: 'iframe', label: 'Iframe (embedded)' },
 ]
 
-// Every field that can feed an outgoing URL param — matches resolveParamValue
-// on the backend exactly. Adding anything not in this list would silently
-// resolve to an empty string server-side.
 const SOURCE_OPTIONS = [
   { value: 'transaction_id', label: 'Transaction ID' },
   { value: 'user.public_id', label: 'User · Public ID' },
@@ -41,7 +38,7 @@ const SOURCE_OPTIONS = [
 
 const emptyForm = {
   name: '', internal_id: '', type: 'api', endpoint_url: '', iframe_url: '',
-  hash_algorithm: '', hash_key: '', commission_rate: 20,
+  hash_algorithm: '', hash_key: '', commission_rate: 20, logo_url: '',
   url_params: [{ param: 'user_id', source: 'user.public_id', value: '' }, { param: 'transaction_id', source: 'transaction_id', value: '' }],
   s2s: { transaction_id_field: 'transaction_id', sub_id_field: '', status_field: 'status', payout_field: 'payout', status_map: [{ key: 'completed', value: 'success' }, { key: 'rejected', value: 'failed' }] },
   browser: { transaction_id_field: 'transaction_id', sub_id_field: '', payout_field: 'payout', signature_field: 'hash', hash_fields: 'transaction_id, payout, status' },
@@ -109,6 +106,7 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
       endpoint_url: wall.endpoint_url || '', iframe_url: wall.iframe_url || '',
       hash_algorithm: wall.hash_algorithm || '', hash_key: wall.hash_key || '',
       commission_rate: wall.commission_rate ?? 20,
+      logo_url: wall.logo_url || '',
       url_params: cfg.url_params?.length ? cfg.url_params : emptyForm.url_params,
       s2s: {
         transaction_id_field: cfg.s2s?.transaction_id_field || '',
@@ -147,6 +145,7 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
       hash_algorithm: form.hash_algorithm.trim() || null,
       hash_key: form.hash_key.trim() || null,
       commission_rate: Number(form.commission_rate),
+      logo_url: form.logo_url.trim() || null,
       callback_config: {
         url_params: form.url_params.filter((p) => p.param.trim()),
         s2s: {
@@ -213,248 +212,260 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
   const addMapRow = () => setForm((f) => ({ ...f, s2s: { ...f.s2s, status_map: [...f.s2s.status_map, { key: '', value: '' }] } }))
   const removeMapRow = (i) => setForm((f) => ({ ...f, s2s: { ...f.s2s, status_map: f.s2s.status_map.filter((_, idx) => idx !== i) } }))
 
+  // Build postback URL for display
+  const postbackUrl = form.internal_id
+    ? `${window.location.origin}/api/callback/${form.internal_id.trim().toLowerCase().replace(/\s+/g, '_')}`
+    : ''
+
   return (
     <AdminPageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-      <Box sx={{ mb: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
-        <Box>
-          <Typography sx={{ fontWeight: 800, fontSize: '1.25rem', color: COLORS.textPrimary }}>
-            Offer Walls
-          </Typography>
-          <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>
-            {rows.length} configured · onboard a new survey provider without touching code
-          </Typography>
+      <Box sx={{ maxWidth: 1200, mx: 'auto', px: { xs: 2, md: 3 }, pt: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+          <Box>
+            <Typography sx={{ fontWeight: 800, fontSize: '1.5rem', color: COLORS.textPrimary }}>Offer Walls</Typography>
+            <Typography sx={{ fontSize: '0.85rem', color: COLORS.textSecondary, mt: 0.5 }}>
+              {rows.length} configured · onboard a new survey provider without touching code
+            </Typography>
+          </Box>
+          <Button onClick={openCreate} variant="contained" startIcon={<AddIcon />} sx={{ bgcolor: COLORS.primary, color: '#fff', fontWeight: 700, textTransform: 'none', borderRadius: 2, px: 3, '&:hover': { bgcolor: COLORS.primaryDark } }}>
+            New Wall
+          </Button>
         </Box>
-        <Button onClick={openCreate} startIcon={<AddIcon />} variant="contained" sx={{
-          textTransform: 'none', fontWeight: 700, borderRadius: 2.5, px: 2.5,
-          bgcolor: COLORS.primary, '&:hover': { bgcolor: COLORS.primary },
-        }}>
-          Add offer wall
-        </Button>
-      </Box>
 
-      <TableShell COLORS={COLORS}>
         {error ? (
           <ErrorState label={error} onRetry={fetchData} COLORS={COLORS} />
         ) : !loading && rows.length === 0 ? (
-          <EmptyState label="No offer walls configured yet" COLORS={COLORS} />
+          <EmptyState label="No offer walls yet. Add your first provider." COLORS={COLORS} />
         ) : (
-          <TableScroll>
-            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse', minWidth: 800 }}>
-              <Box component="thead">
-                <Box component="tr" sx={{ borderBottom: `1px solid ${COLORS.border}` }}>
-                  {['Name', 'Internal ID', 'Type', 'Commission', 'Status', ''].map((h) => (
-                    <Box component="th" key={h} sx={{
-                      textAlign: 'left', px: 2, py: 1.4, fontSize: '0.74rem', fontWeight: 700,
-                      color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap',
-                    }}>{h}</Box>
-                  ))}
+          <TableShell COLORS={COLORS}>
+            <TableScroll>
+              <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+                <Box component="thead">
+                  <Box component="tr" sx={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                    {['Name', 'Internal ID', 'Type', 'Commission', 'Status', ''].map((h) => (
+                      <Box key={h} component="th" sx={{ textAlign: 'left', p: 1.5, fontSize: '0.75rem', fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>
+                        {h}
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+                <Box component="tbody">
+                  {loading
+                    ? [...Array(4)].map((_, i) => (
+                      <Box key={i} component="tr">
+                        {[...Array(6)].map((_, j) => (
+                          <Box key={j} component="td" sx={{ p: 1.5 }}>
+                            <Skeleton variant="rounded" height={32} sx={{ borderRadius: 1 }} />
+                          </Box>
+                        ))}
+                      </Box>
+                    ))
+                    : rows.map((wall) => (
+                      <Box key={wall.id} component="tr" sx={{ borderBottom: `1px solid ${COLORS.border}`, '&:hover': { bgcolor: `${COLORS.primary}04` } }}>
+                        <Box component="td" sx={{ p: 1.5 }}>
+                          <Typography sx={{ fontWeight: 600, fontSize: '0.9rem', color: COLORS.textPrimary }}>
+                            {wall.name}
+                          </Typography>
+                        </Box>
+                        <Box component="td" sx={{ p: 1.5 }}>
+                          <Typography sx={{ fontFamily: 'monospace', fontSize: '0.82rem', color: COLORS.textSecondary }}>
+                            {wall.internal_id}
+                          </Typography>
+                        </Box>
+                        <Box component="td" sx={{ p: 1.5 }}>
+                          <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary, textTransform: 'capitalize' }}>
+                            {wall.type}
+                          </Typography>
+                        </Box>
+                        <Box component="td" sx={{ p: 1.5 }}>
+                          <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary }}>
+                            {wall.commission_rate}%
+                          </Typography>
+                        </Box>
+                        <Box component="td" sx={{ p: 1.5 }}>
+                          <Switch
+                            checked={wall.is_active}
+                            disabled={togglingId === wall.id}
+                            onChange={() => handleToggle(wall)}
+                          />
+                        </Box>
+                        <Box component="td" sx={{ p: 1.5, textAlign: 'right' }}>
+                          <Tooltip title="Preview URL">
+                            <IconButton onClick={() => openEdit(wall)} sx={{ color: COLORS.textSecondary, '&:hover': { color: COLORS.primary } }}>
+                              <VisibilityOutlinedIcon sx={{ fontSize: '1.1rem' }} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Edit">
+                            <IconButton onClick={() => openEdit(wall)} sx={{ color: COLORS.textSecondary, '&:hover': { color: COLORS.primary } }}>
+                              <EditIcon sx={{ fontSize: '1.1rem' }} />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </Box>
+                    ))}
                 </Box>
               </Box>
-              <Box component="tbody">
-                {loading
-                  ? [...Array(4)].map((_, i) => (
-                    <Box component="tr" key={i} sx={{ borderBottom: `1px solid ${COLORS.border}` }}>
-                      <Box component="td" colSpan={6} sx={{ px: 2, py: 1.6 }}><Skeleton variant="rounded" height={30} /></Box>
-                    </Box>
-                  ))
-                  : rows.map((wall) => (
-                    <Box component="tr" key={wall.id} sx={{
-                      borderBottom: `1px solid ${COLORS.border}`,
-                      '&:hover': { bgcolor: `${COLORS.primary}05` },
-                    }}>
-                      <Box component="td" sx={{ px: 2, py: 1.4, fontSize: '0.86rem', fontWeight: 700, color: COLORS.textPrimary }}>
-                        {wall.name}
-                      </Box>
-                      <Box component="td" sx={{ px: 2, py: 1.4, fontSize: '0.8rem', color: COLORS.textMuted, fontFamily: 'monospace' }}>
-                        {wall.internal_id}
-                      </Box>
-                      <Box component="td" sx={{ px: 2, py: 1.4 }}>
-                        <Typography sx={{
-                          fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', display: 'inline-block',
-                          color: COLORS.primary, bgcolor: `${COLORS.primary}12`, px: 1, py: 0.3, borderRadius: 4,
-                        }}>
-                          {wall.type}
-                        </Typography>
-                      </Box>
-                      <Box component="td" sx={{ px: 2, py: 1.4, fontSize: '0.83rem', color: COLORS.textSecondary }}>
-                        {wall.commission_rate}%
-                      </Box>
-                      <Box component="td" sx={{ px: 2, py: 1.4 }}>
-                        <Switch size="small" checked={!!wall.is_active} disabled={togglingId === wall.id}
-                          onChange={() => handleToggle(wall)} />
-                      </Box>
-                      <Box component="td" sx={{ px: 1, py: 1.4, textAlign: 'right' }}>
-                        <IconButton size="small" onClick={() => openEdit(wall)}>
-                          <EditIcon fontSize="small" sx={{ color: COLORS.textMuted }} />
-                        </IconButton>
-                      </Box>
-                    </Box>
-                  ))}
-              </Box>
-            </Box>
-          </TableScroll>
+            </TableScroll>
+          </TableShell>
         )}
-      </TableShell>
+      </Box>
 
       <Dialog open={dialogOpen} onClose={() => !saving && setDialogOpen(false)} maxWidth="md" fullWidth
         PaperProps={{ sx: { borderRadius: 3, bgcolor: COLORS.cardBg } }}>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700, color: COLORS.textPrimary }}>
-          {editingId ? `Edit — ${form.name}` : 'New offer wall'}
-          <IconButton size="small" onClick={() => setDialogOpen(false)} disabled={saving}><CloseIcon fontSize="small" /></IconButton>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 2, px: 3 }}>
+          <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: COLORS.textPrimary }}>
+            {editingId ? `Edit — ${form.name}` : 'New offer wall'}
+          </Typography>
+          <IconButton onClick={() => setDialogOpen(false)} disabled={saving} sx={{ color: COLORS.textSecondary }}>
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
+
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 3, borderBottom: `1px solid ${COLORS.border}`, minHeight: 40 }}>
-          <Tab label="Basics" sx={{ textTransform: 'none', fontSize: '0.83rem', minHeight: 40 }} />
-          <Tab label="URL parameters" sx={{ textTransform: 'none', fontSize: '0.83rem', minHeight: 40 }} />
-          <Tab label="S2S callback" sx={{ textTransform: 'none', fontSize: '0.83rem', minHeight: 40 }} />
-          <Tab label="Browser callback" sx={{ textTransform: 'none', fontSize: '0.83rem', minHeight: 40 }} />
+          <Tab label="Basic" sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', color: COLORS.textSecondary, '&.Mui-selected': { color: COLORS.primary } }} />
+          <Tab label="URL Params" sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', color: COLORS.textSecondary, '&.Mui-selected': { color: COLORS.primary } }} />
+          <Tab label="S2S Postback" sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', color: COLORS.textSecondary, '&.Mui-selected': { color: COLORS.primary } }} />
+          <Tab label="Browser Postback" sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', color: COLORS.textSecondary, '&.Mui-selected': { color: COLORS.primary } }} />
         </Tabs>
-        <DialogContent sx={{ pt: 2.5 }}>
+
+        <DialogContent sx={{ px: 3, py: 2.5 }}>
           {tab === 0 && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8 }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.8 }}>
-                <TextField label="Display name" size="small" value={form.name} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-                <TextField label="Internal ID (slug)" size="small" value={form.internal_id} sx={fieldSx}
-                  helperText="lowercase, no spaces — used internally to identify this wall"
-                  onChange={(e) => setForm((f) => ({ ...f, internal_id: e.target.value }))} />
-              </Box>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.8 }}>
-                <Select size="small" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} sx={fieldSx}>
-                  {TYPE_OPTIONS.map((o) => <MenuItem key={o.value} value={o.value} sx={{ fontSize: '0.85rem' }}>{o.label}</MenuItem>)}
-                </Select>
-                <TextField label="Commission rate (%)" type="number" size="small" value={form.commission_rate} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, commission_rate: e.target.value }))} />
-              </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField label="Name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} fullWidth sx={fieldSx} />
+              <TextField label="Internal ID" value={form.internal_id} onChange={(e) => setForm((f) => ({ ...f, internal_id: e.target.value }))} fullWidth sx={fieldSx} helperText="Used in URLs — lowercase, no spaces" />
+              <Select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} fullWidth sx={fieldSx}>
+                {TYPE_OPTIONS.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
+              </Select>
+              <TextField label="Commission Rate (%)" type="number" value={form.commission_rate} onChange={(e) => setForm((f) => ({ ...f, commission_rate: e.target.value }))} fullWidth sx={fieldSx} />
+              <TextField label="Logo URL" value={form.logo_url} onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value }))} fullWidth sx={fieldSx} helperText="Optional — image URL shown on frontend cards" />
+
               {form.type === 'iframe' ? (
-                <TextField label="Iframe URL" size="small" value={form.iframe_url} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, iframe_url: e.target.value }))} />
+                <TextField label="Iframe URL" value={form.iframe_url} onChange={(e) => setForm((f) => ({ ...f, iframe_url: e.target.value }))} fullWidth sx={fieldSx} />
               ) : (
-                <TextField label="Endpoint URL" size="small" value={form.endpoint_url} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, endpoint_url: e.target.value }))} />
+                <TextField label="Endpoint URL" value={form.endpoint_url} onChange={(e) => setForm((f) => ({ ...f, endpoint_url: e.target.value }))} fullWidth sx={fieldSx} />
               )}
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.8 }}>
-                <TextField label="Hash algorithm (optional)" size="small" placeholder="md5, sha256…" value={form.hash_algorithm} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, hash_algorithm: e.target.value }))} />
-                <TextField label="Hash key / secret (optional)" size="small" value={form.hash_key} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, hash_key: e.target.value }))} />
-              </Box>
+
+              <TextField label="Hash Algorithm" value={form.hash_algorithm} onChange={(e) => setForm((f) => ({ ...f, hash_algorithm: e.target.value }))} fullWidth sx={fieldSx} helperText="e.g. sha256, md5 — leave empty if provider doesn't use signatures" />
+              <TextField label="Hash Key" value={form.hash_key} onChange={(e) => setForm((f) => ({ ...f, hash_key: e.target.value }))} fullWidth sx={fieldSx} helperText="Secret key for signature verification" />
+
+              {/* NEW: Postback URL Display */}
+              {postbackUrl && (
+                <Box sx={{ mt: 1, p: 2, bgcolor: `${COLORS.primary}06`, borderRadius: 2, border: `1px dashed ${COLORS.primary}40` }}>
+                  <Typography sx={{ fontWeight: 600, fontSize: '0.8rem', color: COLORS.textPrimary, mb: 1 }}>
+                    Postback URL — Give this to your provider:
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography sx={{ fontFamily: 'monospace', fontSize: '0.78rem', color: COLORS.primary, flex: 1, wordBreak: 'break-all' }}>
+                      {postbackUrl}
+                    </Typography>
+                    <Button
+                      onClick={() => navigator.clipboard.writeText(postbackUrl)}
+                      size="small"
+                      variant="outlined"
+                      startIcon={<ContentCopyOutlinedIcon sx={{ fontSize: '0.9rem' }} />}
+                      sx={{ textTransform: 'none', fontSize: '0.75rem', borderRadius: 1.5, minWidth: 0, whiteSpace: 'nowrap' }}
+                    >
+                      Copy
+                    </Button>
+                  </Box>
+                </Box>
+              )}
             </Box>
           )}
 
           {tab === 1 && (
-            <Box>
-              <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted, mb: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary, mb: 0.5 }}>
                 Build the outgoing URL by mapping each query parameter the provider expects to a field on our side.
               </Typography>
               {form.url_params.map((row, i) => (
-                <Box key={i} sx={{ display: 'flex', gap: 1, mb: 1.2, alignItems: 'center' }}>
-                  <TextField size="small" placeholder="param name (e.g. ssid)" value={row.param}
-                    onChange={(e) => updateParamRow(i, 'param', e.target.value)} sx={{ ...fieldSx, flex: 1 }} />
-                  <Select size="small" value={row.source} onChange={(e) => updateParamRow(i, 'source', e.target.value)} sx={{ ...fieldSx, flex: 1.3 }}>
-                    {SOURCE_OPTIONS.map((o) => <MenuItem key={o.value} value={o.value} sx={{ fontSize: '0.83rem' }}>{o.label}</MenuItem>)}
+                <Box key={i} sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+                  <TextField label="Param name" value={row.param} onChange={(e) => updateParamRow(i, 'param', e.target.value)} sx={{ ...fieldSx, flex: 1 }} />
+                  <Select value={row.source} onChange={(e) => updateParamRow(i, 'source', e.target.value)} sx={{ ...fieldSx, flex: 1.5 }}>
+                    {SOURCE_OPTIONS.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
                   </Select>
                   {row.source === 'static' && (
-                    <TextField size="small" placeholder="value" value={row.value}
-                      onChange={(e) => updateParamRow(i, 'value', e.target.value)} sx={{ ...fieldSx, flex: 1 }} />
+                    <TextField label="Value" value={row.value} onChange={(e) => updateParamRow(i, 'value', e.target.value)} sx={{ ...fieldSx, flex: 1 }} />
                   )}
-                  <IconButton size="small" onClick={() => removeParamRow(i)}><DeleteOutlineIcon fontSize="small" sx={{ color: '#ef4444' }} /></IconButton>
+                  <IconButton onClick={() => removeParamRow(i)} sx={{ color: COLORS.textMuted, mt: 0.5 }}>
+                    <DeleteOutlineIcon />
+                  </IconButton>
                 </Box>
               ))}
-              <Button onClick={addParamRow} startIcon={<AddIcon />} size="small" sx={{ textTransform: 'none', mt: 0.5 }}>
+              <Button onClick={addParamRow} variant="outlined" startIcon={<AddIcon />} sx={{ alignSelf: 'flex-start', textTransform: 'none', borderRadius: 2 }}>
                 Add parameter
               </Button>
 
               {editingId && (
-                <Box sx={{ mt: 2.5, pt: 2, borderTop: `1px solid ${COLORS.border}` }}>
-                  <Button onClick={handlePreview} disabled={previewLoading} startIcon={<VisibilityOutlinedIcon />} size="small"
-                    sx={{ textTransform: 'none', fontWeight: 700 }}>
-                    {previewLoading ? <CircularProgress size={16} /> : 'Preview entry URL'}
+                <Box sx={{ mt: 2 }}>
+                  <Button onClick={handlePreview} disabled={previewLoading} variant="outlined" startIcon={<VisibilityOutlinedIcon />} sx={{ textTransform: 'none', borderRadius: 2 }}>
+                    {previewLoading ? <CircularProgress size={18} /> : 'Preview URL'}
                   </Button>
                   {previewResult?.type === 'success' && (
-                    <Box sx={{ mt: 1.2, p: 1.3, borderRadius: 2, bgcolor: `${COLORS.primary}08`, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography sx={{ fontSize: '0.78rem', color: COLORS.textSecondary, wordBreak: 'break-all', flex: 1 }}>
+                    <Box sx={{ mt: 1.5, p: 1.5, bgcolor: `${COLORS.success}08`, borderRadius: 2, border: `1px solid ${COLORS.success}30`, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography sx={{ fontFamily: 'monospace', fontSize: '0.78rem', color: COLORS.textPrimary, flex: 1, wordBreak: 'break-all' }}>
                         {previewResult.url}
                       </Typography>
-                      <Tooltip title="Copy">
-                        <IconButton size="small" onClick={() => navigator.clipboard?.writeText(previewResult.url)}>
-                          <ContentCopyOutlinedIcon sx={{ fontSize: '0.95rem' }} />
-                        </IconButton>
-                      </Tooltip>
+                      <IconButton onClick={() => navigator.clipboard?.writeText(previewResult.url)} sx={{ color: COLORS.textSecondary }}>
+                        <ContentCopyOutlinedIcon sx={{ fontSize: '1rem' }} />
+                      </IconButton>
                     </Box>
                   )}
-                  {previewResult?.type === 'error' && <Alert severity="error" sx={{ mt: 1.2, fontSize: '0.8rem' }}>{previewResult.msg}</Alert>}
+                  {previewResult?.type === 'error' && <Alert severity="error" sx={{ mt: 1.5, borderRadius: 2 }}>{previewResult.msg}</Alert>}
                 </Box>
               )}
             </Box>
           )}
 
           {tab === 2 && (
-            <Box>
-              <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted, mb: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary, mb: 0.5 }}>
                 Server-to-server postback the provider sends when a survey completes — field names as the provider sends them.
               </Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.8, mb: 1.8 }}>
-                <TextField label="Transaction ID field" size="small" value={form.s2s.transaction_id_field} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, transaction_id_field: e.target.value } }))} />
-                <TextField label="Sub ID field (optional)" size="small" value={form.s2s.sub_id_field} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, sub_id_field: e.target.value } }))} />
-                <TextField label="Status field" size="small" value={form.s2s.status_field} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, status_field: e.target.value } }))} />
-                <TextField label="Payout field" size="small" value={form.s2s.payout_field} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, payout_field: e.target.value } }))} />
-              </Box>
-              <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: COLORS.textPrimary, mb: 1 }}>
-                Status mapping (their value → our value)
-              </Typography>
+              <TextField label="Transaction ID field" value={form.s2s.transaction_id_field} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, transaction_id_field: e.target.value } }))} fullWidth sx={fieldSx} helperText="e.g. transaction_id, tx_id, txn" />
+              <TextField label="Sub ID field (optional)" value={form.s2s.sub_id_field} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, sub_id_field: e.target.value } }))} fullWidth sx={fieldSx} helperText="Field that echoes our internal TXN-... ID" />
+              <TextField label="Status field" value={form.s2s.status_field} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, status_field: e.target.value } }))} fullWidth sx={fieldSx} />
+              <TextField label="Payout field" value={form.s2s.payout_field} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, payout_field: e.target.value } }))} fullWidth sx={fieldSx} />
+
+              <Typography sx={{ fontWeight: 600, fontSize: '0.85rem', color: COLORS.textPrimary, mt: 1 }}>Status mapping (their value → our value)</Typography>
               {form.s2s.status_map.map((row, i) => (
-                <Box key={i} sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center' }}>
-                  <TextField size="small" placeholder="their status (e.g. completed)" value={row.key}
-                    onChange={(e) => updateMapRow(i, 'key', e.target.value)} sx={{ ...fieldSx, flex: 1 }} />
-                  <Select size="small" value={row.value || ''} onChange={(e) => updateMapRow(i, 'value', e.target.value)} sx={{ ...fieldSx, flex: 1 }}>
-                    <MenuItem value="success" sx={{ fontSize: '0.83rem' }}>success</MenuItem>
-                    <MenuItem value="failed" sx={{ fontSize: '0.83rem' }}>failed</MenuItem>
-                    <MenuItem value="quota_full" sx={{ fontSize: '0.83rem' }}>quota_full</MenuItem>
-                  </Select>
-                  <IconButton size="small" onClick={() => removeMapRow(i)}><DeleteOutlineIcon fontSize="small" sx={{ color: '#ef4444' }} /></IconButton>
+                <Box key={i} sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                  <TextField label="Their value" value={row.key} onChange={(e) => updateMapRow(i, 'key', e.target.value)} sx={{ ...fieldSx, flex: 1 }} />
+                  <Typography sx={{ color: COLORS.textMuted }}>→</Typography>
+                  <TextField label="Our value" value={row.value} onChange={(e) => updateMapRow(i, 'value', e.target.value)} sx={{ ...fieldSx, flex: 1 }} />
+                  <IconButton onClick={() => removeMapRow(i)} sx={{ color: COLORS.textMuted }}>
+                    <DeleteOutlineIcon />
+                  </IconButton>
                 </Box>
               ))}
-              <Button onClick={addMapRow} startIcon={<AddIcon />} size="small" sx={{ textTransform: 'none' }}>
-                Add status mapping
+              <Button onClick={addMapRow} variant="outlined" startIcon={<AddIcon />} sx={{ alignSelf: 'flex-start', textTransform: 'none', borderRadius: 2 }}>
+                Add mapping
               </Button>
             </Box>
           )}
 
           {tab === 3 && (
-            <Box>
-              <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted, mb: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary, mb: 0.5 }}>
                 Browser redirect postback (used as a fallback/confirmation alongside S2S, or as the only signal for iframe walls).
               </Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.8, mb: 1.8 }}>
-                <TextField label="Transaction ID field" size="small" value={form.browser.transaction_id_field} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, transaction_id_field: e.target.value } }))} />
-                <TextField label="Sub ID field (optional)" size="small" value={form.browser.sub_id_field} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, sub_id_field: e.target.value } }))} />
-                <TextField label="Payout field" size="small" value={form.browser.payout_field} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, payout_field: e.target.value } }))} />
-                <TextField label="Signature field" size="small" value={form.browser.signature_field} sx={fieldSx}
-                  onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, signature_field: e.target.value } }))} />
-              </Box>
-              <TextField fullWidth label="Hash fields (comma-separated, in signature order)" size="small"
-                value={form.browser.hash_fields} sx={fieldSx}
-                onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, hash_fields: e.target.value } }))} />
+              <TextField label="Transaction ID field" value={form.browser.transaction_id_field} onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, transaction_id_field: e.target.value } }))} fullWidth sx={fieldSx} />
+              <TextField label="Sub ID field (optional)" value={form.browser.sub_id_field} onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, sub_id_field: e.target.value } }))} fullWidth sx={fieldSx} />
+              <TextField label="Payout field" value={form.browser.payout_field} onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, payout_field: e.target.value } }))} fullWidth sx={fieldSx} />
+              <TextField label="Signature field" value={form.browser.signature_field} onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, signature_field: e.target.value } }))} fullWidth sx={fieldSx} helperText="e.g. hash, sig, signature" />
+              <TextField label="Hash fields (comma-separated)" value={form.browser.hash_fields} onChange={(e) => setForm((f) => ({ ...f, browser: { ...f.browser, hash_fields: e.target.value } }))} fullWidth sx={fieldSx} helperText="Fields included in the signature, e.g. transaction_id, payout, status" />
             </Box>
           )}
 
-          {saveError && <Alert severity="error" sx={{ mt: 2 }}>{saveError}</Alert>}
+          {saveError && <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>{saveError}</Alert>}
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+
+        <DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${COLORS.border}` }}>
           <Button onClick={() => setDialogOpen(false)} disabled={saving} sx={{ textTransform: 'none', color: COLORS.textSecondary }}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={saving} variant="contained" sx={{
-            textTransform: 'none', fontWeight: 700, borderRadius: 2, px: 3, bgcolor: COLORS.primary, '&:hover': { bgcolor: COLORS.primary },
-          }}>
-            {saving ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : editingId ? 'Save changes' : 'Create offer wall'}
+          <Button onClick={handleSave} disabled={saving} variant="contained" sx={{ bgcolor: COLORS.primary, color: '#fff', fontWeight: 700, textTransform: 'none', borderRadius: 2, px: 4, '&:hover': { bgcolor: COLORS.primaryDark } }}>
+            {saving ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : (editingId ? 'Save Changes' : 'Create Wall')}
           </Button>
         </DialogActions>
       </Dialog>

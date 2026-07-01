@@ -1,7 +1,7 @@
 // ============================================================
-// EarnPage.jsx — Offer Wall Content Page
+// EarnPage.jsx — Offer Wall Content Page (FIXED)
 // ============================================================
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import {
@@ -36,13 +36,20 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  // FIX: Refs to prevent duplicate operations
+  const wallLoadedRef = useRef(false)
+  const clickCreatedRef = useRef(false)
+
   useEffect(() => { fetchOfferWalls() }, [])
 
+  // FIX: Only trigger when wallId changes, not when offerWalls changes
   useEffect(() => {
     if (!wallId || offerWalls.length === 0) return
     const wall = offerWalls.find(w => w.internal_id === wallId || w.id === parseInt(wallId))
-    if (wall) loadWallContent(wall)
-  }, [wallId, offerWalls])
+    if (wall && !wallLoadedRef.current) {
+      loadWallContent(wall)
+    }
+  }, [wallId]) // REMOVED offerWalls from deps
 
   const fetchOfferWalls = async () => {
     try {
@@ -53,44 +60,58 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
       if (!wallId && tab) { setLoading(false); return }
       if (wallId) {
         const wall = walls.find(w => w.internal_id === wallId || w.id === parseInt(wallId))
-        if (wall) await loadWallContent(wall)
-        else { setError('Offer wall not found'); setLoading(false) }
-      } else setLoading(false)
+        if (wall && !wallLoadedRef.current) {
+          await loadWallContent(wall)
+        } else if (!wall) {
+          setError('Offer wall not found')
+          setLoading(false)
+        }
+      } else {
+        setLoading(false)
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load offer walls')
       setLoading(false)
     }
   }
 
-  const trackClick = async (wallId) => {
+  // NEW: Get entry URL from backend (creates click + returns URL)
+  const getEntryUrl = async (wall) => {
     try {
-      const res = await axiosInstance.post('/survey-clicks/', { offer_wall_id: wallId })
+      const res = await axiosInstance.post(`/offer-walls/${wall.internal_id}/entry`)
       return res.data.data
     } catch (err) {
-      console.error('Click tracking failed:', err)
+      console.error('Entry URL failed:', err)
       return null
     }
   }
 
   const loadWallContent = async (wall) => {
+    if (wallLoadedRef.current) return
+    wallLoadedRef.current = true
+    clickCreatedRef.current = false
+
     setSelectedWall(wall)
     setError(null)
     setLoading(true)
 
     try {
       if (wall.type === 'iframe') {
-        // IFRAME: Track click on load — partner needs transaction_id in URL
-        const clickData = await trackClick(wall.id)
-        const url = buildWallUrl(wall, clickData)
-        setIframeUrl(url)
+        // FIX: Use backend API to get iframe URL with click already created
+        const entryData = await getEntryUrl(wall)
+        if (entryData?.iframe_src) {
+          setIframeUrl(entryData.iframe_src)
+        } else {
+          setError('Failed to load iframe URL')
+        }
         setLoading(false)
       } else if (wall.type === 'api') {
-        // API: Don't track click yet. Just fetch surveys.
+        // API: Fetch surveys (mock for now)
         const res = await axiosInstance.get(`/offer-walls/${wall.internal_id}/surveys`)
         setSurveys(res.data.data?.surveys || [])
         setLoading(false)
       } else if (wall.type === 'router') {
-        // ROUTER: Don't track click yet. Just show landing page.
+        // ROUTER: Just show landing page
         setLoading(false)
       } else {
         setError(`Unknown offer wall type: ${wall.type}`)
@@ -102,65 +123,62 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
     }
   }
 
-  const buildWallUrl = (wall, clickData) => {
-    if (!wall.endpoint_url) return ''
-    const url = new URL(wall.endpoint_url)
-    const paramMapping = wall.config?.param_mapping || {}
-    const params = {}
-
-    if (paramMapping.user_id) params[paramMapping.user_id] = user?.public_id || user?.id
-    if (paramMapping.sub_id) params[paramMapping.sub_id] = user?.public_id || user?.id
-    if ((clickData?.click_id || clickData?.id) && paramMapping.transaction_id) {
-      params[paramMapping.transaction_id] = clickData.click_id || clickData.id
-    }
-    if (paramMapping.username && user?.username) params[paramMapping.username] = user.username
-    if (paramMapping.email && user?.email) params[paramMapping.email] = user.email
-    if (paramMapping.country && user?.country) params[paramMapping.country] = user.country
-
-    if (wall.config?.extra_params) {
-      Object.entries(wall.config.extra_params).forEach(([key, value]) => {
-        const replaced = String(value)
-          .replace(/{{user_id}}/g, user?.public_id || user?.id || '')
-          .replace(/{{username}}/g, user?.username || '')
-          .replace(/{{email}}/g, user?.email || '')
-          .replace(/{{country}}/g, user?.country || '')
-          .replace(/{{click_id}}/g, clickData?.click_id || clickData?.id || '')
-        if (replaced) params[key] = replaced
-      })
-    }
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) url.searchParams.set(key, String(value))
-    })
-    return url.toString()
-  }
-
-  // API: Track click ONLY when user clicks a specific survey
+  // API: Track click when user clicks a specific survey
   const handleSurveyClick = async (survey) => {
-    if (!selectedWall) return
-    const clickData = await trackClick(selectedWall.id)
-    let surveyUrl = survey.url || survey.survey_url || survey.link || survey.entry_url
-    if (!surveyUrl && survey.survey_id) {
-      surveyUrl = `${selectedWall.endpoint_url}?survey_id=${survey.survey_id}&user_id=${user?.public_id}`
-    }
-    if (!surveyUrl) { console.error('No survey URL'); return }
+    if (!selectedWall || clickCreatedRef.current) return
+    clickCreatedRef.current = true
 
-    if (clickData?.click_id || clickData?.id) {
-      try {
-        const url = new URL(surveyUrl)
-        url.searchParams.set('transaction_id', clickData.click_id || clickData.id)
-        surveyUrl = url.toString()
-      } catch (e) {}
+    try {
+      const res = await axiosInstance.post('/survey-clicks/', {
+        offer_wall_id: selectedWall.id,
+        survey_id: survey.survey_id,
+        survey_name: survey.survey_name,
+        cpa: survey.cpa || survey.payout || survey.reward
+      })
+      const clickData = res.data.data
+
+      let surveyUrl = survey.url || survey.survey_url || survey.link || survey.entry_url
+      if (!surveyUrl && survey.survey_id) {
+        surveyUrl = `${selectedWall.endpoint_url}?survey_id=${survey.survey_id}&user_id=${user?.public_id}`
+      }
+      if (!surveyUrl) {
+        console.error('No survey URL')
+        clickCreatedRef.current = false
+        return
+      }
+
+      if (clickData?.transaction_id) {
+        try {
+          const url = new URL(surveyUrl)
+          url.searchParams.set('transaction_id', clickData.transaction_id)
+          surveyUrl = url.toString()
+        } catch (e) {}
+      }
+      window.open(surveyUrl, '_blank')
+    } catch (err) {
+      console.error('Survey click failed:', err)
+      clickCreatedRef.current = false
     }
-    window.open(surveyUrl, '_blank')
   }
 
-  // ROUTER: Track click ONLY when user clicks "Start Earning Now"
+  // ROUTER: Track click when user clicks "Start Earning Now"
   const handleRouterStart = async () => {
-    if (!selectedWall) return
-    const clickData = await trackClick(selectedWall.id)
-    const routerUrl = buildWallUrl(selectedWall, clickData)
-    if (routerUrl) window.open(routerUrl, '_blank')
+    if (!selectedWall || clickCreatedRef.current) return
+    clickCreatedRef.current = true
+
+    try {
+      const entryData = await getEntryUrl(selectedWall)
+      if (entryData?.redirect_url) {
+        window.open(entryData.redirect_url, '_blank')
+      } else {
+        setError('Failed to generate redirect URL')
+        clickCreatedRef.current = false
+      }
+    } catch (err) {
+      console.error('Router start failed:', err)
+      setError('Failed to start. Please try again.')
+      clickCreatedRef.current = false
+    }
   }
 
   const formatPoints = (val) => {
@@ -210,19 +228,16 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {filteredWalls.map((wall, idx) => {
                 const color = ['#5312bc', '#2563eb', '#10b981', '#f59e0b', '#ec4899', '#14b8a6'][idx % 6]
-                const isLocked = wall.min_level && user?.level_id < wall.min_level
-                const maxPayout = wall.config?.max_payout ? formatDollar(wall.config.max_payout / 100) : null
 
                 return (
                   <Paper key={wall.id} onClick={() => {
-                    if (!isLocked) navigate(`/earn?wall=${wall.internal_id || wall.id}`)
+                    navigate(`/earn?wall=${wall.internal_id || wall.id}`)
                   }} sx={{
                     p: 3, borderRadius: 3, bgcolor: COLORS.cardBg,
                     border: `1px solid ${COLORS.border}`,
-                    cursor: isLocked ? 'not-allowed' : 'pointer',
-                    opacity: isLocked ? 0.5 : 1,
+                    cursor: 'pointer',
                     transition: 'all 0.25s ease',
-                    '&:hover': !isLocked && {
+                    '&:hover': {
                       boxShadow: '0 8px 30px rgba(83,18,188,0.08)',
                       transform: 'translateY(-2px)',
                       borderColor: `${COLORS.primary}30`,
@@ -230,23 +245,26 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
                   }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'space-between' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box sx={{ width: 48, height: 48, borderRadius: 2.5, bgcolor: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: color }}>
-                            {wall.name?.[0]?.toUpperCase() || 'P'}
-                          </Typography>
-                        </Box>
-                        <Box>
-                          <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: COLORS.textPrimary }}>{wall.name}</Typography>
-                          <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary }}>{wall.description || 'High paying surveys and offers'}</Typography>
-                          <Box sx={{ display: 'flex', gap: 1, mt: 0.8 }}>
-                            {wall.rating && <Chip size="small" label={`${wall.rating} ★`} sx={{ bgcolor: `${COLORS.gold}12`, color: COLORS.gold, fontWeight: 600, fontSize: '0.7rem' }} />}
-                            {wall.category && <Chip size="small" label={wall.category} sx={{ bgcolor: `${color}08`, color: color, fontWeight: 600, fontSize: '0.7rem' }} />}
+                        {wall.logo_url ? (
+                          <Box component="img" src={wall.logo_url} sx={{ width: 48, height: 48, borderRadius: 2, objectFit: 'contain' }} />
+                        ) : (
+                          <Box sx={{ width: 48, height: 48, borderRadius: 2.5, bgcolor: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: color }}>
+                              {wall.name?.[0]?.toUpperCase() || 'P'}
+                            </Typography>
                           </Box>
+                        )}
+                        <Box>
+                          <Typography sx={{ fontWeight: 700, fontSize: '1.05rem', color: COLORS.textPrimary }}>
+                            {wall.name}
+                          </Typography>
+                          <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary }}>
+                            {wall.description || 'High paying surveys and offers'}
+                          </Typography>
                         </Box>
                       </Box>
                       <Box sx={{ textAlign: 'right' }}>
-                        {maxPayout && <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: COLORS.gold }}>Up to {maxPayout}</Typography>}
-                        <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted }}>{wall.type === 'iframe' ? 'In-app' : wall.type === 'api' ? 'Surveys' : 'External'}</Typography>
+                        <Chip size="small" label={wall.type === 'iframe' ? 'In-app' : wall.type === 'api' ? 'Surveys' : 'External'} sx={{ bgcolor: `${COLORS.primary}10`, color: COLORS.primary, fontWeight: 600, fontSize: '0.7rem' }} />
                       </Box>
                     </Box>
                   </Paper>
@@ -260,34 +278,40 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
   }
 
   // ============================================================
-  // RENDER: IFRAME WALL — Loads immediately with click tracked
+  // RENDER: IFRAME WALL
   // ============================================================
   if (selectedWall?.type === 'iframe') {
     return (
       <PageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-        <Box sx={{ maxWidth: '100%', mx: 'auto', height: 'calc(100vh - 120px)' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, px: { xs: 2, md: 3 } }}>
-            <Button onClick={() => navigate(-1)} startIcon={<ArrowBackIcon />} sx={{
-              color: COLORS.textSecondary, textTransform: 'none', fontWeight: 600,
-              '&:hover': { bgcolor: `${COLORS.primary}08`, color: COLORS.primary }
-            }}>
-              Back
-            </Button>
-            <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: COLORS.textPrimary }}>{selectedWall.name}</Typography>
-            <Chip size="small" label="iFrame" sx={{ bgcolor: `${COLORS.primary}12`, color: COLORS.primary, fontWeight: 700, fontSize: '0.65rem' }} />
+        <Box sx={{ maxWidth: 1200, mx: 'auto', pt: 3, px: { xs: 2, md: 3 } }}>
+          <Box onClick={() => navigate(-1)} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3, cursor: 'pointer', color: COLORS.textSecondary, fontWeight: 600, fontSize: '0.9rem', transition: 'color 0.2s', '&:hover': { color: COLORS.primary }, width: 'fit-content' }}>
+            <ArrowBackIcon sx={{ fontSize: '1.1rem' }} />
+            Back to Partners
           </Box>
-          {iframeUrl ? (
-            <iframe
-              src={iframeUrl}
-              title={selectedWall.name}
-              style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12, backgroundColor: darkMode ? '#1e293b' : '#fff' }}
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-            />
-          ) : (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80%' }}>
-              <CircularProgress size={40} sx={{ color: COLORS.primary }} />
+
+          <Paper sx={{ borderRadius: 3, overflow: 'hidden', bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
+            <Box sx={{ p: 2, borderBottom: `1px solid ${COLORS.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography sx={{ fontWeight: 700, color: COLORS.textPrimary }}>
+                {selectedWall.name}
+              </Typography>
+              <Chip size="small" label="In-app" sx={{ bgcolor: `${COLORS.primary}10`, color: COLORS.primary, fontWeight: 600 }} />
             </Box>
-          )}
+            {iframeUrl ? (
+              <Box sx={{ width: '100%', height: { xs: '70vh', md: '80vh' } }}>
+                <iframe
+                  src={iframeUrl}
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  title={selectedWall.name}
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                />
+              </Box>
+            ) : (
+              <Box sx={{ p: 4, textAlign: 'center' }}>
+                <CircularProgress size={40} sx={{ color: COLORS.primary }} />
+                <Typography sx={{ mt: 2, color: COLORS.textSecondary }}>Loading {selectedWall.name}...</Typography>
+              </Box>
+            )}
+          </Paper>
         </Box>
       </PageWrapper>
     )
@@ -300,23 +324,26 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
     return (
       <PageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
         <Box sx={{ maxWidth: 1200, mx: 'auto', pt: 3, px: { xs: 2, md: 3 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-            <Button onClick={() => navigate(-1)} startIcon={<ArrowBackIcon />} sx={{
-              color: COLORS.textSecondary, textTransform: 'none', fontWeight: 600,
-              '&:hover': { bgcolor: `${COLORS.primary}08`, color: COLORS.primary }
-            }}>
-              Back
-            </Button>
-            <Typography sx={{ fontWeight: 700, fontSize: '1.2rem', color: COLORS.textPrimary }}>{selectedWall.name}</Typography>
-            <Chip size="small" label="API" sx={{ bgcolor: `${COLORS.accent}12`, color: COLORS.accent, fontWeight: 700, fontSize: '0.65rem' }} />
+          <Box onClick={() => navigate(-1)} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3, cursor: 'pointer', color: COLORS.textSecondary, fontWeight: 600, fontSize: '0.9rem', transition: 'color 0.2s', '&:hover': { color: COLORS.primary }, width: 'fit-content' }}>
+            <ArrowBackIcon sx={{ fontSize: '1.1rem' }} />
+            Back to Partners
           </Box>
+
+          <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.5rem', md: '2rem' }, color: COLORS.textPrimary, mb: 1 }}>
+            {selectedWall.name}
+          </Typography>
+          <Typography sx={{ fontSize: '0.9rem', color: COLORS.textSecondary, mb: 4 }}>
+            {selectedWall.description || 'Choose a survey to start earning'}
+          </Typography>
 
           {loading ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} variant="rounded" height={100} sx={{ borderRadius: 3 }} />)}
+              {[1, 2, 3].map(i => (
+                <Skeleton key={i} variant="rounded" height={120} sx={{ borderRadius: 3 }} />
+              ))}
             </Box>
           ) : error ? (
-            <Alert severity="error" sx={{ borderRadius: 2, mb: 2 }}>{error}</Alert>
+            <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>
           ) : surveys.length === 0 ? (
             <Paper sx={{ p: 4, borderRadius: 3, textAlign: 'center', bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
               <Typography sx={{ color: COLORS.textSecondary, mb: 1 }}>No surveys available right now.</Typography>
@@ -385,8 +412,6 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
   // RENDER: ROUTER WALL — Landing Page
   // ============================================================
   if (selectedWall?.type === 'router') {
-    const maxPayout = selectedWall.config?.max_payout ? formatDollar(selectedWall.config.max_payout / 100) : '$10.00'
-
     return (
       <PageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
         <Box sx={{ maxWidth: 800, mx: 'auto', pt: 3, px: { xs: 2, md: 3 } }}>
@@ -398,14 +423,18 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
           <Paper sx={{ borderRadius: 4, p: { xs: 3, md: 5 }, mb: 3, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
             <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 6, bgcolor: COLORS.primary }} />
             <Box sx={{ width: 80, height: 80, borderRadius: '50%', bgcolor: `${COLORS.primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2, mt: 1 }}>
-              <Typography sx={{ fontSize: '2rem', fontWeight: 800, color: COLORS.primary }}>{selectedWall.name?.[0]?.toUpperCase() || 'P'}</Typography>
+              {selectedWall.logo_url ? (
+                <Box component="img" src={selectedWall.logo_url} sx={{ width: 60, height: 60, objectFit: 'contain' }} />
+              ) : (
+                <Typography sx={{ fontSize: '2rem', fontWeight: 800, color: COLORS.primary }}>{selectedWall.name?.[0]?.toUpperCase() || 'P'}</Typography>
+              )}
             </Box>
             <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.5rem', md: '2rem' }, color: COLORS.textPrimary, mb: 1 }}>{selectedWall.name}</Typography>
             <Typography sx={{ fontSize: '1.1rem', color: COLORS.textSecondary, mb: 3, maxWidth: 500, mx: 'auto' }}>{selectedWall.description || 'Complete surveys and offers to earn rewards'}</Typography>
 
             <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.5, bgcolor: `${COLORS.gold}15`, border: `1px solid ${COLORS.gold}30`, borderRadius: 3, px: 3, py: 1.5, mb: 4 }}>
               <MonetizationOnIcon sx={{ color: COLORS.gold, fontSize: '1.5rem' }} />
-              <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.gold }}>Earn up to {maxPayout} per survey</Typography>
+              <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.gold }}>Earn rewards per survey</Typography>
             </Box>
 
             <Button onClick={handleRouterStart} variant="contained" sx={{
@@ -450,7 +479,7 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
   return (
     <PageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
       <Box sx={{ maxWidth: 1200, mx: 'auto', pt: 4, textAlign: 'center' }}>
-        {loading ? <CircularProgress size={40} sx={{ color: COLORS.primary }} /> : error ? <Alert severity="error" sx={{ borderRadius: 2, maxWidth: 500, mx: 'auto' }}>{error}</Alert> : <Typography sx={{ color: COLORS.textSecondary }}>Select an offer wall to start earning</Typography>}
+        {loading ? <CircularProgress size={40} sx={{ color: COLORS.primary }} /> : error ? <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert> : null}
       </Box>
     </PageWrapper>
   )

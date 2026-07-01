@@ -374,6 +374,8 @@ const runSchemaUpdates = async () => {
     `ALTER TABLE survey_clicks ADD COLUMN IF NOT EXISTS external_transaction_id VARCHAR(100)`,
     `ALTER TABLE tickets ADD COLUMN IF NOT EXISTS image_url TEXT`,
 
+     `ALTER TABLE offer_walls ADD COLUMN IF NOT EXISTS logo_url TEXT`,
+
 
 
     `CREATE INDEX IF NOT EXISTS idx_traffic_logs_direction ON traffic_logs(direction)`,

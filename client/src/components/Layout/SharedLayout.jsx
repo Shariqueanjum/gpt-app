@@ -25,7 +25,6 @@ import PeopleIcon from '@mui/icons-material/People'
 import HistoryIcon from '@mui/icons-material/History'
 import SupportAgentIcon from '@mui/icons-material/SupportAgent'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
-import SettingsIcon from '@mui/icons-material/Settings'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
@@ -67,7 +66,6 @@ export const MORE_NAV = [
   { label: 'Referrals', icon: PeopleIcon, color: '#ec4899', path: '/referrals' },
   { label: 'Support', icon: SupportAgentIcon, color: '#f59e0b', path: '/support' },
   { label: 'Profile', icon: AccountCircleIcon, color: '#8b5cf6', path: '/profile' },
-  { label: 'Settings', icon: SettingsIcon, color: '#6b7280', path: '/settings' },
    { label: 'Progress', icon: TrendingUpIcon, color: '#5312bc', path: '/progress' },
 ]
 

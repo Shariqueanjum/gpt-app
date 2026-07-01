@@ -28,6 +28,7 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import LockIcon from '@mui/icons-material/Lock'
 import PaymentIcon from '@mui/icons-material/Payment'
 import BarChartIcon from '@mui/icons-material/BarChart'
@@ -68,7 +69,7 @@ const MORE_NAV = [
   { label: 'Referrals', icon: PeopleIcon, color: '#ec4899', path: '/referrals' },
   { label: 'Support', icon: SupportAgentIcon, color: '#f59e0b', path: '/support' },
   { label: 'Profile', icon: AccountCircleIcon, color: '#8b5cf6', path: '/profile' },
-  { label: 'Settings', icon: SettingsIcon, color: '#6b7280', path: '/settings' },
+  { label: 'Progress', icon: TrendingUpIcon, color: '#5312bc', path: '/progress' },
 ]
 
 const MOBILE_NAV = [

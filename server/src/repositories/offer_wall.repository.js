@@ -3,7 +3,7 @@ const pool = require('../config/db');
 const findActiveOfferWalls = async () => {
   const res = await pool.query(
     `SELECT id, name, internal_id, type, endpoint_url, iframe_url, 
-            commission_rate, is_active, hash_key, callback_config
+            commission_rate, is_active, hash_key, callback_config, logo_url
      FROM offer_walls 
      WHERE is_active = true 
      ORDER BY id`
@@ -15,7 +15,7 @@ const findAllOfferWalls = async () => {
   const res = await pool.query(
     `SELECT id, name, internal_id, type, endpoint_url, iframe_url,
             hash_algorithm, commission_rate, is_active, hash_key, callback_config,
-            created_at, updated_at
+            created_at, updated_at, logo_url
      FROM offer_walls
      ORDER BY id`
   );
@@ -25,7 +25,7 @@ const findAllOfferWalls = async () => {
 const findByInternalId = async (internalId) => {
   const res = await pool.query(
     `SELECT id, name, internal_id, type, endpoint_url, iframe_url,
-            commission_rate, is_active, hash_key, callback_config
+            commission_rate, is_active, hash_key, callback_config, logo_url
      FROM offer_walls 
      WHERE internal_id = $1 AND is_active = true`,
     [internalId]
@@ -36,7 +36,7 @@ const findByInternalId = async (internalId) => {
 const findById = async (id) => {
   const res = await pool.query(
     `SELECT id, name, internal_id, type, endpoint_url, iframe_url,
-            commission_rate, is_active, hash_key, callback_config
+            commission_rate, is_active, hash_key, callback_config, logo_url
      FROM offer_walls 
      WHERE id = $1 AND is_active = true`,
     [id]
@@ -48,7 +48,7 @@ const findByIdAdmin = async (id) => {
   const res = await pool.query(
     `SELECT id, name, internal_id, type, endpoint_url, iframe_url,
             hash_algorithm, commission_rate, is_active, hash_key, callback_config,
-            created_at, updated_at
+            created_at, updated_at, logo_url
      FROM offer_walls
      WHERE id = $1`,
     [id]
@@ -60,13 +60,13 @@ const findByIdAdmin = async (id) => {
 
 const createOfferWall = async ({
   name, internal_id, type, endpoint_url, iframe_url,
-  hash_algorithm, hash_key, commission_rate, callback_config,
+  hash_algorithm, hash_key, commission_rate, callback_config,logo_url,
 }) => {
   const res = await pool.query(
     `INSERT INTO offer_walls
        (name, internal_id, type, endpoint_url, iframe_url,
-        hash_algorithm, hash_key, commission_rate, callback_config, is_active)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,true)
+        hash_algorithm, hash_key, commission_rate, callback_config, is_active,logo_url)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,true,$10)
      RETURNING *`,
     [
       name, internal_id, type,
@@ -76,6 +76,7 @@ const createOfferWall = async ({
       hash_key       || null,
       commission_rate,
       JSON.stringify(callback_config || {}),
+       logo_url || null,
     ]
   );
   return res.rows[0];
@@ -84,7 +85,7 @@ const createOfferWall = async ({
 const updateOfferWall = async (id, fields) => {
   const {
     name, internal_id, type, endpoint_url, iframe_url,
-    hash_algorithm, hash_key, commission_rate, callback_config, is_active,
+    hash_algorithm, hash_key, commission_rate, callback_config, is_active,logo_url,
   } = fields;
 
   const res = await pool.query(
@@ -99,8 +100,9 @@ const updateOfferWall = async (id, fields) => {
        commission_rate = COALESCE($8,  commission_rate),
        callback_config = COALESCE($9,  callback_config),
        is_active       = COALESCE($10, is_active),
+       logo_url = COALESCE($11, logo_url),
        updated_at      = NOW()
-     WHERE id = $11
+     WHERE id = $12
      RETURNING *`,
     [
       name         || null,
@@ -113,6 +115,7 @@ const updateOfferWall = async (id, fields) => {
       commission_rate !== undefined ? commission_rate : null,
       callback_config !== undefined ? JSON.stringify(callback_config) : null,
       is_active   !== undefined ? is_active : null,
+      logo_url !== undefined ? logo_url : null,
       id,
     ]
   );
