@@ -64,9 +64,9 @@ const getRecentActivity = async (limit) => {
   const res = await pool.query(
     `(
       SELECT
-        tl.id::text                                         AS id,
-        'survey_completed'                                  AS type,
-        CONCAT(LEFT(tl.user_username, 2), '***')           AS username,
+        tl.id::text AS id,
+        'survey_completed' AS type,
+         tl.user_username AS username, 
         tl.offer_wall_name                                  AS offer_wall,
         (tl.processing_result->>'user_credited')::text      AS amount_raw,
         COALESCE(
@@ -85,7 +85,7 @@ const getRecentActivity = async (limit) => {
       SELECT
         id::text                                            AS id,
         'user_registered'                                   AS type,
-        CONCAT(LEFT(username, 2), '***')                   AS username,
+        username,
         NULL                                               AS offer_wall,
         NULL                                               AS amount_raw,
         COALESCE(country, 'Unknown')                       AS country,
@@ -103,9 +103,9 @@ const getRecentActivity = async (limit) => {
 const formatRow = (row) => ({
   id:         row.id,
   type:       row.type,
-  username:   row.username || 'an***',
+  username:   row.username || 'Anonymous',
   offer_wall: row.offer_wall || null,
-  amount:     row.amount_raw ? parseFloat(row.amount_raw).toFixed(2) : null,
+  amount:    row.amount_raw ? parseFloat(row.amount_raw).toFixed(0) : null,
   country:    row.country || 'Unknown',
   time:       row.created_at,
 })

@@ -1,4 +1,4 @@
-const { getUsersList, getUserDetails, banUser, unbanUser, manualAdjustBalance } = require('../services/admin_user.service');
+const { getUsersList, getUserDetails, getUserFullDetails, getUserTransactions, getUserWithdrawals, getUserReferrals, banUser, unbanUser, manualAdjustBalance } = require('../services/admin_user.service');
 
 const listUsers = async (req, res, next) => {
   try {
@@ -27,6 +27,61 @@ const getUser = async (req, res, next) => {
     next(err);
   }
 };
+
+const getUserFullProfile = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await getUserFullDetails(parseInt(id));
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getUserTransactionHistory = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await getUserTransactions(parseInt(id), req.query);
+    res.json({
+      success: true,
+      data: result.data,
+      meta: result.meta
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getUserWithdrawalHistory = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await getUserWithdrawals(parseInt(id), req.query);
+    res.json({
+      success: true,
+      data: result.data,
+      meta: result.meta
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getUserReferralData = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await getUserReferrals(parseInt(id));
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 const ban = async (req, res, next) => {
   try {
@@ -87,6 +142,10 @@ const adjustBalance = async (req, res, next) => {
 module.exports = {
   listUsers,
   getUser,
+  getUserFullProfile,
+  getUserTransactionHistory,
+  getUserWithdrawalHistory,
+  getUserReferralData,
   ban,
   unban,
   adjustBalance

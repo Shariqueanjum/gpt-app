@@ -236,7 +236,7 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
         type:       'survey_completed',
         username:   username,
         offer_wall: offerWall?.name || 'Survey',
-        amount:     cpaUser ? (cpaUser / 100).toFixed(2) : null,
+        amount:     cpaUser ? cpaUser.toString() : null,
         country:    user?.country || 'Unknown',
       });
     } catch (_) {}

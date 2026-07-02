@@ -99,6 +99,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
   const [loading, setLoading] = useState(true)
   const [scrolled, setScrolled] = useState(false)
   const [activeTab, setActiveTab] = useState('/earn')
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0)
   const sseRef = useRef(null)
 
   useEffect(() => {
@@ -114,9 +115,19 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
     fetchOfferWalls()
     fetchStreakAndAutoCheckIn()
     fetchLiveActivity()
+    fetchUnreadNotifCount()
     connectSSE()
     return () => { if (sseRef.current) sseRef.current.close() }
   }, [dispatch])
+
+  const fetchUnreadNotifCount = async () => {
+    try {
+      const res = await axiosInstance.get('/announcements/')
+      setUnreadNotifCount(res.data?.unread_count || 0)
+    } catch (err) {
+      setUnreadNotifCount(0)
+    }
+  }
 
   const fetchStreakAndAutoCheckIn = async () => {
     try {
@@ -145,7 +156,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
           setLiveActivity(prev => {
             const exists = prev.find(p => p.id === data.id)
             if (exists) return prev
-            return [data, ...prev].slice(0, 20)
+            return [...prev, data].slice(-20)
           })
         } catch { }
       })
@@ -179,7 +190,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
   const fetchLiveActivity = async () => {
     try {
       const res = await axiosInstance.get('/live-activity/recent?limit=15')
-      setLiveActivity(res.data.data || [])
+      setLiveActivity((res.data.data || []).reverse())
     } catch (err) { console.error('Live activity fetch failed:', err) }
   }
 
@@ -220,13 +231,15 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
 
   const timeAgo = (dateStr) => {
     if (!dateStr) return 'Just now'
-    const diff = Date.now() - new Date(dateStr).getTime()
-    const mins = Math.floor(diff / 60000)
-    if (mins < 1) return 'Just now'
-    if (mins < 60) return `${mins} min ago`
-    const hrs = Math.floor(mins / 60)
-    if (hrs < 24) return `${hrs}h ago`
-    return `${Math.floor(hrs / 24)}d ago`
+    const nowUTC = Date.UTC(
+      new Date().getUTCFullYear(),
+      new Date().getUTCMonth(),
+      new Date().getUTCDate(),
+      new Date().getUTCHours(),
+      new Date().getUTCMinutes(),
+      new Date().getUTCSeconds()
+    )
+    const diff = nowUTC - new Date(dateStr).getTime()
   }
 
   const renderActivityItem = (activity, idx) => (
@@ -415,7 +428,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <IconButton onClick={() => navigate('/notifications')} size="small" sx={{ color: COLORS.textSecondary }}>
-                <Badge badgeContent={0} color="error"><NotificationsNoneOutlinedIcon sx={{ fontSize: 22 }} /></Badge>
+                <Badge badgeContent={unreadNotifCount} color="error"><NotificationsNoneOutlinedIcon sx={{ fontSize: 22 }} /></Badge>
               </IconButton>
               <IconButton size="small" onClick={toggleDarkMode} sx={{ color: COLORS.textSecondary }}>
                 {darkMode ? <LightModeOutlinedIcon sx={{ fontSize: 22 }} /> : <DarkModeOutlinedIcon sx={{ fontSize: 22 }} />}
@@ -669,7 +682,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Tooltip title="Notifications">
                 <IconButton onClick={() => navigate('/notifications')} sx={{ color: COLORS.textSecondary, '&:hover': { color: COLORS.primary } }}>
-                  <Badge badgeContent={0} color="error"><NotificationsNoneOutlinedIcon sx={{ fontSize: 24 }} /></Badge>
+                  <Badge badgeContent={unreadNotifCount} color="error"><NotificationsNoneOutlinedIcon sx={{ fontSize: 24 }} /></Badge>
                 </IconButton>
               </Tooltip>
               <Tooltip title={darkMode ? 'Light mode' : 'Dark mode'}>

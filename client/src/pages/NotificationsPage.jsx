@@ -287,7 +287,7 @@ const NotificationsPage = ({ darkMode, toggleDarkMode }) => {
                         mb: 1,
                         wordBreak: 'break-word'
                       }}>
-                        {notif.content}
+                        {notif.message}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
                         <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted }}>

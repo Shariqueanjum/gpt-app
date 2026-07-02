@@ -405,7 +405,7 @@ const SupportPage = ({ darkMode, toggleDarkMode }) => {
                         }}>
                           Your Message
                         </Typography>
-                        <Typography sx={{ fontSize: '0.85rem', color: COLORS.textSecondary, lineHeight: 1.6 }}>
+                        <Typography sx={{ fontSize: '0.85rem', color: COLORS.textSecondary, lineHeight: 1.6,  fontWeight: 500 }}>
                           {ticket.message}
                         </Typography>
                       </Box>
@@ -443,7 +443,7 @@ const SupportPage = ({ darkMode, toggleDarkMode }) => {
                           }}>
                             Admin Response
                           </Typography>
-                          <Typography sx={{ fontSize: '0.85rem', color: COLORS.textSecondary, lineHeight: 1.6 }}>
+                          <Typography sx={{ fontSize: '0.85rem', color: COLORS.textSecondary, lineHeight: 1.6, fontWeight: 500 }}>
                             {ticket.admin_response}
                           </Typography>
                           {ticket.updated_at && (
@@ -456,7 +456,7 @@ const SupportPage = ({ darkMode, toggleDarkMode }) => {
 
                       {!ticket.admin_response && ticket.status === 'open' && (
                         <Typography sx={{
-                          fontSize: '0.8rem', color: COLORS.textMuted, fontStyle: 'italic'
+                          fontSize: '0.8rem', color: COLORS.textMuted, fontStyle: 'italic',fontWeight: 500
                         }}>
                           Our support team will respond to your ticket soon.
                         </Typography>

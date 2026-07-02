@@ -33,7 +33,8 @@ const getUserSurveyStats = async (userId) => {
 };
 
 const lockUserForLevelCheck = async (client, userId) => {
-  const res = await client.query(
+  const executor = client || pool;
+  const res = await executor.query(
     `SELECT id, username, level, balance_available
      FROM users WHERE id = $1 FOR UPDATE`,
     [userId]

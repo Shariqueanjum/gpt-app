@@ -45,7 +45,7 @@ const sendVerificationEmail = async (email, verificationToken) => {
                       <!-- CTA -->
                       <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto 28px;">
                         <tr>
-                          <td align="center" style="border-radius:8px; background-color:#10b981;" bgcolor="#10b981">
+                          <td align="center" style="border-radius:8px; background-color:#5312bc;" bgcolor="#5312bc">
                             <a href="${verificationLink}" 
                                style="display:inline-block; padding:16px 40px; font-size:15px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:8px; letter-spacing:0.3px;">
                               VERIFY YOUR EMAIL
@@ -185,7 +185,7 @@ const sendForgotUsernameEmail = async (email, username) => {
                   <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#4b5563;">
                     You requested a reminder of your username. Here it is:
                   </p>
-                  <p style="margin:0 0 28px;font-size:24px;font-weight:700;color:#10b981;letter-spacing:1px;">
+                  <p style="margin:0 0 28px;font-size:24px;font-weight:700;color:#5312bc;letter-spacing:1px;">
                     ${username}
                   </p>
                   <p style="margin:0 0 24px;font-size:13px;color:#9ca3af;">

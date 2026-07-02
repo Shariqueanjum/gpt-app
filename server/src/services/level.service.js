@@ -6,7 +6,7 @@ const { createTransaction } = require('../repositories/transaction.repository');
 const { TRANSACTION_TYPES, TRANSACTION_STATUS } = require('../constants/transactionTypes');
 
 const calculateUserLevel = async (userId, lockedUser = null ) => {
-  const user = lockedUser || await lockUserForLevelCheck(null, userId); 
+   const user = lockedUser || await findUserById(userId);
   
   if (!user) {
     throw new Error('User not found');
@@ -55,7 +55,7 @@ const checkAndUpgradeLevel = async (userId) => {
       throw new Error('User not found');
     }
 
-    const levelData = await calculateUserLevel(userId);
+    const levelData = await calculateUserLevel(userId, lockedUser);
     
     if (!levelData.qualifies_for_upgrade) {
       await client.query('COMMIT');

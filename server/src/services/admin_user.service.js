@@ -1,5 +1,9 @@
 const pool = require('../config/db');
 const { findUsersForAdmin, findUserById, updateUserBanStatus, adjustUserBalance, lockUserById } = require('../repositories/user.repository');
+const { getTransactionsByUserId } = require('../repositories/transaction.repository');
+const { findWithdrawalsByUserId, countWithdrawalsByUserId } = require('../repositories/withdrawal.repository');
+const { getReferralStats } = require('../repositories/referral.repository');
+const { getUserBalances, getTransactionStats, getTotalWithdrawn, getTotalSurveysCompleted, getTotalReferrals } = require('../repositories/dashboard.repository');
 const { TRANSACTION_TYPES } = require('../constants/transactionTypes');
 
 const getUsersList = async (query = {}) => {
@@ -23,7 +27,7 @@ const getUsersList = async (query = {}) => {
 
 const getUserDetails = async (userId) => {
   const user = await findUserById(userId);
-  
+
   if (!user) {
     const error = new Error('User not found');
     error.status = 404;
@@ -32,7 +36,7 @@ const getUserDetails = async (userId) => {
 
   // Remove sensitive fields
   const { password_hash, ...safeUser } = user;
-  
+
   return {
     user: {
       ...safeUser,
@@ -43,9 +47,99 @@ const getUserDetails = async (userId) => {
   };
 };
 
+const getUserFullDetails = async (userId) => {
+  const user = await findUserById(userId);
+  if (!user) {
+    const error = new Error('User not found');
+    error.status = 404;
+    throw error;
+  }
+
+  // Fetch all stats in parallel for performance
+  const [
+    txStats,
+    totalWithdrawn,
+    totalSurveys,
+    totalReferrals,
+    referralData
+  ] = await Promise.all([
+    getTransactionStats(userId),
+    getTotalWithdrawn(userId),
+    getTotalSurveysCompleted(userId),
+    getTotalReferrals(userId),
+    getReferralStats(userId)
+  ]);
+
+  const { password_hash, ...safeUser } = user;
+
+  return {
+    user: {
+      ...safeUser,
+      balance_available: parseFloat(safeUser.balance_available),
+      balance_locked: parseFloat(safeUser.balance_locked),
+      balance_denied: parseFloat(safeUser.balance_denied)
+    },
+    stats: {
+      total_earned: parseFloat(txStats.total_earned),
+      total_reversed: parseFloat(txStats.total_reversed),
+      total_withdrawn: parseFloat(totalWithdrawn),
+      total_surveys_completed: totalSurveys,
+      total_referrals: totalReferrals,
+      referral_earnings: parseFloat(txStats.referral_earnings)
+    },
+    referrals: referralData
+  };
+};
+
+const getUserTransactions = async (userId, query = {}) => {
+  const filters = {};
+  if (query.type) filters.type = query.type;
+  if (query.status) filters.status = query.status;
+  if (query.date_from && query.date_to) {
+    filters.dateFrom = query.date_from;
+    filters.dateTo = query.date_to;
+  }
+  const pagination = { page: query.page || 1, limit: query.limit || 20 };
+  const sort = { column: query.sort_by || 'created_at', order: query.sort_order || 'desc' };
+  return await getTransactionsByUserId(userId, filters, pagination, sort);
+};
+
+const getUserWithdrawals = async (userId, query = {}) => {
+  const page = parseInt(query.page) || 1;
+  const limit = parseInt(query.limit) || 20;
+  const offset = (page - 1) * limit;
+
+  const [data, total] = await Promise.all([
+    findWithdrawalsByUserId(userId, limit, offset),
+    countWithdrawalsByUserId(userId)
+  ]);
+
+  const parsedData = data.map(w => ({
+    ...w,
+    amount: parseFloat(w.amount),
+    method_details: w.method_details
+  }));
+
+  return {
+    data: parsedData,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNext: page * limit < total,
+      hasPrev: page > 1
+    }
+  };
+};
+
+const getUserReferrals = async (userId) => {
+  return await getReferralStats(userId);
+};
+
 const banUser = async (userId, reason, adminId, adminIp) => {
   const user = await findUserById(userId);
-  
+
   if (!user) {
     const error = new Error('User not found');
     error.status = 404;
@@ -78,7 +172,7 @@ const banUser = async (userId, reason, adminId, adminIp) => {
 
 const unbanUser = async (userId, adminId, adminIp) => {
   const user = await findUserById(userId);
-  
+
   if (!user) {
     const error = new Error('User not found');
     error.status = 404;
@@ -115,9 +209,9 @@ const manualAdjustBalance = async (userId, amount, reason, adminId, adminIp) => 
   try {
     await client.query('BEGIN');
 
-   // const user = await findUserById(userId);
+    // const user = await findUserById(userId);
     const user = await lockUserById(client, userId);
-    
+
     if (!user) {
       throw new Error('User not found');
     }
@@ -136,8 +230,8 @@ const manualAdjustBalance = async (userId, amount, reason, adminId, adminIp) => 
     await client.query(
       `INSERT INTO audit_logs (admin_id, action, target_type, target_id, details, ip_address)
        VALUES ($1, $2, $3, $4, $5, $6)`,
-      [adminId, 'manual_adjustment', 'user', userId, 
-       JSON.stringify({ amount, reason, transaction_id: transaction.id }), adminIp]
+      [adminId, 'manual_adjustment', 'user', userId,
+        JSON.stringify({ amount, reason, transaction_id: transaction.id }), adminIp]
     );
 
     await client.query('COMMIT');
@@ -160,4 +254,9 @@ const manualAdjustBalance = async (userId, amount, reason, adminId, adminIp) => 
   }
 };
 
-module.exports = { getUsersList, getUserDetails, banUser, unbanUser, manualAdjustBalance };
+module.exports = {
+  getUsersList, getUserDetails, getUserFullDetails,
+  getUserTransactions,
+  getUserWithdrawals,
+  getUserReferrals, banUser, unbanUser, manualAdjustBalance
+};
