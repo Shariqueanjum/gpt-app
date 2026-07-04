@@ -26,6 +26,14 @@ const parseS2SCallback = (body, callbackConfig) => {
   const externalTxIdField = config.external_transaction_id_field;
   const externalTransactionId = externalTxIdField ? body[externalTxIdField]  : (subId ? transactionId : null);
 
+  // NEW: Extract username (configurable field name for iframe fallback)
+  // Common field names: username, user_name, user, mid, pid, pub_id, affiliate_id
+  const usernameField = config.username_field || config.user_id_field || config.user_field;
+  const username = usernameField ? body[usernameField] : null;
+
+  // NEW: Extract user_id/public_id (configurable field name)
+  const userPublicIdField = config.user_public_id_field || config.pub_id_field || config.affiliate_id_field;
+  const userPublicId = userPublicIdField ? body[userPublicIdField] : null;
 
   if (!transactionId) {
     throw new Error(`Missing required field: ${config.transaction_id_field}`);
@@ -41,6 +49,8 @@ const parseS2SCallback = (body, callbackConfig) => {
     status: mappedStatus,
     payout: payout !== undefined ? parseFloat(payout) : null,
     externalTransactionId: externalTransactionId ? externalTransactionId.toString() : null,
+    username: username,                    // NEW: for iframe fallback lookup
+    userPublicId: userPublicId, 
     rawStatus,
     rawBody: body
   };
@@ -67,11 +77,21 @@ const parseBrowserCallback = (query, callbackConfig) => {
   const externalTxIdField = config.external_transaction_id_field;
   const externalTransactionId = externalTxIdField ? query[externalTxIdField] : (subId ? transactionId : null);
 
+   // NEW: Extract username for browser callbacks
+  const usernameField = config.username_field || config.user_id_field || config.user_field;
+  const username = usernameField ? query[usernameField] : null;
+
+  // NEW: Extract user_id/public_id for browser callbacks
+  const userPublicIdField = config.user_public_id_field || config.pub_id_field || config.affiliate_id_field;
+  const userPublicId = userPublicIdField ? query[userPublicIdField] : null;
+
   return {
     transactionId: transactionId.toString(),
     subId: subId ? subId.toString() : null,
     externalTransactionId: externalTransactionId ? externalTransactionId.toString() : null,
     payout: payout !== undefined ? parseFloat(payout) : null,
+    username: username,                    // NEW
+    userPublicId: userPublicId,  
     signature: query[config.signature_field] || query.signature || query.hash || query.sig,
     rawQuery: query
   };

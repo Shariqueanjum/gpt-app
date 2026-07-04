@@ -95,8 +95,6 @@ const handleS2S = async (req, res, next) => {
     if (parsed.status === 'success' || parsed.status === 'completed') {
       const result = await processSurveyCompletion(parsed, offerWall);
 
-      console.log("I am the result ",result);
-
        await logIncomingTraffic({
         type: 's2s_callback',
         offer_wall_id: offerWall.id,
@@ -126,7 +124,7 @@ const handleS2S = async (req, res, next) => {
       });
     } else {
       // Failed, rejected, etc.
-      const result = await processNonSuccessCallback(parsed.transactionId, parsed.status, offerWall);
+      const result = await processNonSuccessCallback(parsed, offerWall);
         
       await logIncomingTraffic({
         type: 's2s_callback',
@@ -257,7 +255,6 @@ const handleBrowser = async (req, res, next) => {
 
     if (normalizedStatus === 'success') {
       const result = await processSurveyCompletion(parsed, offerWall);
-      console.log("i am the result",result);
 
     await logIncomingTraffic({
         type: 'browser_callback',
@@ -288,7 +285,7 @@ const handleBrowser = async (req, res, next) => {
         normalizedStatus === 'security' || normalizedStatus === 'security_terminated' ? 'security_terminated' :
         normalizedStatus;
 
-      await processNonSuccessCallback(parsed.transactionId, mappedStatus, offerWall);
+      await processNonSuccessCallback(parsed, offerWall);
       
       await logIncomingTraffic({
         type: 'browser_callback',

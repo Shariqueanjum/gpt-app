@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 const { updateSurveyClickStatus, createTransaction, findTransactionByReference } = require('../repositories/transaction.repository');
-const { findByTransactionId, findByExternalTransactionId, externalTransactionIdExists, updateExternalTransactionId, lockSurveyClickById, lockSurveyClickByTransactionId,lockSurveyClickByExternalId } = require('../repositories/survey_click.repository');
+const { findByTransactionId, findByExternalTransactionId, externalTransactionIdExists, updateExternalTransactionId, lockSurveyClickById, lockSurveyClickByTransactionId, lockSurveyClickByExternalId } = require('../repositories/survey_click.repository');
 const { findUserById } = require('../repositories/user.repository');
 const { getNumericSetting } = require('./settings.service');
 const { TRANSACTION_TYPES, TRANSACTION_STATUS, SURVEY_CLICK_STATUS } = require('../constants/transactionTypes');
@@ -16,7 +16,7 @@ const assertClickBelongsToOfferWall = (click, offerWall) => {
 };
 
 // Find click for callback WITH row locking (prevents race conditions)
-const findAndLockClickForCallback = async (client, parsedCallback) => {
+const findAndLockClickForCallback = async (client, parsedCallback, offerWall) => {
   let click = null;
   let foundBy = null;
 
@@ -74,6 +74,56 @@ const findAndLockClickForCallback = async (client, parsedCallback) => {
     return { click, foundBy, user_id: click.user_id, username: click.username };
   }
 
+    // ============================================
+  // NEW: Priority 5 — IFRAME FALLBACK
+  // For iframe-type offer walls where 3rd party does NOT echo back our transaction_id
+  // We fallback to looking up by username or user_public_id
+  // ONLY applies to iframe type walls
+  // ============================================
+  if (!click && offerWall && offerWall.type === 'iframe') {
+    const identifier = parsedCallback.username || parsedCallback.userPublicId;
+    const identifierField = parsedCallback.username ? 'u.username' : 'u.public_id';
+
+    if (identifier) {
+      const userRes = await client.query(
+        `SELECT sc.*, u.username, u.public_id
+         FROM survey_clicks sc
+         JOIN users u ON sc.user_id = u.id
+         WHERE ${identifierField} = $1
+         AND sc.offer_wall_id = $2
+         AND sc.status = 'pending'
+         AND sc.expires_at > NOW()
+         ORDER BY sc.created_at DESC
+         LIMIT 1
+         FOR UPDATE`,
+        [identifier, offerWall.id]
+      );
+
+      if (userRes.rows.length > 0) {
+        click = userRes.rows[0];
+        foundBy = 'iframe_user_fallback';
+
+        // Store their transaction_id as external_transaction_id for future lookups (reversals)
+        const theirId = parsedCallback.externalTransactionId || parsedCallback.transactionId;
+        if (theirId && !click.external_transaction_id) {
+          try {
+            // Check if this external ID already exists on another click
+            const exists = await externalTransactionIdExists(theirId);
+            if (!exists) {
+              await updateExternalTransactionId(client, click.id, theirId);
+              click.external_transaction_id = theirId;
+            }
+          } catch (e) {
+            // If duplicate, just log and continue — might be a retry callback
+            console.log(`[Credit] External ID ${theirId} already exists on another click, skipping storage`);
+          }
+        }
+
+        return { click, foundBy, user_id: click.user_id, username: click.username };
+      }
+    }
+  }
+
   return { click: null, foundBy: null, user_id: null, username: null };
 };
 
@@ -84,7 +134,7 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
     await client.query('BEGIN');
 
     // FIX: Use unified finder
-   const { click, foundBy, user_id, username } = await findAndLockClickForCallback(client, parsedCallback);
+   const { click, foundBy, user_id, username } = await findAndLockClickForCallback(client, parsedCallback, offerWall);
 
     if (!click) {
       const err = new Error('Transaction ID not found');
@@ -270,17 +320,13 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
   }
 };
 
-const processNonSuccessCallback = async (transactionId, status, offerWall) => {
+const processNonSuccessCallback = async (parsedCallback, offerWall) => {
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
 
-    const { click, foundBy, user_id, username } = await findAndLockClickForCallback(client, { 
-      transactionId, 
-      subId: null, 
-      externalTransactionId: null 
-    });
+    const { click, foundBy, user_id, username } = await findAndLockClickForCallback(client, parsedCallback, offerWall);
     
     if (!click) {
       const err = new Error('Transaction ID not found');
@@ -295,7 +341,7 @@ const processNonSuccessCallback = async (transactionId, status, offerWall) => {
       return { already_processed: true, click_id: click.id, status: click.status, user_id, username };
     }
 
-    await updateSurveyClickStatus(client, click.id, status);
+    await updateSurveyClickStatus(client, click.id, parsedCallback.status);
     
     await client.query('COMMIT');
 
