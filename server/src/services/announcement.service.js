@@ -60,7 +60,7 @@ const createAnnouncementAdmin = async (payload, adminId, adminIp) => {
         title: announcement.title,
         message: announcement.message, // sanitized
         is_active: announcement.is_active,
-        created_at: announcement.created_at
+        created_at: announcement.created_at ? new Date(announcement.created_at).toISOString() : null
       }
     };
 

@@ -38,6 +38,7 @@ const performanceRoutes = require('./routes/performance.routes');
 const adminVPNRoutes = require('./routes/admin_vpn.routes');
 const adminOfferWallRoutes = require('./routes/admin_offer_wall.routes');
 const liveActivityRoutes = require('./routes/live_activity.routes');
+const adminLockedBalanceRoutes = require('./routes/admin_locked_balance.routes');
 
 const app = express();
 
@@ -116,6 +117,8 @@ app.use('/api/admin/vpn', adminVPNRoutes);
 app.use('/api/admin/offer-walls', adminOfferWallRoutes);
 
 app.use('/api/live-activity', liveActivityRoutes);
+
+app.use('/api/admin/locked-balance', adminLockedBalanceRoutes);
 
 app.use(errorHandler)
 

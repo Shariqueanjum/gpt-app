@@ -12,6 +12,14 @@ const getProfile = async (userId) => {
 
   // Remove sensitive fields
   const { password_hash, ...safeUser } = user;
+
+   // Convert timestamps to UTC ISO strings
+  if (safeUser.created_at) {
+    safeUser.created_at = new Date(safeUser.created_at).toISOString();
+  }
+  if (safeUser.updated_at) {
+    safeUser.updated_at = new Date(safeUser.updated_at).toISOString();
+  }
   
   return { user: safeUser };
 };

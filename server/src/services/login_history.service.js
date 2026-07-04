@@ -32,7 +32,10 @@ const getMyLoginHistory = async (userId, validatedQuery) => {
   const { page, limit } = selectQuery.pagination;
 
   return {
-    data,
+    data: data.map(row => ({
+    ...row,
+    created_at: row.created_at ? new Date(row.created_at).toISOString() : null
+  })),
     meta: {
       page,
       limit,

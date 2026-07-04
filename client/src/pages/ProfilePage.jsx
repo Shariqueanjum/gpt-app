@@ -23,6 +23,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import MenuItem from '@mui/material/MenuItem'
 import axiosInstance from '../utils/axiosInstance'
+import { formatUTCDateTime, formatUTCMonthYear } from '../utils/formatTime'
 import { fetchCurrentUser } from '../slices/authSlice'
 import { PageWrapper, getColors } from '../components/Layout/SharedLayout'
 
@@ -157,8 +158,7 @@ const ProfilePage = ({ darkMode, toggleDarkMode }) => {
   }
 
   const getMemberSince = () => {
-    if (!user?.created_at) return 'New member'
-    return new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+     return `Member since ${formatUTCMonthYear(user?.created_at)}`
   }
 
   const getInitials = (name) => {
@@ -168,13 +168,7 @@ const ProfilePage = ({ darkMode, toggleDarkMode }) => {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   }
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return ''
-    return new Date(dateStr).toLocaleString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    })
-  }
+  const formatDate = (dateStr) => dateStr ? formatUTCDateTime(dateStr) : ''
 
   // Generate page numbers for pagination
   const getPageNumbers = () => {
@@ -246,7 +240,7 @@ const ProfilePage = ({ darkMode, toggleDarkMode }) => {
                 />
                 <Chip
                   icon={<CalendarTodayIcon sx={{ fontSize: '0.8rem', color: COLORS.primary }} />}
-                  label={`Since ${getMemberSince()}`}
+                  label={ getMemberSince()}
                   size="small"
                   sx={{ bgcolor: `${COLORS.primary}12`, color: COLORS.primary, fontWeight: 600, fontSize: '0.72rem' }}
                 />

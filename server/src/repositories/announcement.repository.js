@@ -45,7 +45,11 @@ const getActiveAnnouncementsForUser = async (userId, pagination = {}) => {
   );
 
   return {
-    data: dataRes.rows,
+    data: dataRes.rows.map(row => ({
+    ...row,
+    created_at: row.created_at ? new Date(row.created_at).toISOString() : null,
+    read_at: row.read_at ? new Date(row.read_at).toISOString() : null
+  })),
     meta: {
       page,
       limit,
@@ -148,7 +152,10 @@ const getAllAnnouncementsForAdmin = async (pagination = {}) => {
   );
 
   return {
-    data: dataRes.rows,
+    data: dataRes.rows.map(row => ({
+    ...row,
+    created_at: row.created_at ? new Date(row.created_at).toISOString() : null
+  })),
     meta: {
       page,
       limit,

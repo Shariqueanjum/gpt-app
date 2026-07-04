@@ -107,7 +107,7 @@ const formatRow = (row) => ({
   offer_wall: row.offer_wall || null,
   amount:    row.amount_raw ? parseFloat(row.amount_raw).toFixed(0) : null,
   country:    row.country || 'Unknown',
-  time:       row.created_at,
+  time:       row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
 })
 
 module.exports = { stream, recent }

@@ -136,9 +136,13 @@ const processSingleReversal = async (transactionId, reason, source, adminId, adm
         // Lock referrer row
         await lockUserForUpdate(client, originalTx.referrer_id);
 
+         // FIX: Determine referrer's balance field based on whether referral was locked
+        const refWasLocked = refTx.status === 'locked' || refTx.metadata?.is_locked === true;
+        const refBalanceField = refWasLocked ? 'balance_locked' : 'balance_available';
+
         // Deduct from referrer's balance
         await client.query(
-          'UPDATE users SET balance_available = balance_available + $1 WHERE id = $2',
+          `UPDATE users SET ${refBalanceField} = ${refBalanceField} + $1 WHERE id = $2`,
           [-originalTx.referrer_earned, originalTx.referrer_id]
         );
 
@@ -162,7 +166,9 @@ const processSingleReversal = async (transactionId, reason, source, adminId, adm
             source: source,
             admin_id: adminId,
             from_user_id: click.user_id,
-            from_username: click.username
+            from_username: click.username,
+            was_locked: refWasLocked,
+            deducted_from: refBalanceField
           }
         });
       }
@@ -274,11 +280,16 @@ const undoReversal = async (surveyClickId, adminId, adminIp) => {
     if (reversalTx.referrer_id && reversalTx.referrer_earned) {
       const refEarned = Math.abs(parseFloat(reversalTx.referrer_earned));
       
+      // FIX: Find the referral transaction to check if it was locked
+      const refTx = await findReferralTransaction(client, surveyClickId, reversalTx.user_id);
+      const refWasLocked = refTx?.status === 'locked' || refTx?.metadata?.is_locked === true;
+      const refBalanceField = refWasLocked ? 'balance_locked' : 'balance_available';
+
       // Lock referrer row
       await lockUserForUpdate(client, reversalTx.referrer_id);
       
       await client.query(
-        'UPDATE users SET balance_available = balance_available + $1 WHERE id = $2',
+        `UPDATE users SET ${refBalanceField} = ${refBalanceField} + $1 WHERE id = $2`,
         [refEarned, reversalTx.referrer_id]
       );
 
@@ -296,7 +307,8 @@ const undoReversal = async (surveyClickId, adminId, adminIp) => {
         status: TRANSACTION_STATUS.COMPLETED,
         metadata: {
           reason: 'Admin undo referral reversal',
-          admin_id: adminId
+          admin_id: adminId,
+          was_locked: refWasLocked
         }
       });
     }

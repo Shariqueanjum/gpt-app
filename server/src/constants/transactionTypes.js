@@ -11,7 +11,8 @@ const TRANSACTION_TYPES = Object.freeze({
   PAYMENT_PROOF_REWARD: 'payment_proof_reward',
   LEVEL_UP_BONUS: 'level_up_bonus',
   FRAUD_DEDUCTION: 'fraud_deduction',
-  UNDO_REVERSAL: 'undo_reversal'
+  UNDO_REVERSAL: 'undo_reversal',
+  UNLOCK: 'unlock'
 });
 
 const TRANSACTION_STATUS = Object.freeze({

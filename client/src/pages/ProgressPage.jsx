@@ -1,100 +1,85 @@
-// ============================================================
-// ProgressPage.jsx — Level & Progress + Performance Analytics
-// FIXED: Speedometer value below, equal cards, proper phone layout
-// APIs: GET /api/levels/progress, GET /api/performance/
-// ============================================================
 import { useEffect, useState, useCallback } from 'react'
-import { useSelector } from 'react-redux'
 import {
   Box, Typography, Paper, Chip, Skeleton, useTheme, useMediaQuery,
-  Tabs, Tab, LinearProgress, Tooltip, Fade, Grid,
+  Tabs, Tab, LinearProgress, Tooltip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
 } from '@mui/material'
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
-import TrendingUpIcon from '@mui/icons-material/TrendingUp'
-import TrendingDownIcon from '@mui/icons-material/TrendingDown'
-import MouseIcon from '@mui/icons-material/Mouse'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import CancelIcon from '@mui/icons-material/Cancel'
-import SpeedIcon from '@mui/icons-material/Speed'
+import EmojiEventsIcon          from '@mui/icons-material/EmojiEvents'
+import TrendingUpIcon           from '@mui/icons-material/TrendingUp'
+import TrendingDownIcon         from '@mui/icons-material/TrendingDown'
+import MouseIcon                from '@mui/icons-material/Mouse'
+import CheckCircleIcon          from '@mui/icons-material/CheckCircle'
+import CancelIcon               from '@mui/icons-material/Cancel'
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
-import LocalAtmIcon from '@mui/icons-material/LocalAtm'
-import PeopleIcon from '@mui/icons-material/People'
-import BarChartIcon from '@mui/icons-material/BarChart'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import LockIcon from '@mui/icons-material/Lock'
-import axiosInstance from '../utils/axiosInstance'
+import LocalAtmIcon             from '@mui/icons-material/LocalAtm'
+import PeopleIcon               from '@mui/icons-material/People'
+import BarChartIcon             from '@mui/icons-material/BarChart'
+import WarningAmberIcon         from '@mui/icons-material/WarningAmber'
+import LockIcon                 from '@mui/icons-material/Lock'
+import axiosInstance            from '../utils/axiosInstance'
 import { PageWrapper, getColors } from '../components/Layout/SharedLayout'
 
-// ─── Helpers ─────────────────────────────────────────────────
-const formatPts = (v) => Math.floor(v || 0).toLocaleString()
+const formatPts    = (v) => Math.floor(v || 0).toLocaleString()
 const formatDollar = (v) => `$${(parseFloat(v || 0) / 100).toFixed(2)}`
-const formatPct = (v) => `${parseFloat(v || 0).toFixed(2)}%`
+const formatPct    = (v) => `${parseFloat(v || 0).toFixed(2)}%`
 
-// ─── Arc Speedometer (0-100, car-style) ──────────────────────
-// VALUE IS BELOW THE GAUGE, NOT ON TOP
-const ArcSpeedometer = ({ value, size = 180, darkMode }) => {
+// ─── Arc Speedometer ──────────────────────────────────────────────────────────
+const ArcSpeedometer = ({ value, darkMode }) => {
   const COLORS = getColors(darkMode)
-  const val = Math.min(Math.max(value || 0, 0), 100)
+  const size   = 200
+  const val    = Math.min(Math.max(value || 0, 0), 100)
   const isHigh = val > 5
-  const color = isHigh ? '#ef4444' : '#10b981'
-  const radius = (size - 24) / 2
+  const color  = isHigh ? '#ef4444' : '#10b981'
+  const radius = (size - 28) / 2
   const center = size / 2
   const startAngle = 135
-  const endAngle = 405
+  const endAngle   = 405
   const totalAngle = endAngle - startAngle
   const progressAngle = startAngle + (val / 100) * totalAngle
 
-  const polarToCartesian = (cx, cy, r, angleDeg) => {
-    const angleRad = (Math.PI / 180) * angleDeg
-    return { x: cx + r * Math.cos(angleRad), y: cy + r * Math.sin(angleRad) }
+  const polar = (cx, cy, r, deg) => {
+    const rad = (Math.PI / 180) * deg
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
+  }
+  const arc = (cx, cy, r, start, end) => {
+    const s = polar(cx, cy, r, end)
+    const e = polar(cx, cy, r, start)
+    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${end - start <= 180 ? 0 : 1} 0 ${e.x} ${e.y}`
   }
 
-  const describeArc = (cx, cy, r, start, end) => {
-    const startPt = polarToCartesian(cx, cy, r, end)
-    const endPt = polarToCartesian(cx, cy, r, start)
-    const largeArc = end - start <= 180 ? 0 : 1
-    return `M ${startPt.x} ${startPt.y} A ${r} ${r} 0 ${largeArc} 0 ${endPt.x} ${endPt.y}`
-  }
-
-  const bgPath = describeArc(center, center, radius, startAngle, endAngle)
-  const progressPath = describeArc(center, center, radius, startAngle, progressAngle)
-
-  const ticks = []
-  for (let i = 0; i <= 10; i++) {
+  const ticks = Array.from({ length: 11 }, (_, i) => {
     const angle = startAngle + (i / 10) * totalAngle
-    const inner = polarToCartesian(center, center, radius - 14, angle)
-    const outer = polarToCartesian(center, center, radius - 4, angle)
-    ticks.push({ inner, outer, label: i * 10, angle })
-  }
+    return { inner: polar(center, center, radius - 16, angle), outer: polar(center, center, radius - 4, angle), label: i * 10, angle }
+  })
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      {/* Gauge SVG only — NO TEXT ON TOP */}
-      <Box sx={{ width: size, height: size * 0.72, position: 'relative' }}>
+      <Box sx={{ width: size, height: size * 0.72 }}>
         <svg width={size} height={size * 0.72} viewBox={`0 0 ${size} ${size * 0.72}`}>
-          <path d={bgPath} fill="none" stroke={darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'} strokeWidth={14} strokeLinecap="round" />
-          <path d={progressPath} fill="none" stroke={color} strokeWidth={14} strokeLinecap="round" style={{ transition: 'all 0.8s ease-out' }} />
+          <path d={arc(center, center, radius, startAngle, endAngle)} fill="none"
+            stroke={darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'} strokeWidth={16} strokeLinecap="round" />
+          <path d={arc(center, center, radius, startAngle, progressAngle)} fill="none"
+            stroke={color} strokeWidth={16} strokeLinecap="round" style={{ transition: 'all 0.8s ease-out' }} />
           {ticks.map((t, i) => (
             <g key={i}>
-              <line x1={t.inner.x} y1={t.inner.y} x2={t.outer.x} y2={t.outer.y} stroke={darkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'} strokeWidth={1.5} />
-              <text x={polarToCartesian(center, center, radius - 26, t.angle).x} y={polarToCartesian(center, center, radius - 26, t.angle).y}
+              <line x1={t.inner.x} y1={t.inner.y} x2={t.outer.x} y2={t.outer.y}
+                stroke={darkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'} strokeWidth={1.5} />
+              <text x={polar(center, center, radius - 28, t.angle).x} y={polar(center, center, radius - 28, t.angle).y}
                 textAnchor="middle" dominantBaseline="middle" fill={COLORS.textMuted} fontSize="8" fontWeight="600">
                 {t.label}
               </text>
             </g>
           ))}
-          <line x1={center} y1={center} x2={polarToCartesian(center, center, radius - 10, progressAngle).x} y2={polarToCartesian(center, center, radius - 10, progressAngle).y}
+          <line x1={center} y1={center}
+            x2={polar(center, center, radius - 12, progressAngle).x}
+            y2={polar(center, center, radius - 12, progressAngle).y}
             stroke={color} strokeWidth={3} strokeLinecap="round" style={{ transition: 'all 0.8s ease-out' }} />
-          <circle cx={center} cy={center} r={7} fill={color} />
+          <circle cx={center} cy={center} r={8} fill={color} />
         </svg>
       </Box>
-      {/* VALUE BELOW GAUGE — clean separation */}
-      <Box sx={{ textAlign: 'center', mt: 0.5 }}>
-        <Typography sx={{ fontSize: '1.6rem', fontWeight: 900, color: color, lineHeight: 1 }}>
-          {formatPct(val)}
-        </Typography>
-        <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+      <Box sx={{ textAlign: 'center', mt: 1 }}>
+        <Typography sx={{ fontSize: '2rem', fontWeight: 900, color, lineHeight: 1 }}>{formatPct(val)}</Typography>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', mt: 0.3 }}>
           Reversal Rate
         </Typography>
       </Box>
@@ -102,23 +87,23 @@ const ArcSpeedometer = ({ value, size = 180, darkMode }) => {
   )
 }
 
-// ─── Level Badge ─────────────────────────────────────────────
+// ─── Level Badge ──────────────────────────────────────────────────────────────
 const LevelBadge = ({ level, size = 56 }) => {
-  const colors = ['#5312bc', '#2563eb', '#10b981', '#f59e0b', '#ec4899', '#14b8a6', '#ef4444', '#8b5cf6']
-  const color = colors[(level - 1) % colors.length]
+  const colors = ['#5312bc','#2563eb','#10b981','#f59e0b','#ec4899','#14b8a6','#ef4444','#8b5cf6']
+  const color  = colors[(level - 1) % colors.length]
   return (
     <Box sx={{
-      width: size, height: size, borderRadius: '50%',
-      background: `linear-gradient(135deg, ${color} 0%, ${color}dd 100%)`,
+      width: size, height: size, borderRadius: '50%', flexShrink: 0,
+      background: `linear-gradient(135deg, ${color} 0%, ${color}cc 100%)`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      boxShadow: `0 4px 20px ${color}40`, border: `3px solid ${color}30`,
+      boxShadow: `0 4px 16px ${color}40`, border: `3px solid ${color}30`,
     }}>
       <Typography sx={{ fontSize: size > 50 ? '1.4rem' : '1rem', fontWeight: 900, color: '#fff' }}>{level}</Typography>
     </Box>
   )
 }
 
-// ─── Simple SVG Bar Chart ──────────────────────────────────
+// ─── Bar Chart ────────────────────────────────────────────────────────────────
 const SimpleBarChart = ({ data, darkMode, labelKey, valueKey, height = 180 }) => {
   const COLORS = getColors(darkMode)
   if (!data || data.length === 0) return null
@@ -126,13 +111,19 @@ const SimpleBarChart = ({ data, darkMode, labelKey, valueKey, height = 180 }) =>
   return (
     <Box sx={{ width: '100%', height, display: 'flex', alignItems: 'flex-end', gap: 1, px: 1, pb: 3 }}>
       {data.map((item, idx) => {
-        const val = item[valueKey] || 0
-        const h = Math.max((val / maxVal) * (height - 30), 4)
+        const h = Math.max((( item[valueKey] || 0) / maxVal) * (height - 30), 4)
         return (
-          <Tooltip key={idx} title={`${item[labelKey]}: ${formatPts(val)} pts`} arrow placement="top">
+          <Tooltip key={idx} title={`${item[labelKey]}: ${formatPts(item[valueKey])} pts`} arrow placement="top">
             <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-              <Box sx={{ width: '100%', height: h, bgcolor: COLORS.primary, borderRadius: '6px 6px 0 0', opacity: 0.85, transition: 'all 0.4s ease', '&:hover': { opacity: 1, transform: 'scaleY(1.05)' }, transformOrigin: 'bottom' }} />
-              <Typography sx={{ fontSize: '0.65rem', fontWeight: 600, color: COLORS.textMuted, textAlign: 'center', lineHeight: 1.1 }}>{item[labelKey]}</Typography>
+              <Box sx={{
+                width: '100%', height: h, bgcolor: COLORS.primary,
+                borderRadius: '6px 6px 0 0', opacity: 0.85,
+                transition: 'all 0.4s ease', transformOrigin: 'bottom',
+                '&:hover': { opacity: 1, transform: 'scaleY(1.05)' },
+              }} />
+              <Typography sx={{ fontSize: '0.62rem', fontWeight: 600, color: COLORS.textMuted, textAlign: 'center', lineHeight: 1.1 }}>
+                {item[labelKey]}
+              </Typography>
             </Box>
           </Tooltip>
         )
@@ -141,65 +132,24 @@ const SimpleBarChart = ({ data, darkMode, labelKey, valueKey, height = 180 }) =>
   )
 }
 
-// ─── Stat Card (equal height via flex) ─────────────────────
-const StatCard = ({ icon: Icon, label, value, sub, accent, delay = 0, darkMode }) => {
-  const COLORS = getColors(darkMode)
-  const [visible, setVisible] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setVisible(true), delay); return () => clearTimeout(t) }, [delay])
-
-  return (
-    <Fade in={visible} timeout={400}>
-      <Paper sx={{
-        p: { xs: 1.2, sm: 2 }, borderRadius: 3,
-        height: { xs: 100, sm: 120 },
-        display: 'flex', flexDirection: 'column',
-        justifyContent: 'space-between',
-        bgcolor: COLORS.cardBg,
-        border: `1px solid ${COLORS.border}`,
-        transition: 'all 0.3s ease',
-        '&:hover': { boxShadow: `0 8px 30px ${accent}15`, borderColor: `${accent}30`, transform: 'translateY(-2px)' },
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-          <Box sx={{ width: 26, height: 26, borderRadius: 1, bgcolor: `${accent}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Icon sx={{ fontSize: 14, color: accent }} />
-          </Box>
-          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: '0.5px', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {label}
-          </Typography>
-        </Box>
-        <Box>
-          <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: COLORS.textPrimary, lineHeight: 1.1 }}>
-            {value}
-          </Typography>
-          {sub && (
-            <Typography sx={{ fontSize: '0.6rem', fontWeight: 500, color: COLORS.textSecondary, mt: 0.3, lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {sub}
-            </Typography>
-          )}
-        </Box>
-      </Paper>
-    </Fade>
-  )
-}
-
-// ─── Main Component ──────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 const ProgressPage = ({ darkMode, toggleDarkMode }) => {
-  const COLORS = getColors(darkMode)
-  const theme = useTheme()
+  const COLORS   = getColors(darkMode)
+  const theme    = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-  const [activeTab, setActiveTab] = useState(0)
-  const [levelData, setLevelData] = useState(null)
-  const [performanceData, setPerformanceData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [activeTab,        setActiveTab]        = useState(0)
+  const [levelData,        setLevelData]        = useState(null)
+  const [performanceData,  setPerformanceData]  = useState(null)
+  const [loading,          setLoading]          = useState(true)
+  const [error,            setError]            = useState(null)
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
       const [levelRes, perfRes] = await Promise.all([
         axiosInstance.get('/levels/progress'),
-        axiosInstance.get('/performance/')
+        axiosInstance.get('/performance/'),
       ])
       setLevelData(levelRes.data?.data || null)
       setPerformanceData(perfRes.data?.data || null)
@@ -211,162 +161,145 @@ const ProgressPage = ({ darkMode, toggleDarkMode }) => {
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
-  const handleTabChange = (e, newValue) => setActiveTab(newValue)
 
-  // DATA
   const currentLevel = levelData?.current_level || 1
-  const progress = levelData?.progress || null
-  const allLevels = levelData?.all_levels || []
+  const progress     = levelData?.progress || null
+  const allLevels    = levelData?.all_levels || []
 
-  const perf = performanceData || {}
-  const surveys = perf.surveys || {}
-  const earnings = perf.earnings || {}
+  const perf      = performanceData || {}
+  const surveys   = perf.surveys   || {}
+  const earnings  = perf.earnings  || {}
 
-  const totalClicks = surveys.total_clicks || 0
-  const completed = surveys.completed || 0
-  const failed = surveys.failed || 0
-  const quotaFull = surveys.quota_full || 0
-  const securityTerminated = surveys.security_terminated || 0
-  const reversed = surveys.reversed || 0
-  const completionRate = surveys.completion_rate || 0
-  const reversalRate = surveys.reversal_rate || 0
-  const isReversalHigh = reversalRate > 5
+  const totalClicks          = surveys.total_clicks          || 0
+  const completed            = surveys.completed             || 0
+  const failed               = surveys.failed                || 0
+  const quotaFull            = surveys.quota_full            || 0
+  const securityTerminated   = surveys.security_terminated   || 0
+  const reversed             = surveys.reversed              || 0
+  const completionRate       = surveys.completion_rate       || 0
+  const reversalRate         = surveys.reversal_rate         || 0
+  const isReversalHigh       = reversalRate > 5
 
-  const totalCompleted = completed
-  const totalReversed = reversed
+  // Note: own_reversal_count / referral_commission_reversed require backend deploy of dashboard.repository.js changes
 
-  const monthlyData = (perf.monthly_breakdown || [])
-    .slice().reverse()
-    .map(m => ({ label: new Date(m.month).toLocaleDateString('en-US', { month: 'short' }), value: m.earnings || 0 }))
+  const monthlyData = (perf.monthly_breakdown || []).slice().reverse().map(m => ({
+    label: new Date(m.month).toLocaleDateString('en-US', { month: 'short' }),
+    value: m.total_earnings || 0,
+  }))
+  const wallData = (perf.offer_walls || []).slice(0, 6).map(w => ({
+    label: w.offer_wall_name?.substring(0, 8) || 'Wall', value: w.total_earned || 0,
+  }))
 
-  const wallData = (perf.offer_walls || [])
-    .slice(0, 6)
-    .map(w => ({ label: w.offer_wall_name?.substring(0, 8) || 'Wall', value: w.total_earned || 0 }))
-
-  // ─── LOADING ───────────────────────────────────────────────
-  if (loading) {
-    return (
-      <PageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-        <Box sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, py: 3 }}>
-          <Skeleton variant="text" width={280} height={40} sx={{ borderRadius: 1 }} />
-          <Skeleton variant="text" width={180} height={24} sx={{ borderRadius: 1, mb: 3 }} />
-          <Skeleton variant="rounded" height={48} sx={{ borderRadius: 3, mb: 3 }} />
-          <Grid container spacing={1.5}>
-            {[1,2,3].map(i => (
-              <Grid item xs={4} key={i}>
-                <Skeleton variant="rounded" height={100} sx={{ borderRadius: 3 }} />
-              </Grid>
-            ))}
-          </Grid>
-          <Grid container spacing={1.5} sx={{ mt: 1.5 }}>
-            {[1,2].map(i => (
-              <Grid item xs={6} key={i}>
-                <Skeleton variant="rounded" height={100} sx={{ borderRadius: 3 }} />
-              </Grid>
-            ))}
-          </Grid>
-          <Skeleton variant="rounded" height={300} sx={{ borderRadius: 3, mt: 2 }} />
+  if (loading) return (
+    <PageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
+      <Box sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, py: 3 }}>
+        <Skeleton variant="text" width={260} height={44} sx={{ borderRadius: 1, mb: 0.5 }} />
+        <Skeleton variant="text" width={200} height={24} sx={{ borderRadius: 1, mb: 3 }} />
+        <Skeleton variant="rounded" height={52} sx={{ borderRadius: 3, mb: 3 }} />
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2, mb: 2 }}>
+          {[1,2,3,4].map(i => <Skeleton key={i} variant="rounded" height={88} sx={{ borderRadius: 3 }} />)}
         </Box>
-      </PageWrapper>
-    )
-  }
+        <Skeleton variant="rounded" height={340} sx={{ borderRadius: 3 }} />
+      </Box>
+    </PageWrapper>
+  )
 
-  // ─── ERROR ─────────────────────────────────────────────────
-  if (error) {
-    return (
-      <PageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-        <Box sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, py: 3, textAlign: 'center' }}>
-          <WarningAmberIcon sx={{ fontSize: 48, color: 'error.main', mb: 1 }} />
-          <Typography sx={{ fontSize: '1.1rem', fontWeight: 700, color: 'text.primary' }}>{error}</Typography>
-          <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary', mt: 0.5 }}>Please try refreshing the page.</Typography>
-        </Box>
-      </PageWrapper>
-    )
-  }
+  if (error) return (
+    <PageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
+      <Box sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, py: 3, textAlign: 'center', pt: 8 }}>
+        <WarningAmberIcon sx={{ fontSize: 48, color: '#ef4444', mb: 1 }} />
+        <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: COLORS.textPrimary }}>{error}</Typography>
+      </Box>
+    </PageWrapper>
+  )
+
+  const borderColor = darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
+  const tbCell = { borderBottom: `1px solid ${darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}` }
+  const thCell = { fontWeight: 800, color: COLORS.textMuted, fontSize: '0.72rem', borderBottom: `1px solid ${borderColor}` }
 
   return (
     <PageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-      <Box sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, py: 3 }}>
+      <Box sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, py: { xs: 2, md: 3 } }}>
 
-        {/* ── HEADER ─────────────────────────────────────────── */}
-        <Box sx={{ mb: 3 }}>
-          <Typography sx={{ fontSize: { xs: '1.4rem', md: '1.7rem' }, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.3px' }}>
+        {/* Header */}
+        <Box sx={{ mb: 3, mt: { xs: 1, md: 0 } }}>
+          <Typography sx={{ fontSize: { xs: '1.4rem', md: '1.75rem' }, fontWeight: 800, color: COLORS.textPrimary, letterSpacing: '-0.02em' }}>
             My Progress
           </Typography>
-          <Typography sx={{ fontSize: '0.9rem', color: 'text.secondary', mt: 0.3 }}>
+          <Typography sx={{ fontSize: '0.88rem', color: COLORS.textMuted, mt: 0.3 }}>
             Track your level, achievements, and earning performance
           </Typography>
         </Box>
 
-        {/* ── TABS ───────────────────────────────────────────── */}
-        <Paper sx={{
-          borderRadius: 3, mb: 3, overflow: 'hidden',
-          bgcolor: 'background.paper',
-          border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-        }}>
-          <Tabs value={activeTab} onChange={handleTabChange} variant={isMobile ? 'fullWidth' : 'standard'}
-            sx={{ '& .MuiTabs-flexContainer': { px: { md: 2 } }, '& .MuiTabs-indicator': { bgcolor: COLORS.primary, height: 3, borderRadius: '3px 3px 0 0' } }}>
-            <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}><EmojiEventsIcon sx={{ fontSize: 20 }} /><Typography sx={{ fontWeight: 700, fontSize: '0.9rem', textTransform: 'none' }}>Level & Progress</Typography></Box>}
-              sx={{ color: 'text.secondary', '&.Mui-selected': { color: COLORS.primary, fontWeight: 800 }, textTransform: 'none', minHeight: 52 }} />
-            <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}><BarChartIcon sx={{ fontSize: 20 }} /><Typography sx={{ fontWeight: 700, fontSize: '0.9rem', textTransform: 'none' }}>Performance</Typography></Box>}
-              sx={{ color: 'text.secondary', '&.Mui-selected': { color: COLORS.primary, fontWeight: 800 }, textTransform: 'none', minHeight: 52 }} />
+        {/* Tabs */}
+        <Paper sx={{ borderRadius: 3, mb: 3, overflow: 'hidden', bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
+          <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} variant={isMobile ? 'fullWidth' : 'standard'}
+            sx={{
+              '& .MuiTabs-flexContainer': { px: { md: 2 } },
+              '& .MuiTabs-indicator': { bgcolor: COLORS.primary, height: 3, borderRadius: '3px 3px 0 0' },
+            }}>
+            {[
+              { label: 'Level & Progress', icon: EmojiEventsIcon },
+              { label: 'Performance',      icon: BarChartIcon },
+            ].map((tab, i) => (
+              <Tab key={i} sx={{ color: COLORS.textSecondary, '&.Mui-selected': { color: COLORS.primary }, textTransform: 'none', minHeight: 52 }}
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
+                    <tab.icon sx={{ fontSize: 19 }} />
+                    <Typography sx={{ fontWeight: 700, fontSize: '0.88rem', textTransform: 'none' }}>{tab.label}</Typography>
+                  </Box>
+                }
+              />
+            ))}
           </Tabs>
         </Paper>
 
-        {/* ═══════════════════════════════════════════════════════
-            TAB 1: LEVEL & PROGRESS
-        ═══════════════════════════════════════════════════════ */}
+        {/* ═══ TAB 1: LEVEL & PROGRESS ════════════════════════════════════════ */}
         {activeTab === 0 && (
           <Box>
-            {/* Hero Card */}
             <Paper sx={{
               p: { xs: 2.5, md: 3.5 }, borderRadius: 3, mb: 3,
-              bgcolor: 'background.paper',
-              border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-              background: darkMode
-                ? 'linear-gradient(135deg, rgba(83,18,188,0.06) 0%, rgba(37,99,235,0.03) 100%)'
-                : 'linear-gradient(135deg, rgba(83,18,188,0.03) 0%, rgba(37,99,235,0.015) 100%)',
+              bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`,
+              background: `linear-gradient(135deg, ${COLORS.primary}10 0%, ${COLORS.primary}03 100%)`,
             }}>
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-start' }, gap: 3 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, flexShrink: 0 }}>
                   <LevelBadge level={currentLevel} size={80} />
                   <Chip label={`Level ${currentLevel}`} sx={{ bgcolor: `${COLORS.primary}15`, color: COLORS.primary, fontWeight: 800, fontSize: '0.75rem', height: 26 }} />
                 </Box>
-
                 <Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' }, width: '100%' }}>
-                  <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: 'text.primary', mb: 1 }}>
+                  <Typography sx={{ fontSize: '1.05rem', fontWeight: 800, color: COLORS.textPrimary, mb: 1.5 }}>
                     {currentLevel === 20
-                      ? 'Congratulations! You have reached the maximum level.'
+                      ? 'You have reached the maximum level!'
                       : progress
                         ? `Complete ${progress.surveys_remaining} more surveys to unlock Level ${progress.next_level}`
-                        : 'Keep completing surveys to level up and earn rewards.'
-                    }
+                        : 'Keep completing surveys to level up and earn rewards.'}
                   </Typography>
-
                   {progress && (
-                    <Box sx={{ width: '100%', mb: 1 }}>
+                    <Box sx={{ width: '100%', mb: 1.5 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.8 }}>
-                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.secondary' }}>
+                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: COLORS.textSecondary }}>
                           {progress.surveys_completed} / {progress.surveys_required} surveys
                         </Typography>
                         <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: COLORS.primary }}>
                           {progress.percentage}%
                         </Typography>
                       </Box>
-                      <LinearProgress variant="determinate" value={progress.percentage}
-                        sx={{ height: 10, borderRadius: 5, bgcolor: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', '& .MuiLinearProgress-bar': { bgcolor: COLORS.primary, borderRadius: 5, transition: 'transform 1s ease-out' } }} />
+                      <LinearProgress variant="determinate" value={progress.percentage} sx={{
+                        height: 10, borderRadius: 5,
+                        bgcolor: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                        '& .MuiLinearProgress-bar': { bgcolor: COLORS.primary, borderRadius: 5, transition: 'transform 1s ease-out' },
+                      }} />
                     </Box>
                   )}
-
                   {reversalRate > 5 && (
                     <Box sx={{
-                      mt: 1.5, p: 1.5, borderRadius: 2,
-                      bgcolor: darkMode ? 'rgba(239,68,68,0.1)' : '#fef2f2',
+                      p: 1.5, borderRadius: 2, bgcolor: darkMode ? 'rgba(239,68,68,0.1)' : '#fef2f2',
                       border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: 1,
                     }}>
-                      <WarningAmberIcon sx={{ fontSize: 18, color: '#dc2626', flexShrink: 0 }} />
+                      <WarningAmberIcon sx={{ fontSize: 17, color: '#dc2626', flexShrink: 0 }} />
                       <Typography sx={{ fontSize: '0.78rem', fontWeight: 600, color: '#dc2626' }}>
-                        Your reversal rate is {formatPct(reversalRate)}. Keep it below 5% or your account may be banned.
+                        Your reversal rate is {formatPct(reversalRate)}. Keep it below 5% or your account may be at risk.
                       </Typography>
                     </Box>
                   )}
@@ -374,25 +307,19 @@ const ProgressPage = ({ darkMode, toggleDarkMode }) => {
               </Box>
             </Paper>
 
-            {/* Level Roadmap Table */}
-            <Paper sx={{
-              borderRadius: 3, overflow: 'hidden',
-              bgcolor: 'background.paper',
-              border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-            }}>
-              <Box sx={{ p: 2.5, borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }}>
-                <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: 'text.primary' }}>Level Roadmap</Typography>
-                <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>Your journey through all 20 levels</Typography>
+            {/* Level Roadmap */}
+            <Paper sx={{ borderRadius: 3, overflow: 'hidden', bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
+              <Box sx={{ p: 2.5, borderBottom: `1px solid ${COLORS.border}` }}>
+                <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: COLORS.textPrimary }}>Level Roadmap</Typography>
+                <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>Your journey through all 20 levels</Typography>
               </Box>
               <TableContainer>
                 <Table size="small">
                   <TableHead>
-                    <TableRow sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                      <TableCell sx={{ fontWeight: 800, color: 'text.secondary', fontSize: '0.75rem', borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }}>Level</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: 'text.secondary', fontSize: '0.75rem', borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }}>Surveys Required</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: 'text.secondary', fontSize: '0.75rem', borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }}>Max Reversal</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: 'text.secondary', fontSize: '0.75rem', borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }}>Reward</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: 'text.secondary', fontSize: '0.75rem', borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }}>Status</TableCell>
+                    <TableRow sx={{ bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
+                      {['Level','Surveys Required','Max Reversal','Reward','Status'].map(h => (
+                        <TableCell key={h} sx={thCell}>{h}</TableCell>
+                      ))}
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -400,29 +327,25 @@ const ProgressPage = ({ darkMode, toggleDarkMode }) => {
                       const isCurrent = lvl.level === currentLevel
                       return (
                         <TableRow key={lvl.level} sx={{
-                          bgcolor: isCurrent ? (darkMode ? 'rgba(83,18,188,0.06)' : 'rgba(83,18,188,0.03)') : 'transparent',
-                          transition: 'background 0.2s',
+                          bgcolor: isCurrent ? (darkMode ? 'rgba(83,18,188,0.07)' : 'rgba(83,18,188,0.03)') : 'transparent',
                           '&:hover': { bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' },
                         }}>
-                          <TableCell sx={{ borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`, py: 1.2 }}>
+                          <TableCell sx={{ ...tbCell, py: 1.2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <LevelBadge level={lvl.level} size={32} />
-                              <Typography sx={{ fontSize: '0.85rem', fontWeight: isCurrent ? 800 : 600, color: isCurrent ? COLORS.primary : 'text.primary' }}>
-                                Level {lvl.level} {isCurrent && <span style={{ fontSize: '0.7rem', marginLeft: 6, color: COLORS.textMuted }}>(You)</span>}
+                              <LevelBadge level={lvl.level} size={30} />
+                              <Typography sx={{ fontSize: '0.84rem', fontWeight: isCurrent ? 800 : 600, color: isCurrent ? COLORS.primary : COLORS.textPrimary }}>
+                                Level {lvl.level}{isCurrent && <span style={{ fontSize: '0.68rem', marginLeft: 6, color: COLORS.textMuted }}>(You)</span>}
                               </Typography>
                             </Box>
                           </TableCell>
-                          <TableCell sx={{ borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`, fontSize: '0.85rem', color: 'text.primary', fontWeight: 600 }}>{formatPts(lvl.surveys_required)}</TableCell>
-                          <TableCell sx={{ borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`, fontSize: '0.85rem', color: 'text.primary', fontWeight: 600 }}>≤ {lvl.reversal_rate_max}%</TableCell>
-                          <TableCell sx={{ borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`, fontSize: '0.85rem', color: 'text.primary', fontWeight: 700 }}>+{formatPts(lvl.reward)} pts</TableCell>
-                          <TableCell sx={{ borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}` }}>
-                            {lvl.unlocked ? (
-                              <Chip icon={<CheckCircleIcon sx={{ fontSize: 14 }} />} label="Unlocked" size="small"
-                                sx={{ bgcolor: '#d1fae5', color: '#059669', fontWeight: 700, fontSize: '0.7rem', height: 24 }} />
-                            ) : (
-                              <Chip icon={<LockIcon sx={{ fontSize: 14 }} />} label="Locked" size="small"
-                                sx={{ bgcolor: darkMode ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: 'text.secondary', fontWeight: 600, fontSize: '0.7rem', height: 24 }} />
-                            )}
+                          <TableCell sx={{ ...tbCell, fontSize: '0.84rem', fontWeight: 600, color: COLORS.textPrimary }}>{formatPts(lvl.surveys_required)}</TableCell>
+                          <TableCell sx={{ ...tbCell, fontSize: '0.84rem', fontWeight: 600, color: COLORS.textPrimary }}>≤ {lvl.reversal_rate_max}%</TableCell>
+                          <TableCell sx={{ ...tbCell, fontSize: '0.84rem', fontWeight: 700, color: COLORS.textPrimary }}>+{formatPts(lvl.reward)} pts</TableCell>
+                          <TableCell sx={tbCell}>
+                            {lvl.unlocked
+                              ? <Chip icon={<CheckCircleIcon sx={{ fontSize: 13 }} />} label="Unlocked" size="small" sx={{ bgcolor: '#d1fae5', color: '#059669', fontWeight: 700, fontSize: '0.68rem', height: 22 }} />
+                              : <Chip icon={<LockIcon sx={{ fontSize: 13 }} />} label="Locked" size="small" sx={{ bgcolor: darkMode ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: COLORS.textMuted, fontWeight: 600, fontSize: '0.68rem', height: 22 }} />
+                            }
                           </TableCell>
                         </TableRow>
                       )
@@ -434,172 +357,223 @@ const ProgressPage = ({ darkMode, toggleDarkMode }) => {
           </Box>
         )}
 
-        {/* ═══════════════════════════════════════════════════════
-            TAB 2: PERFORMANCE
-            PHONE: Row1=3 cards, Row2=2 cards
-            DESKTOP: Row1=5 cards
-        ═══════════════════════════════════════════════════════ */}
+        {/* ═══ TAB 2: PERFORMANCE ════════════════════════════════════════════ */}
         {activeTab === 1 && (
           <Box>
-            {/* ═══ PERFORMANCE STATS ROW ═══ */}
-            <Grid container spacing={1.5} sx={{ mb: 1.5 }} alignItems="stretch">
-              <Grid item xs={4} md={2.4} sx={{ display: 'flex' }}>
-                <StatCard icon={MouseIcon} label="Clicks" value={formatPts(totalClicks)} sub="Total clicks" accent="#2563eb" delay={0} darkMode={darkMode} />
-              </Grid>
-              <Grid item xs={4} md={2.4} sx={{ display: 'flex' }}>
-                <StatCard icon={CheckCircleIcon} label="Completed" value={formatPts(completed)} sub="Surveys finished" accent="#10b981" delay={100} darkMode={darkMode} />
-              </Grid>
-              <Grid item xs={4} md={2.4} sx={{ display: 'flex' }}>
-                <StatCard icon={CancelIcon} label="Reversed" value={formatPts(reversed)} sub="Lost surveys" accent="#ef4444" delay={200} darkMode={darkMode} />
-              </Grid>
-            </Grid>
-            <Grid container spacing={1.5} sx={{ mb: 3 }} alignItems="stretch">
-              <Grid item xs={6} md={2.4} sx={{ display: 'flex' }}>
-                <StatCard icon={TrendingUpIcon} label="Completion Rate" value={formatPct(completionRate)} sub="Click → Complete" accent="#2563eb" delay={300} darkMode={darkMode} />
-              </Grid>
-              <Grid item xs={6} md={2.4} sx={{ display: 'flex' }}>
-                <StatCard icon={TrendingDownIcon} label="Reversal Rate" value={formatPct(reversalRate)} sub={isReversalHigh ? 'Above 5%' : 'Healthy'} accent={isReversalHigh ? '#ef4444' : '#10b981'} delay={400} darkMode={darkMode} />
-              </Grid>
-            </Grid>
 
-            {/* ═══ SPEEDOMETER + EARNINGS ═══ */}
-            <Grid container spacing={2} sx={{ mb: 3 }} alignItems="stretch">
-              {/* Speedometer Card */}
-              <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
-                <Paper sx={{
-                  p: { xs: 2.5, md: 3 }, borderRadius: 3,
-                  flex: 1,
-                  bgcolor: COLORS.cardBg,
-                  border: `1px solid ${COLORS.border}`,
-                  background: `linear-gradient(135deg, ${COLORS.primary}08 0%, ${COLORS.primary}02 100%)`,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            {/* ── Row 1: 4 equal stat cards ── */}
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+              gap: 2, mb: 2,
+            }}>
+              {[
+                { icon: MouseIcon,        label: 'Total Clicks',    value: formatPts(totalClicks),    sub: 'Survey attempts',   accent: '#2563eb' },
+                { icon: CheckCircleIcon,  label: 'Completed',       value: formatPts(completed),      sub: 'Surveys finished',  accent: '#10b981' },
+                { icon: TrendingUpIcon,   label: 'Completion Rate', value: formatPct(completionRate), sub: 'Click → Complete',  accent: '#5312bc' },
+                { icon: CancelIcon,       label: 'Reversed',        value: formatPts(reversed),       sub: null,                accent: '#ef4444' },
+              ].map((c, i) => (
+                <Paper key={i} elevation={0} sx={{
+                  p: { xs: 2, md: 2.5 }, borderRadius: 3,
+                  bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`,
+                  background: `linear-gradient(135deg, ${c.accent}12 0%, ${c.accent}03 100%)`,
+                  display: 'flex', alignItems: 'center', gap: 1.5,
+                  transition: 'all 0.25s ease',
+                  '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 6px 20px ${c.accent}18`, borderColor: `${c.accent}30` },
                 }}>
-                  <ArcSpeedometer value={reversalRate} darkMode={darkMode} />
-                  <Box sx={{ textAlign: 'center', mt: 2, px: 1 }}>
-                    <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: isReversalHigh ? '#ef4444' : '#10b981' }}>
-                      {isReversalHigh ? 'High Risk!' : 'Healthy Rate'}
+                  <Box sx={{
+                    width: { xs: 36, md: 42 }, height: { xs: 36, md: 42 }, borderRadius: 2, flexShrink: 0,
+                    bgcolor: `${c.accent}18`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <c.icon sx={{ fontSize: { xs: 18, md: 20 }, color: c.accent }} />
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>
+                      {c.label}
                     </Typography>
-                    <Typography sx={{ fontSize: '0.75rem', color: COLORS.textSecondary, mt: 0.5, lineHeight: 1.4 }}>
-                      {isReversalHigh
-                        ? 'Keep it below 5% or your account may be banned.'
-                        : 'Your reversal rate is within safe limits. Keep it up!'}
+                    <Typography sx={{ fontSize: { xs: '1.15rem', md: '1.35rem' }, fontWeight: 800, color: COLORS.textPrimary, lineHeight: 1.2, mt: 0.3 }}>
+                      {c.value}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.68rem', color: COLORS.textMuted, mt: 0.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {c.sub}
                     </Typography>
                   </Box>
                 </Paper>
-              </Grid>
+              ))}
+            </Box>
 
-              {/* Earnings Overview Card */}
-              <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
-                <Paper sx={{
-                  p: { xs: 2.5, md: 3 }, borderRadius: 3,
-                  flex: 1,
-                  bgcolor: COLORS.cardBg,
-                  border: `1px solid ${COLORS.border}`,
+            {/* ── Row 2: Reversal Rate card (full width, prominent) ── */}
+            <Paper elevation={0} sx={{
+              p: { xs: 2, md: 2.5 }, borderRadius: 3, mb: 2,
+              bgcolor: COLORS.cardBg, border: `1px solid ${isReversalHigh ? '#ef444430' : '#10b98130'}`,
+              background: `linear-gradient(135deg, ${isReversalHigh ? '#ef4444' : '#10b981'}10 0%, ${isReversalHigh ? '#ef4444' : '#10b981'}02 100%)`,
+              display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap',
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 200 }}>
+                <Box sx={{
+                  width: 44, height: 44, borderRadius: 2, flexShrink: 0,
+                  bgcolor: `${isReversalHigh ? '#ef4444' : '#10b981'}18`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: '0.5px', mb: 2.5 }}>
-                    Earnings Overview
+                  <TrendingDownIcon sx={{ fontSize: 22, color: isReversalHigh ? '#ef4444' : '#10b981' }} />
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Reversal Rate
                   </Typography>
-                  <Grid container spacing={2}>
-                    {[
-                      { icon: AccountBalanceWalletIcon, label: 'Total Earned', value: formatDollar(earnings.total_earned), color: COLORS.primary },
-                      { icon: TrendingDownIcon, label: 'Reversed', value: formatDollar(earnings.total_reversed), color: '#ef4444' },
-                      { icon: LocalAtmIcon, label: 'Withdrawn', value: formatDollar(earnings.total_withdrawn), color: '#f59e0b' },
-                      { icon: PeopleIcon, label: 'Referrals', value: formatDollar(earnings.referral_earnings), color: '#ec4899' },
-                      { icon: AccountBalanceWalletIcon, label: 'Available', value: formatDollar(earnings.balance_available), color: '#2563eb' },
-                      { icon: LockIcon, label: 'Locked', value: formatDollar(earnings.balance_locked), color: '#6b7280' },
-                    ].map((item, idx) => (
-                      <Grid item xs={6} sm={4} md={2} key={idx}>
-                        <Box sx={{
-                          textAlign: 'center', p: 1.5, borderRadius: 2,
-                          bgcolor: darkMode ? `${item.color}08` : `${item.color}04`,
-                          border: `1px solid ${darkMode ? `${item.color}15` : `${item.color}10`}`,
-                          transition: 'all 0.3s ease',
-                          '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 4px 12px ${item.color}15` },
-                        }}>
-                          <item.icon sx={{ fontSize: 22, color: item.color, mb: 0.8 }} />
-                          <Typography sx={{ fontSize: '0.95rem', fontWeight: 900, color: COLORS.textPrimary }}>{item.value}</Typography>
-                          <Typography sx={{ fontSize: '0.65rem', fontWeight: 600, color: COLORS.textSecondary, mt: 0.3 }}>{item.label}</Typography>
-                        </Box>
-                      </Grid>
-                    ))}
-                  </Grid>
-                </Paper>
-              </Grid>
-            </Grid>
-
-            {/* ═══ MONTHLY EARNINGS CHART ═══ */}
-            <Paper sx={{
-              p: { xs: 2.5, md: 3 }, borderRadius: 3, mb: 3,
-              bgcolor: COLORS.cardBg,
-              border: `1px solid ${COLORS.border}`,
-            }}>
-              <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: '0.5px', mb: 2.5 }}>
-                Monthly Earnings (Last 12 Months)
-              </Typography>
-              {monthlyData.length > 0 ? (
-                <SimpleBarChart data={monthlyData} darkMode={darkMode} labelKey="label" valueKey="value" height={220} />
-              ) : (
-                <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Typography sx={{ fontSize: '0.85rem', color: COLORS.textSecondary }}>No monthly data available yet</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                    <Typography sx={{ fontSize: '1.8rem', fontWeight: 900, color: isReversalHigh ? '#ef4444' : '#10b981', lineHeight: 1.1 }}>
+                      {formatPct(reversalRate)}
+                    </Typography>
+                    <Chip
+                      label={isReversalHigh ? '⚠ Above 5% limit' : '✓ Healthy'}
+                      size="small"
+                      sx={{ bgcolor: isReversalHigh ? '#ef444415' : '#10b98115', color: isReversalHigh ? '#ef4444' : '#10b981', fontWeight: 700, fontSize: '0.7rem', height: 22 }}
+                    />
+                  </Box>
                 </Box>
-              )}
+              </Box>
+              <Typography sx={{ fontSize: '0.8rem', color: COLORS.textSecondary, maxWidth: 340, lineHeight: 1.55 }}>
+                {isReversalHigh
+                  ? 'Your reversal rate is above the 5% threshold. Completing surveys carefully will bring this down and protect your account.'
+                  : 'Great job! Your reversal rate is within safe limits. Keep completing quality surveys to maintain this.'}
+              </Typography>
             </Paper>
 
-            {/* ═══ EARNINGS BY OFFER WALL ═══ */}
-            <Paper sx={{
-              p: { xs: 2.5, md: 3 }, borderRadius: 3, mb: 3,
-              bgcolor: COLORS.cardBg,
-              border: `1px solid ${COLORS.border}`,
+            {/* ── Row 3: Speedometer full width since breakdown needs backend deploy ── */}
+            <Paper elevation={0} sx={{
+              p: 3, borderRadius: 3, mb: 2,
+              bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`,
+              background: `linear-gradient(135deg, ${COLORS.primary}08 0%, ${COLORS.primary}02 100%)`,
+              display: 'flex', flexDirection: { xs: 'column', md: 'row' },
+              alignItems: 'center', gap: 4,
             }}>
-              <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: '0.5px', mb: 2.5 }}>
-                Earnings by Offer Wall
-              </Typography>
-              {wallData.length > 0 ? (
-                <SimpleBarChart data={wallData} darkMode={darkMode} labelKey="label" valueKey="value" height={200} />
-              ) : (
-                <Box sx={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Typography sx={{ fontSize: '0.85rem', color: COLORS.textSecondary }}>No offer wall data available yet</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', mb: 1.5 }}>
+                  Reversal Gauge
+                </Typography>
+                <ArcSpeedometer value={reversalRate} darkMode={darkMode} />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: isReversalHigh ? '#ef4444' : '#10b981', mb: 1 }}>
+                  {isReversalHigh ? '⚠ High Risk' : '✓ Healthy Rate'}
+                </Typography>
+                <Typography sx={{ fontSize: '0.85rem', color: COLORS.textSecondary, lineHeight: 1.6, mb: 2 }}>
+                  {isReversalHigh
+                    ? 'Your reversal rate is above the 5% threshold. Completing surveys carefully will bring this down and protect your account.'
+                    : 'Your reversal rate is within safe limits. Keep completing quality surveys to maintain this.'}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Box>
+                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase' }}>Total Reversed</Typography>
+                    <Typography sx={{ fontSize: '1.1rem', fontWeight: 900, color: '#ef4444' }}>{formatPts(reversed)} surveys</Typography>
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase' }}>Completed</Typography>
+                    <Typography sx={{ fontSize: '1.1rem', fontWeight: 900, color: '#10b981' }}>{formatPts(completed)} surveys</Typography>
+                  </Box>
                 </Box>
-              )}
+              </Box>
             </Paper>
 
-            {/* ═══ DETAILED PERFORMANCE STATS ═══ */}
-            <Paper sx={{
-              borderRadius: 3, overflow: 'hidden',
-              bgcolor: COLORS.cardBg,
-              border: `1px solid ${COLORS.border}`,
+            {/* ── Row 4: Earnings Overview — 3 col on mobile, 6 on desktop ── */}
+            <Paper elevation={0} sx={{ p: { xs: 2.5, md: 3 }, borderRadius: 3, mb: 2, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
+              <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', mb: 2 }}>
+                Earnings Overview
+              </Typography>
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' },
+                gap: { xs: 1, md: 1.5 },
+              }}>
+                {[
+                  { icon: AccountBalanceWalletIcon, label: 'Net Earned',    value: formatDollar(earnings.net_earned),         color: COLORS.primary },
+                  { icon: TrendingDownIcon,          label: 'Reversed',      value: formatDollar(earnings.total_reversed),    color: '#ef4444'      },
+                  { icon: LocalAtmIcon,              label: 'Withdrawn',     value: formatDollar(earnings.total_withdrawn),   color: '#f59e0b'      },
+                  { icon: PeopleIcon,                label: 'Referrals',     value: formatDollar(earnings.referral_earnings), color: '#ec4899'      },
+                  { icon: AccountBalanceWalletIcon,  label: 'Available',     value: formatDollar(earnings.balance_available), color: '#2563eb'      },
+                  { icon: LockIcon,                  label: 'Locked',        value: formatDollar(earnings.balance_locked),    color: '#7c3aed'      },
+                ].map((item, idx) => (
+                  <Box key={idx} sx={{
+                    p: { xs: 1.2, md: 1.5 }, borderRadius: 2, textAlign: 'center',
+                    bgcolor: darkMode ? `${item.color}09` : `${item.color}06`,
+                    border: `1px solid ${item.color}20`,
+                    transition: 'all 0.2s ease',
+                    '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 4px 12px ${item.color}15` },
+                  }}>
+                    <item.icon sx={{ fontSize: { xs: 18, md: 22 }, color: item.color, mb: 0.6 }} />
+                    <Typography sx={{ fontSize: { xs: '0.82rem', md: '0.95rem' }, fontWeight: 900, color: COLORS.textPrimary, lineHeight: 1.2 }}>
+                      {item.value}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.6rem', fontWeight: 600, color: COLORS.textMuted, mt: 0.3 }}>{item.label}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Paper>
+
+            {/* ── Row 5: Charts side by side on desktop, stacked on mobile ── */}
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+              gap: 2, mb: 2,
             }}>
+              <Paper elevation={0} sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 3, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
+                <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', mb: 2 }}>
+                  Monthly Earnings (All Types)
+                </Typography>
+                {monthlyData.length > 0
+                  ? <SimpleBarChart data={monthlyData} darkMode={darkMode} labelKey="label" valueKey="value" height={180} />
+                  : <Box sx={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Typography sx={{ fontSize: '0.82rem', color: COLORS.textMuted }}>No monthly data yet</Typography></Box>
+                }
+              </Paper>
+
+              <Paper elevation={0} sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 3, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
+                <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', mb: 2 }}>
+                  Earnings by Offer Wall
+                </Typography>
+                {wallData.length > 0
+                  ? <SimpleBarChart data={wallData} darkMode={darkMode} labelKey="label" valueKey="value" height={180} />
+                  : <Box sx={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Typography sx={{ fontSize: '0.82rem', color: COLORS.textMuted }}>No offer wall data yet</Typography></Box>
+                }
+              </Paper>
+            </Box>
+
+            {/* ── Row 6: Detailed stats table ── */}
+            <Paper elevation={0} sx={{ borderRadius: 3, overflow: 'hidden', bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
               <Box sx={{ p: 2.5, borderBottom: `1px solid ${COLORS.border}` }}>
-                <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: COLORS.textPrimary }}>Detailed Performance Stats</Typography>
+                <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: COLORS.textPrimary }}>Detailed Survey Stats</Typography>
               </Box>
               <TableContainer>
                 <Table size="small">
                   <TableHead>
-                    <TableRow sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                      <TableCell sx={{ fontWeight: 800, color: 'text.secondary', fontSize: '0.75rem', borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }}>Metric</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: 'text.secondary', fontSize: '0.75rem', borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }} align="right">Value</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: 'text.secondary', fontSize: '0.75rem', borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }} align="right">Percentage</TableCell>
+                    <TableRow sx={{ bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
+                      {['Metric','Count','% of Clicks'].map((h, i) => (
+                        <TableCell key={h} sx={thCell} align={i > 0 ? 'right' : 'left'}>{h}</TableCell>
+                      ))}
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {[
-                      { label: 'Total Clicks', value: formatPts(totalClicks), pct: '100%', color: COLORS.primary },
-                      { label: 'Completed', value: formatPts(completed), pct: formatPct(completionRate), color: '#10b981' },
-                      { label: 'Failed', value: formatPts(failed), pct: formatPct((failed / totalClicks) * 100), color: '#ef4444' },
-                      { label: 'Quota Full', value: formatPts(quotaFull), pct: formatPct((quotaFull / totalClicks) * 100), color: '#f59e0b' },
-                      { label: 'Security Terminated', value: formatPts(securityTerminated), pct: formatPct((securityTerminated / totalClicks) * 100), color: '#dc2626' },
-                      { label: 'Reversed', value: formatPts(reversed), pct: formatPct((reversed / totalClicks) * 100), color: '#6b7280' },
+                      { label: 'Total Clicks',        value: totalClicks,        pct: 100,                                                              color: COLORS.primary },
+                      { label: 'Completed',           value: completed,          pct: completionRate,                                                   color: '#10b981'      },
+                      { label: 'Failed',              value: failed,             pct: totalClicks ? (failed / totalClicks) * 100 : 0,                   color: '#ef4444'      },
+                      { label: 'Quota Full',          value: quotaFull,          pct: totalClicks ? (quotaFull / totalClicks) * 100 : 0,                color: '#f59e0b'      },
+                      { label: 'Security Terminated', value: securityTerminated, pct: totalClicks ? (securityTerminated / totalClicks) * 100 : 0,       color: '#dc2626'      },
+                      { label: 'Reversed',            value: reversed,           pct: totalClicks ? (reversed / completed) * 100 : 0,                 color: '#6b7280'      },
                     ].map((row, idx) => (
                       <TableRow key={idx} sx={{ '&:hover': { bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' } }}>
-                        <TableCell sx={{ borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`, py: 1.2 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.color }} />
-                            <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.primary' }}>{row.label}</Typography>
+                        <TableCell sx={{ ...tbCell, py: 1.3 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.color, flexShrink: 0 }} />
+                            <Typography sx={{ fontSize: '0.84rem', fontWeight: 600, color: COLORS.textPrimary }}>{row.label}</Typography>
                           </Box>
                         </TableCell>
-                        <TableCell sx={{ borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`, fontSize: '0.85rem', fontWeight: 700, color: 'text.primary' }} align="right">{row.value}</TableCell>
-                        <TableCell sx={{ borderBottom: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}` }} align="right">
-                          <Chip label={row.pct} size="small" sx={{ bgcolor: `${row.color}15`, color: row.color, fontWeight: 700, fontSize: '0.72rem', height: 24 }} />
+                        <TableCell sx={{ ...tbCell, fontSize: '0.84rem', fontWeight: 700, color: COLORS.textPrimary }} align="right">
+                          {formatPts(row.value)}
+                        </TableCell>
+                        <TableCell sx={tbCell} align="right">
+                          <Chip label={formatPct(row.pct)} size="small"
+                            sx={{ bgcolor: `${row.color}15`, color: row.color, fontWeight: 700, fontSize: '0.7rem', height: 22 }} />
                         </TableCell>
                       </TableRow>
                     ))}
@@ -607,6 +581,7 @@ const ProgressPage = ({ darkMode, toggleDarkMode }) => {
                 </Table>
               </TableContainer>
             </Paper>
+
           </Box>
         )}
       </Box>

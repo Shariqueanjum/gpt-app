@@ -186,8 +186,13 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
       const referrerEarned = parseFloat(((cpaUser * referralPercent) / 100).toFixed(2));
 
       if (referrerEarned > 0) {
+        // FIX #1: When survey is locked, referral also goes to locked balance
+
+        const refBalanceField = isLocked ? 'balance_locked' : 'balance_available';
+        const refTransactionStatus = isLocked ? TRANSACTION_STATUS.LOCKED : TRANSACTION_STATUS.COMPLETED;
+
         await client.query(
-          'UPDATE users SET balance_available = balance_available + $1 WHERE id = $2',
+          `UPDATE users SET ${refBalanceField} = ${refBalanceField} + $1 WHERE id = $2`,
           [referrerEarned, user.referred_by]
         );
 
@@ -202,12 +207,14 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
           commission_rate_at_time: null,
           referrer_id: null,
           referrer_earned: 0,
-          status: TRANSACTION_STATUS.COMPLETED,
+          status: refTransactionStatus,
           metadata: {
             from_survey_click: click.id,
             from_transaction: mainTransaction.id,
             referral_percent: referralPercent,
-            survey_earned: cpaUser
+            survey_earned: cpaUser,
+            is_locked: isLocked,  // FIX: track if this referral was locked
+            parent_transaction_status: transactionStatus
           }
         });
 
@@ -250,7 +257,8 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
       transaction_id: mainTransaction.id,
       referral_credited: referralTransaction ? {
         referrer_id: user.referred_by,
-        amount: referralTransaction.amount
+        amount: referralTransaction.amount,
+        is_locked: isLocked 
       } : null
     };
 
@@ -261,26 +269,6 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
     client.release();
   }
 };
-
-// const processNonSuccessCallback = async (transactionId, status, offerWall) => {
-//   const { click, foundBy } = await findSurveyClickForCallback({ transactionId }, offerWall);
-  
-//   if (!click) {
-//     const err = new Error('Transaction ID not found');
-//     err.status = 404;
-//     throw err;
-//   }
-
-//   assertClickBelongsToOfferWall(click, offerWall);
-
-//   if (click.status !== SURVEY_CLICK_STATUS.PENDING) {
-//     return { already_processed: true, click_id: click.id, status: click.status };
-//   }
-
-//   await updateSurveyClickStatus(null, click.id, status);
-  
-//   return { click_id: click.id, status };
-// };
 
 const processNonSuccessCallback = async (transactionId, status, offerWall) => {
   const client = await pool.connect();

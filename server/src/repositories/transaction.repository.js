@@ -20,7 +20,7 @@ const createTransaction = async (clientOrPool, data) => {
 
 const updateSurveyClickStatus = async (clientOrPool, clickId, status, data = {}) => {
   const executor = clientOrPool || pool;
-  
+
   const res = await executor.query(
     `UPDATE survey_clicks 
      SET status = $1,
@@ -42,6 +42,19 @@ const findTransactionByReference = async (referenceType, referenceId, type) => {
      WHERE reference_type = $1 AND reference_id = $2 AND type = $3 
      LIMIT 1`,
     [referenceType, referenceId, type]
+  );
+  return res.rows[0];
+};
+
+// FIX #1: New helper to find referral transaction by survey click ID
+const findReferralTransactionBySurveyClick = async (clientOrPool, surveyClickId) => {
+  const executor = clientOrPool || pool;
+  const res = await executor.query(
+    `SELECT * FROM transactions
+     WHERE type = 'referral'
+     AND metadata->>'from_survey_click' = $1
+     LIMIT 1`,
+    [surveyClickId.toString()]
   );
   return res.rows[0];
 };
@@ -114,7 +127,9 @@ const getTransactionsByUserId = async (userId, filters = {}, pagination = {}, so
     ...row,
     amount: parseFloat(row.amount),
     commission_earned: parseFloat(row.commission_earned),
-    referrer_earned: parseFloat(row.referrer_earned)
+    referrer_earned: parseFloat(row.referrer_earned),
+    created_at: row.created_at ? new Date(row.created_at).toISOString() : null,
+    updated_at: row.updated_at ? new Date(row.updated_at).toISOString() : null
   }));
 
   return {
@@ -129,4 +144,4 @@ const getTransactionsByUserId = async (userId, filters = {}, pagination = {}, so
     }
   };
 };
-module.exports = { createTransaction, updateSurveyClickStatus, findTransactionByReference, getTransactionsByUserId };
+module.exports = { createTransaction, updateSurveyClickStatus, findTransactionByReference, findReferralTransactionBySurveyClick, getTransactionsByUserId };

@@ -7,62 +7,63 @@ import {
   MenuItem, Select, FormControl, InputLabel,
   useTheme, useMediaQuery, IconButton, Tooltip, Collapse,
 } from '@mui/material'
-import PollIcon                 from '@mui/icons-material/Poll'
-import PeopleIcon               from '@mui/icons-material/People'
-import CardGiftcardIcon         from '@mui/icons-material/CardGiftcard'
-import WhatshotIcon             from '@mui/icons-material/Whatshot'
-import UndoIcon                 from '@mui/icons-material/Undo'
-import ReplayIcon               from '@mui/icons-material/Replay'
-import TuneIcon                 from '@mui/icons-material/Tune'
+import PollIcon from '@mui/icons-material/Poll'
+import PeopleIcon from '@mui/icons-material/People'
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard'
+import WhatshotIcon from '@mui/icons-material/Whatshot'
+import UndoIcon from '@mui/icons-material/Undo'
+import ReplayIcon from '@mui/icons-material/Replay'
+import TuneIcon from '@mui/icons-material/Tune'
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
-import EmojiEventsIcon          from '@mui/icons-material/EmojiEvents'
-import GppBadIcon               from '@mui/icons-material/GppBad'
-import SyncAltIcon              from '@mui/icons-material/SyncAlt'
-import ReceiptLongIcon          from '@mui/icons-material/ReceiptLong'
-import LockIcon                 from '@mui/icons-material/Lock'
-import CloseIcon                from '@mui/icons-material/Close'
-import TrendingUpIcon           from '@mui/icons-material/TrendingUp'
-import SummarizeIcon            from '@mui/icons-material/Summarize'
-import axiosInstance            from '../utils/axiosInstance'
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
+import GppBadIcon from '@mui/icons-material/GppBad'
+import SyncAltIcon from '@mui/icons-material/SyncAlt'
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
+import LockIcon from '@mui/icons-material/Lock'
+import CloseIcon from '@mui/icons-material/Close'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import SummarizeIcon from '@mui/icons-material/Summarize'
+import axiosInstance from '../utils/axiosInstance'
+import { formatUTCDateTime } from '../utils/formatTime'
 import { PageWrapper, getColors } from '../components/Layout/SharedLayout'
 
 // ─── Types — exact match with server/src/constants/transactionTypes.js ────────
 const TX_TYPES = [
-  { value: 'survey',               label: 'Survey',                icon: PollIcon,                color: '#5312bc', earn: true  },
-  { value: 'referral',             label: 'Referral Bonus',        icon: PeopleIcon,              color: '#ec4899', earn: true  },
-  { value: 'bonus',                label: 'Bonus',                 icon: CardGiftcardIcon,        color: '#f59e0b', earn: true  },
-  { value: 'daily_bonus',          label: 'Daily Streak Bonus',    icon: WhatshotIcon,            color: '#10b981', earn: true  },
-  { value: 'reversal',             label: 'Reversal',              icon: UndoIcon,                color: '#ef4444', earn: false },
-  { value: 'adjustment',           label: 'Adjustment',            icon: SyncAltIcon,             color: '#0891b2', earn: null  },
-  { value: 'promo',                label: 'Promo Reward',          icon: CardGiftcardIcon,        color: '#8b5cf6', earn: true  },
-  { value: 'refund',               label: 'Refund',                icon: ReplayIcon,              color: '#14b8a6', earn: true  },
-  { value: 'withdrawal',           label: 'Withdrawal',            icon: AccountBalanceWalletIcon,color: '#2563eb', earn: false },
-  { value: 'payment_proof_reward', label: 'Payment Proof Reward',  icon: ReceiptLongIcon,         color: '#059669', earn: true  },
-  { value: 'level_up_bonus',       label: 'Level Up Bonus',        icon: EmojiEventsIcon,         color: '#d97706', earn: true  },
-  { value: 'fraud_deduction',      label: 'Fraud Deduction',       icon: GppBadIcon,              color: '#ef4444', earn: false },
-  { value: 'undo_reversal',        label: 'Reversal Undone',       icon: ReplayIcon,              color: '#7c3aed', earn: true  },
+  { value: 'survey', label: 'Survey', icon: PollIcon, color: '#5312bc', earn: true },
+  { value: 'referral', label: 'Referral Bonus', icon: PeopleIcon, color: '#ec4899', earn: true },
+  { value: 'bonus', label: 'Bonus', icon: CardGiftcardIcon, color: '#f59e0b', earn: true },
+  { value: 'daily_bonus', label: 'Daily Streak Bonus', icon: WhatshotIcon, color: '#10b981', earn: true },
+  { value: 'reversal', label: 'Reversal', icon: UndoIcon, color: '#ef4444', earn: false },
+  { value: 'adjustment', label: 'Adjustment', icon: SyncAltIcon, color: '#0891b2', earn: null },
+  { value: 'promo', label: 'Promo Reward', icon: CardGiftcardIcon, color: '#8b5cf6', earn: true },
+  { value: 'refund', label: 'Refund', icon: ReplayIcon, color: '#14b8a6', earn: true },
+  { value: 'withdrawal', label: 'Withdrawal', icon: AccountBalanceWalletIcon, color: '#2563eb', earn: false },
+  { value: 'payment_proof_reward', label: 'Payment Proof Reward', icon: ReceiptLongIcon, color: '#059669', earn: true },
+  { value: 'level_up_bonus', label: 'Level Up Bonus', icon: EmojiEventsIcon, color: '#d97706', earn: true },
+  { value: 'fraud_deduction', label: 'Fraud Deduction', icon: GppBadIcon, color: '#ef4444', earn: false },
+  { value: 'undo_reversal', label: 'Reversal Undone', icon: ReplayIcon, color: '#7c3aed', earn: true },
 ]
 
 // ─── Statuses — exact match with backend ─────────────────────────────────────
 const TX_STATUSES = [
   { value: 'completed', label: 'Completed', bg: '#d1fae5', color: '#059669' },
-  { value: 'pending',   label: 'Pending',   bg: '#fef3c7', color: '#d97706' },
-  { value: 'locked',    label: 'Locked',    bg: '#ede9fe', color: '#7c3aed' },
-  { value: 'reversed',  label: 'Reversed',  bg: '#f3f4f6', color: '#6b7280' },
+  { value: 'pending', label: 'Pending', bg: '#fef3c7', color: '#d97706' },
+  { value: 'locked', label: 'Locked', bg: '#ede9fe', color: '#7c3aed' },
+  { value: 'reversed', label: 'Reversed', bg: '#f3f4f6', color: '#6b7280' },
   { value: 'cancelled', label: 'Cancelled', bg: '#fee2e2', color: '#dc2626' },
 ]
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 const TABS = [
-  { value: 'all',       label: 'All' },
-  { value: 'survey',    label: 'Surveys' },
-  { value: 'withdrawal',label: 'Withdrawals' },
-  { value: 'referral',  label: 'Referrals' },
+  { value: 'all', label: 'All' },
+  { value: 'survey', label: 'Surveys' },
+  { value: 'withdrawal', label: 'Withdrawals' },
+  { value: 'referral', label: 'Referrals' },
   { value: 'bonus,daily_bonus,promo,level_up_bonus,payment_proof_reward', label: 'Bonuses' },
-  { value: 'reversal,undo_reversal,adjustment,fraud_deduction,refund',    label: 'Adjustments' },
+  { value: 'reversal,undo_reversal,adjustment,fraud_deduction,refund', label: 'Adjustments' },
 ]
 
-const typeMap   = Object.fromEntries(TX_TYPES.map(t => [t.value, t]))
+const typeMap = Object.fromEntries(TX_TYPES.map(t => [t.value, t]))
 const statusMap = Object.fromEntries(TX_STATUSES.map(s => [s.value, s]))
 
 // ─── Smart description builder ───────────────────────────────────────────────
@@ -148,22 +149,22 @@ const getReversalSubLabel = (tx) => {
 }
 
 const HistoryPage = ({ darkMode, toggleDarkMode }) => {
-  const COLORS   = getColors(darkMode)
-  const theme    = useTheme()
+  const COLORS = getColors(darkMode)
+  const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
   const [transactions, setTransactions] = useState([])
-  const [meta,         setMeta]         = useState({ page: 1, totalPages: 1, total: 0 })
-  const [loading,      setLoading]      = useState(true)
-  const [error,        setError]        = useState(null)
-  const [activeTab,    setActiveTab]    = useState('all')
-  const [showFilters,  setShowFilters]  = useState(false)
+  const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [activeTab, setActiveTab] = useState('all')
+  const [showFilters, setShowFilters] = useState(false)
   const [summaryStats, setSummaryStats] = useState({ totalEarned: 0, totalWithdrawn: 0, locked: 0 })
 
-  const [status,    setStatus]    = useState('')
+  const [status, setStatus] = useState('')
   const [sortOrder, setSortOrder] = useState('desc')
-  const [dateFrom,  setDateFrom]  = useState('')
-  const [dateTo,    setDateTo]    = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
 
   const fetchTransactions = useCallback(async (page = 1) => {
     try {
@@ -178,10 +179,10 @@ const HistoryPage = ({ darkMode, toggleDarkMode }) => {
         p.set('sort_by', 'created_at')
         p.set('sort_order', sortOrder)
         const s = overrideStatus !== undefined ? overrideStatus : status
-        if (s)      p.set('status',    s)
+        if (s) p.set('status', s)
         if (dateFrom) p.set('date_from', dateFrom)
-        if (dateTo)   p.set('date_to',   dateTo)
-        if (type)   p.set('type',      type)
+        if (dateTo) p.set('date_to', dateTo)
+        if (type) p.set('type', type)
         return p.toString()
       }
 
@@ -199,7 +200,7 @@ const HistoryPage = ({ darkMode, toggleDarkMode }) => {
 
       if (tabTypes.length <= 1) {
         const type = tabTypes[0] || ''
-        const res  = await axiosInstance.get(`/transactions/?${makeParams(type, page)}`)
+        const res = await axiosInstance.get(`/transactions/?${makeParams(type, page)}`)
         setTransactions(res.data.data || [])
         setMeta(res.data.meta || { page: 1, totalPages: 1, total: 0 })
       } else {
@@ -229,13 +230,13 @@ const HistoryPage = ({ darkMode, toggleDarkMode }) => {
     const fetchStats = async () => {
       try {
         const res = await axiosInstance.get('/dashboard')
-        const d   = res.data.data || res.data
+        const d = res.data.data || res.data
         setSummaryStats({
-          totalEarned:    parseFloat(d?.lifetime?.total_earned    || 0),
+          totalEarned: parseFloat(d?.lifetime?.total_earned || 0),
           totalWithdrawn: parseFloat(d?.lifetime?.total_withdrawn || 0),
-          locked:         parseFloat(d?.balance?.locked           || 0),
+          locked: parseFloat(d?.balance?.locked || 0),
         })
-      } catch {}
+      } catch { }
     }
     fetchStats()
   }, [])
@@ -245,19 +246,15 @@ const HistoryPage = ({ darkMode, toggleDarkMode }) => {
   // Reset to page 1 whenever filters or tab change
   useEffect(() => { fetchTransactions(1) }, [activeTab, status, sortOrder, dateFrom, dateTo]) // eslint-disable-line
 
-  const fmt    = (v) => Math.floor(v || 0).toLocaleString()
+  const fmt = (v) => Math.floor(v || 0).toLocaleString()
   const fmtUSD = (v) => `≈ $${(parseFloat(v || 0) / 100).toFixed(2)}`
 
-  const fmtDate = (d) => d
-    ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-    : '—'
-  const fmtDateShort = (d) => d
-    ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-    : '—'
+  const fmtDate = (d) => d ? formatUTCDateTime(d) : '—'
+  const fmtDateShort = (d) => d ? formatUTCDateTime(d) : '—'
 
   const isCredit = (tx) => {
     const cfg = typeMap[tx.type]
-    if (cfg?.earn === true)  return true
+    if (cfg?.earn === true) return true
     if (cfg?.earn === false) return false
     return parseFloat(tx.amount) > 0
   }
@@ -316,11 +313,11 @@ const HistoryPage = ({ darkMode, toggleDarkMode }) => {
   )
 
   const TxIcon = ({ tx, size = 36 }) => {
-    const cfg  = typeMap[tx.type] || { icon: SyncAltIcon, color: COLORS.primary }
+    const cfg = typeMap[tx.type] || { icon: SyncAltIcon, color: COLORS.primary }
     // Referral commission clawback — show a different tint to distinguish
     const isClawback = tx.type === 'reversal' && tx.reference_type === 'referral'
     const color = isClawback ? '#f97316' : cfg.color
-    const Icon  = cfg.icon
+    const Icon = cfg.icon
     return (
       <Box sx={{
         width: size, height: size, borderRadius: size / 4, flexShrink: 0,
@@ -345,8 +342,8 @@ const HistoryPage = ({ darkMode, toggleDarkMode }) => {
 
   const AmountBadge = ({ tx }) => {
     const credit = isCredit(tx)
-    const color  = credit ? '#10b981' : '#ef4444'
-    const sign   = credit ? '+' : '−'
+    const color = credit ? '#10b981' : '#ef4444'
+    const sign = credit ? '+' : '−'
     return (
       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
         <Typography sx={{ fontWeight: 800, fontSize: '0.98rem', color, lineHeight: 1.1 }}>
@@ -395,7 +392,7 @@ const HistoryPage = ({ darkMode, toggleDarkMode }) => {
 
   // Mobile card — shows all the info a user needs clearly
   const MobileCard = ({ tx }) => {
-    const subLabel   = getReversalSubLabel(tx)
+    const subLabel = getReversalSubLabel(tx)
     const isClawback = tx.type === 'reversal' && tx.reference_type === 'referral'
     return (
       <Paper elevation={0} sx={{
@@ -457,9 +454,9 @@ const HistoryPage = ({ darkMode, toggleDarkMode }) => {
 
   // Desktop row
   const DesktopRow = ({ tx }) => {
-    const subLabel   = getReversalSubLabel(tx)
+    const subLabel = getReversalSubLabel(tx)
     const isClawback = tx.type === 'reversal' && tx.reference_type === 'referral'
-    const credit     = isCredit(tx)
+    const credit = isCredit(tx)
     return (
       <Box sx={{
         display: 'grid',
@@ -651,7 +648,7 @@ const HistoryPage = ({ darkMode, toggleDarkMode }) => {
                 <InputLabel sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>Sort</InputLabel>
                 <Select value={sortOrder} label="Sort" onChange={e => setSortOrder(e.target.value)} sx={selectSx}>
                   <MenuItem value="desc" sx={{ fontSize: '0.82rem' }}>Newest first</MenuItem>
-                  <MenuItem value="asc"  sx={{ fontSize: '0.82rem' }}>Oldest first</MenuItem>
+                  <MenuItem value="asc" sx={{ fontSize: '0.82rem' }}>Oldest first</MenuItem>
                 </Select>
               </FormControl>
 
@@ -702,7 +699,7 @@ const HistoryPage = ({ darkMode, toggleDarkMode }) => {
           <Box>
             {loading ? (
               <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                {[1,2,3,4,5,6].map(i => (
+                {[1, 2, 3, 4, 5, 6].map(i => (
                   <Skeleton key={i} variant="rounded" height={isMobile ? 95 : 58} sx={{ borderRadius: 2 }} />
                 ))}
               </Box>

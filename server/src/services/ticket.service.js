@@ -71,7 +71,7 @@ const createTicketRecord = async (userId, payload, imageFile) => {
         message: ticket.message,
         status: ticket.status,
         image_url: ticket.image_url,
-        created_at: ticket.created_at
+        created_at: ticket.created_at ? new Date(ticket.created_at).toISOString() : null
       },
       warning: warning
     };
@@ -183,7 +183,7 @@ const respondToTicket = async (ticketId, payload, adminId, adminIp) => {
         user_id: updated.user_id,
         user_public_id: ticket.user_public_id,
         user_username: ticket.user_username,
-        updated_at: updated.updated_at
+        updated_at: updated.updated_at ? new Date(updated.updated_at).toISOString() : null
       }
     };
 

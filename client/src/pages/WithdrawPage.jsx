@@ -17,8 +17,10 @@ import CancelIcon from '@mui/icons-material/Cancel'
 import PendingIcon from '@mui/icons-material/Pending'
 import PaymentsIcon from '@mui/icons-material/Payments'
 import axiosInstance from '../utils/axiosInstance'
+import { formatUTCDateTime, formatUTCDate } from '../utils/formatTime'
 import { PageWrapper, getColors } from '../components/Layout/SharedLayout'
 import { fetchCurrentUser } from '../slices/authSlice'
+
 
 // ─── Status helpers ────────────────────────────────────────
 const STATUS_ICONS = {
@@ -72,19 +74,6 @@ const METHOD_NAMES = {
 const ptsToUsd = (pts) => ((pts || 0) / 100).toFixed(2)
 const usdToPts = (usd) => Math.round((parseFloat(usd) || 0) * 100)
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return 'N/A'
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric'
-  })
-}
-
-const formatTime = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleTimeString('en-US', {
-    hour: '2-digit', minute: '2-digit'
-  })
-}
 
 // ─── Component ─────────────────────────────────────────────
 const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
@@ -648,7 +637,7 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
                           {METHOD_NAMES[w.method] || w.method}
                         </Typography>
                         <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted }}>
-                          {formatDate(w.created_at)}
+                          {formatUTCDateTime(w.created_at)}
                         </Typography>
                       </Box>
                     </Paper>
@@ -719,10 +708,7 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
                           </TableCell>
                           <TableCell sx={{ borderBottom: `1px solid ${COLORS.border}`, py: 1.8 }} align="right">
                             <Typography sx={{ color: COLORS.textMuted, fontSize: '0.8rem', fontWeight: 500 }}>
-                              {formatDate(w.created_at)}
-                            </Typography>
-                            <Typography sx={{ color: COLORS.textMuted, fontSize: '0.7rem' }}>
-                              {formatTime(w.created_at)}
+                              {formatUTCDateTime(w.created_at)}
                             </Typography>
                           </TableCell>
                         </TableRow>

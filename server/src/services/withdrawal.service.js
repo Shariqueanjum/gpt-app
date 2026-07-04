@@ -104,7 +104,7 @@ const requestWithdrawal = async (userId, payload) => {
         amount: parseFloat(withdrawal.amount),
         method: withdrawal.method,
         status: withdrawal.status,
-        created_at: withdrawal.created_at
+        created_at: withdrawal.created_at ? new Date(withdrawal.created_at).toISOString() : new Date().toISOString()
       }
     };
 
@@ -118,7 +118,7 @@ const requestWithdrawal = async (userId, payload) => {
 
 const getMyWithdrawals = async (userId, page = 1, limit = 20) => {
   const offset = (page - 1) * limit;
-  
+
   const [data, total] = await Promise.all([
     findWithdrawalsByUserId(userId, limit, offset),
     countWithdrawalsByUserId(userId)
@@ -127,7 +127,9 @@ const getMyWithdrawals = async (userId, page = 1, limit = 20) => {
   const parsedData = data.map(w => ({
     ...w,
     amount: parseFloat(w.amount),
-    method_details: w.method_details
+    method_details: w.method_details,
+    created_at: w.created_at ? new Date(w.created_at).toISOString() : null,
+    updated_at: w.updated_at ? new Date(w.updated_at).toISOString() : null
   }));
 
   return {

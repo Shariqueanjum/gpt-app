@@ -33,6 +33,7 @@ import LockIcon from '@mui/icons-material/Lock'
 import PaymentIcon from '@mui/icons-material/Payment'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import axiosInstance from '../utils/axiosInstance'
+import { formatUTCDateTime, formatUTCMonthYear } from '../utils/formatTime'
 import { fetchCurrentUser } from '../slices/authSlice'
 
 const getColors = (darkMode) => ({
@@ -212,11 +213,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
   }
 
   const getMemberSince = () => {
-    if (!user?.created_at) return 'New member'
-    const date = new Date(user.created_at)
-    const month = date.toLocaleString('default', { month: 'short' })
-    const year = date.getFullYear()
-    return `Member since ${month} ${year}`
+    return `Member since ${formatUTCMonthYear(user?.created_at)}`
   }
 
   const formatPoints = (val) => {
@@ -227,19 +224,6 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
   const formatDollar = (val) => {
     if (val === undefined || val === null) return '$0.00'
     return `$${parseFloat(val).toFixed(2)}`
-  }
-
-  const timeAgo = (dateStr) => {
-    if (!dateStr) return 'Just now'
-    const nowUTC = Date.UTC(
-      new Date().getUTCFullYear(),
-      new Date().getUTCMonth(),
-      new Date().getUTCDate(),
-      new Date().getUTCHours(),
-      new Date().getUTCMinutes(),
-      new Date().getUTCSeconds()
-    )
-    const diff = nowUTC - new Date(dateStr).getTime()
   }
 
   const renderActivityItem = (activity, idx) => (
@@ -259,7 +243,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
             <Box component="span" sx={{ color: COLORS.accent, fontWeight: 700 }}>{formatPoints(activity.amount)} pts</Box>
           </Typography>
         )}
-        <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted, mt: 0.3 }}>{timeAgo(activity.time)}</Typography>
+        <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted, mt: 0.3 }}>{formatUTCDateTime(activity.time)}</Typography>
       </Box>
     </Box>
   )

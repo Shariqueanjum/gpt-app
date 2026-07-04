@@ -5,7 +5,8 @@ import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import {
   Box, Typography, Paper, Button, Chip, Skeleton, Alert,
-  useTheme, useMediaQuery, IconButton, Divider, Badge
+  useTheme, useMediaQuery, IconButton, Divider, Badge,
+  Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead'
@@ -14,7 +15,9 @@ import CampaignIcon from '@mui/icons-material/Campaign'
 import InfoIcon from '@mui/icons-material/Info'
 import WarningIcon from '@mui/icons-material/Warning'
 import NewReleasesIcon from '@mui/icons-material/NewReleases'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import axiosInstance from '../utils/axiosInstance'
+import { formatUTCDateTime } from '../utils/formatTime'
 import { PageWrapper, getColors } from '../components/Layout/SharedLayout'
 
 const typeConfig = {
@@ -104,238 +107,248 @@ const NotificationsPage = ({ darkMode, toggleDarkMode }) => {
   })
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return ''
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diffMs = now - date
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
-
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleDateString()
+    return dateStr ? formatUTCDateTime(dateStr) : ''
   }
 
   return (
     <PageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-      <Box sx={{ maxWidth: 900, mx: 'auto', px: isMobile ? 2 : 0 }}>
-        {/* Header */}
-        <Box sx={{ mb: 3, mt: isMobile ? 1 : 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-          <Box>
-            <Typography sx={{ fontWeight: 800, fontSize: '1.4rem', color: COLORS.textPrimary, mb: 0.5 }}>
-              Notifications
-            </Typography>
-            <Typography sx={{ fontSize: '0.9rem', color: COLORS.textSecondary }}>
-              {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'You are all caught up'}
-            </Typography>
-          </Box>
-          {unreadCount > 0 && (
-            <Button
-              onClick={handleMarkAllRead}
-              disabled={actionLoading.all === 'read'}
-              startIcon={<MarkEmailReadIcon />}
-              variant="outlined"
-              sx={{
-                borderColor: COLORS.primary,
-                color: COLORS.primary,
-                fontWeight: 700,
-                textTransform: 'none',
-                borderRadius: 2,
-                fontSize: '0.85rem',
-                '&:hover': { bgcolor: `${COLORS.primary}08`, borderColor: COLORS.primaryDark }
-              }}
-            >
-              {actionLoading.all === 'read' ? 'Marking...' : 'Mark all read'}
-            </Button>
-          )}
-        </Box>
+      {/* Header */}
+      <Box sx={{ mb: 3, py:1, px: isMobile ? 1 : 0 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: COLORS.textPrimary, mb: 0.5 }}>
+          Notifications
+        </Typography>
+        <Typography variant="body2" sx={{ color: COLORS.textMuted }}>
+          {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'You are all caught up'}
+        </Typography>
+      </Box>
 
-        {/* Filter Chips */}
-        <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
-          {[{ key: 'all', label: 'All' }, { key: 'unread', label: 'Unread' }, { key: 'read', label: 'Read' }].map(f => (
-            <Chip
-              key={f.key}
-              label={f.label}
-              onClick={() => setFilter(f.key)}
-              sx={{
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                borderRadius: 2,
-                bgcolor: filter === f.key ? COLORS.primary : darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                color: filter === f.key ? '#fff' : COLORS.textSecondary,
-                border: `1px solid ${filter === f.key ? COLORS.primary : COLORS.border}`,
-                '&:hover': { bgcolor: filter === f.key ? COLORS.primaryDark : darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }
-              }}
-            />
-          ))}
+      {unreadCount > 0 && (
+        <Box sx={{ px: isMobile ? 1 : 0, mb: 2 }}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<MarkEmailReadIcon />}
+            onClick={handleMarkAllRead}
+            disabled={actionLoading.all === 'read'}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              borderColor: COLORS.primary,
+              color: COLORS.primary,
+              '&:hover': { bgcolor: `${COLORS.primary}08`, borderColor: COLORS.primaryDark }
+            }}
+          >
+            Mark all as read
+          </Button>
         </Box>
+      )}
 
-        {/* Error */}
-        {error && (
-          <Alert severity="error" sx={{ borderRadius: 2, mb: 2, fontSize: '0.85rem' }} onClose={() => setError(null)}>
+      {/* Filter Chips */}
+      <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap', px: isMobile ? 1 : 0 }}>
+        {[{ key: 'all', label: 'All' }, { key: 'unread', label: 'Unread' }, { key: 'read', label: 'Read' }].map(f => (
+          <Button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            sx={{
+              fontWeight: 600,
+              fontSize: '0.8rem',
+              borderRadius: 2,
+              bgcolor: filter === f.key ? COLORS.primary : darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+              color: filter === f.key ? '#fff' : COLORS.textSecondary,
+              border: `1px solid ${filter === f.key ? COLORS.primary : COLORS.border}`,
+              '&:hover': { bgcolor: filter === f.key ? COLORS.primaryDark : darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }
+            }}
+          >
+            {f.label}
+          </Button>
+        ))}
+      </Box>
+
+      {/* Error */}
+      {error && (
+        <Box sx={{ px: isMobile ? 1 : 0, mb: 2 }}>
+          <Alert severity="error" sx={{ borderRadius: 2 }} onClose={() => setError(null)}>
             {error}
           </Alert>
-        )}
+        </Box>
+      )}
 
-        {/* Notifications List */}
-        {loading ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} variant="rounded" height={80} sx={{ borderRadius: 3 }} />
-            ))}
-          </Box>
-        ) : filteredNotifications.length === 0 ? (
-          <Paper sx={{
-            p: isMobile ? 3 : 5,
-            borderRadius: 3,
-            bgcolor: COLORS.cardBg,
-            border: `1px solid ${COLORS.border}`,
-            textAlign: 'center'
-          }}>
-            <NotificationsIcon sx={{ fontSize: '3rem', color: COLORS.textMuted, mb: 1.5 }} />
-            <Typography sx={{ color: COLORS.textSecondary, fontWeight: 600, mb: 0.5 }}>
+      {/* Notifications List */}
+      {loading ? (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, px: isMobile ? 1 : 0 }}>
+          {[1, 2, 3, 4].map(i => (
+            <Skeleton key={i} variant="rounded" height={72} sx={{ borderRadius: 2 }} />
+          ))}
+        </Box>
+      ) : filteredNotifications.length === 0 ? (
+        <Box sx={{ px: isMobile ? 1 : 0 }}>
+          <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
+            <NotificationsIcon sx={{ fontSize: 48, color: COLORS.textMuted, mb: 1 }} />
+            <Typography sx={{ color: COLORS.textMuted, fontWeight: 600 }}>
               {filter === 'unread' ? 'No unread notifications' : filter === 'read' ? 'No read notifications' : 'No notifications yet'}
             </Typography>
-            <Typography sx={{ color: COLORS.textMuted, fontSize: '0.85rem' }}>
+            <Typography variant="body2" sx={{ color: COLORS.textMuted, mt: 0.5 }}>
               {filter === 'unread' ? 'Check back later for new updates' : 'All your notifications will appear here'}
             </Typography>
           </Paper>
-        ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {filteredNotifications.map((notif) => {
-              const config = typeConfig[notif.type] || typeConfig.info
-              const Icon = config.icon
-              const isUnread = !notif.is_read
+        </Box>
+      ) : (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, px: isMobile ? 1 : 0 }}>
+          {filteredNotifications.map((notif) => {
+            const config = typeConfig[notif.type] || typeConfig.info
+            const Icon = config.icon
+            const isUnread = !notif.is_read
 
-              return (
-                <Paper
-                  key={notif.id}
+            return (
+              <Accordion
+                key={notif.id}
+                disableGutters
+                elevation={0}
+                sx={{
+                  borderRadius: '12px !important',
+                  overflow: 'hidden',
+                  bgcolor: COLORS.cardBg,
+                  border: `1px solid ${COLORS.border}`,
+                  '&:before': { display: 'none' },
+                  '&.Mui-expanded': {
+                    bgcolor: COLORS.cardBg,
+                  },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon sx={{ color: COLORS.textMuted, flexShrink: 0 }} />}
                   sx={{
-                    p: isMobile ? 2 : 2.5,
-                    px: isMobile ? 2 : 3,
-                    borderRadius: 3,
-                    bgcolor: isUnread ? (darkMode ? 'rgba(83,18,188,0.06)' : config.bg) : COLORS.cardBg,
-                    border: `1px solid ${isUnread ? `${COLORS.primary}20` : COLORS.border}`,
-                    transition: 'all 0.2s ease',
-                    position: 'relative',
-                    overflow: 'hidden'
+                    py: 1,
+                    px: isMobile ? 1.5 : 2,
+                    minHeight: '56px !important',
+                    '& .MuiAccordionSummary-content': {
+                      margin: '6px 0 !important',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      minWidth: 0,
+                    },
                   }}
                 >
-                  {/* Unread indicator bar */}
-                  {isUnread && (
-                    <Box sx={{
-                      position: 'absolute',
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: 4,
-                      bgcolor: COLORS.primary,
-                      borderRadius: '3px 0 0 3px'
-                    }} />
-                  )}
-
-                  <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-                    {/* Icon */}
-                    <Box sx={{
-                      width: 40,
-                      height: 40,
+                  {/* Icon */}
+                  <Box
+                    sx={{
+                      width: 36,
+                      height: 36,
                       borderRadius: 2,
-                      bgcolor: `${config.color}15`,
+                      bgcolor: config.bg,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: config.color,
                       flexShrink: 0,
-                      mt: 0.3
-                    }}>
-                      <Icon sx={{ fontSize: '1.3rem' }} />
-                    </Box>
-
-                    {/* Content */}
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
-                        <Typography sx={{
-                          fontWeight: isUnread ? 700 : 600,
-                          fontSize: '0.95rem',
-                          color: COLORS.textPrimary,
-                          lineHeight: 1.3
-                        }}>
-                          {notif.title}
-                        </Typography>
-                        {isUnread && (
-                          <Chip
-                            label="New"
-                            size="small"
-                            sx={{
-                              height: 20,
-                              fontSize: '0.65rem',
-                              fontWeight: 700,
-                              bgcolor: `${COLORS.primary}15`,
-                              color: COLORS.primary,
-                              borderRadius: 1
-                            }}
-                          />
-                        )}
-                      </Box>
-                      <Typography sx={{
-                        fontSize: '0.85rem',
-                        color: COLORS.textSecondary,
-                        lineHeight: 1.5,
-                        mb: 1,
-                        wordBreak: 'break-word'
-                      }}>
-                        {notif.message}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-                        <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted }}>
-                          {formatDate(notif.created_at)}
-                          {notif.is_read && notif.read_at && ` • Read ${formatDate(notif.read_at)}`}
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 0.5 }}>
-                          {isUnread && (
-                            <Button
-                              onClick={() => handleMarkRead(notif.id)}
-                              disabled={actionLoading[notif.id] === 'read'}
-                              size="small"
-                              startIcon={<MarkEmailReadIcon sx={{ fontSize: '0.9rem' }} />}
-                              sx={{
-                                color: COLORS.primary,
-                                fontWeight: 600,
-                                fontSize: '0.75rem',
-                                textTransform: 'none',
-                                borderRadius: 1.5,
-                                py: 0.3,
-                                px: 1,
-                                '&:hover': { bgcolor: `${COLORS.primary}08` }
-                              }}
-                            >
-                              {actionLoading[notif.id] === 'read' ? '...' : 'Mark read'}
-                            </Button>
-                          )}
-                          <IconButton
-                            onClick={() => handleHide(notif.id)}
-                            disabled={actionLoading[notif.id] === 'hide'}
-                            size="small"
-                            sx={{
-                              color: COLORS.textMuted,
-                              '&:hover': { color: '#ef4444', bgcolor: 'rgba(239,68,68,0.06)' }
-                            }}
-                          >
-                            <DeleteIcon sx={{ fontSize: '1rem' }} />
-                          </IconButton>
-                        </Box>
-                      </Box>
-                    </Box>
+                    }}
+                  >
+                    <Icon sx={{ fontSize: 18, color: config.color }} />
                   </Box>
-                </Paper>
-              )
-            })}
-          </Box>
-        )}
-      </Box>
+
+                  {/* Title + Unread badge */}
+                  <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                    <Typography
+                      sx={{
+                        fontWeight: isUnread ? 700 : 600,
+                        fontSize: '0.9rem',
+                        color: COLORS.textPrimary,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {notif.title}
+                      </span>
+                      {isUnread && (
+                        <Badge
+                          variant="dot"
+                          sx={{
+                            flexShrink: 0,
+                            '& .MuiBadge-badge': {
+                              bgcolor: COLORS.primary,
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                            },
+                          }}
+                        />
+                      )}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: COLORS.textMuted, fontSize: '0.75rem', display: 'block' }}
+                    >
+                      {formatDate(notif.created_at)}
+                      {notif.is_read && notif.read_at && `  | Read at ${formatDate(notif.read_at)}`}
+                    </Typography>
+                  </Box>
+                </AccordionSummary>
+
+                <AccordionDetails sx={{ px: isMobile ? 1.5 : 2, pb: 2, pt: 0 }}>
+                  <Divider sx={{ mb: 1.5, borderColor: COLORS.border }} />
+
+                  {/* Message */}
+                  <Typography
+                    sx={{
+                      color: COLORS.textSecondary,
+                      fontSize: '0.85rem',
+                      lineHeight: 1.6,
+                      mb: 2,
+                      wordBreak: 'break-word',
+                    }}
+                    dangerouslySetInnerHTML={{ __html: notif.message }}
+                  />
+
+                  {/* Actions */}
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                    {isUnread && (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleMarkRead(notif.id)
+                        }}
+                        disabled={actionLoading[notif.id] === 'read'}
+                        sx={{
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          borderRadius: 1.5,
+                          borderColor: COLORS.primary,
+                          color: COLORS.primary,
+                          '&:hover': { bgcolor: `${COLORS.primary}08` },
+                        }}
+                      >
+                        Mark as read
+                      </Button>
+                    )}
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleHide(notif.id)
+                      }}
+                      disabled={actionLoading[notif.id] === 'hide'}
+                      size="small"
+                      sx={{
+                        color: COLORS.textMuted,
+                        '&:hover': { color: '#ef4444', bgcolor: 'rgba(239,68,68,0.06)' },
+                      }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
+            )
+          })}
+        </Box>
+      )}
     </PageWrapper>
   )
 }

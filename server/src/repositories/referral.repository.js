@@ -31,7 +31,8 @@ const getReferralStats = async (userId) => {
     total_earned: parseFloat(earningsRes.rows[0].total_earned),
     referrals: listRes.rows.map(r => ({
       ...r,
-      balance_available: parseFloat(r.balance_available)
+      balance_available: parseFloat(r.balance_available),
+      created_at: r.created_at ? new Date(r.created_at).toISOString() : null
     }))
   };
 };

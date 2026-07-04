@@ -89,7 +89,11 @@ const getTicketsByUserId = async (userId, filters = {}, pagination = {}, sort = 
   const total = countRes.rows[0].total;
 
   return {
-    data: dataRes.rows,
+    data: dataRes.rows.map(row => ({
+    ...row,
+    created_at: row.created_at ? new Date(row.created_at).toISOString() : null,
+    updated_at: row.updated_at ? new Date(row.updated_at).toISOString() : null
+  })),
     meta: {
       page,
       limit,
@@ -173,7 +177,11 @@ const getAllTicketsForAdmin = async (filters = {}, pagination = {}, sort = {}) =
   const total = countRes.rows[0].total;
 
   return {
-    data: dataRes.rows,
+    data: dataRes.rows.map(row => ({
+    ...row,
+    created_at: row.created_at ? new Date(row.created_at).toISOString() : null,
+    updated_at: row.updated_at ? new Date(row.updated_at).toISOString() : null
+  })),
     meta: {
       page,
       limit,

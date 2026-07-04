@@ -14,6 +14,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import axiosInstance from '../utils/axiosInstance'
+import { formatUTCDate } from '../utils/formatTime'
 import { PageWrapper, getColors } from '../components/Layout/SharedLayout'
 
 const ReferralsPage = ({ darkMode, toggleDarkMode }) => {
@@ -291,7 +292,7 @@ const ReferralsPage = ({ darkMode, toggleDarkMode }) => {
                         {ref.username || 'User'}
                       </Typography>
                       <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted }}>
-                        Joined {new Date(ref.created_at).toLocaleDateString()}
+                        Joined {formatUTCDate(ref.created_at)}
                       </Typography>
                     </Box>
                   </Box>

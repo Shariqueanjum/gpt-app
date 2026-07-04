@@ -19,6 +19,7 @@ import FilterListIcon from '@mui/icons-material/FilterList'
 import CloseIcon from '@mui/icons-material/Close'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import axiosInstance from '../utils/axiosInstance'
+import { formatUTCDateTime, formatUTCDate } from '../utils/formatTime'
 import { PageWrapper, getColors } from '../components/Layout/SharedLayout'
 
 const TICKET_CATEGORIES = [
@@ -150,19 +151,8 @@ const SupportPage = ({ darkMode, toggleDarkMode }) => {
     }
   }
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return 'N/A'
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric'
-    })
-  }
-
-  const formatTime = (dateStr) => {
-    if (!dateStr) return ''
-    return new Date(dateStr).toLocaleTimeString('en-US', {
-      hour: '2-digit', minute: '2-digit'
-    })
-  }
+const formatDate = (dateStr) => dateStr ? formatUTCDate(dateStr) : 'N/A'
+const formatTime = (dateStr) => dateStr ? formatUTCDateTime(dateStr).split(' ')[1] || '' : ''
 
   const getStatusConfig = (status) => STATUS_CONFIG[status] || STATUS_CONFIG.open
 
