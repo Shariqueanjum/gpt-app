@@ -18,7 +18,7 @@ const navSections = [
   { label: 'Home', id: 'home' },
   { label: 'How It Works ?', id: 'how-it-works' },
   { label: 'Why Choose Us', id: 'why-choose-us' },
-  { label: 'Rewards', id: 'redeem' },
+  { label: 'Redeem', id: 'redeem' },
   { label: 'FAQ', id: 'faq' },
 ]
 

@@ -104,6 +104,12 @@ const getTrafficLogsForAdmin = async (filters = {}, pagination = {}, sort = {}) 
     values.push(filters.user_id);
   }
 
+  
+  if (filters.username) {
+    whereClause += ` AND tl.user_username ILIKE $${idx++}`;
+    values.push(`%${filters.username}%`);
+  }
+
   if (filters.offer_wall_id) {
     whereClause += ` AND tl.offer_wall_id = $${idx++}`;
     values.push(filters.offer_wall_id);
@@ -136,16 +142,50 @@ const getTrafficLogsForAdmin = async (filters = {}, pagination = {}, sort = {}) 
   );
 
   // Data with all joins
+  // NOTE: joins are intentionally rich here — this is the single feed the
+  // admin Traffic Logs page uses to show "who clicked what" (outgoing) and
+  // "what came back on our callback endpoint" (incoming) without needing a
+  // second round-trip to the Users or Offer Walls APIs.
   const dataRes = await pool.query(
     `SELECT 
       tl.*,
-      u.public_id as user_public_id_joined,
-      u.username as user_username_joined,
-      u.email as user_email,
-      ow.name as offer_wall_name_joined,
-      ow.internal_id as offer_wall_internal_id_joined,
-      sc.transaction_id as click_transaction_id,
-      sc.status as click_status
+ 
+      -- User profile (full context, not just id/username)
+      u.public_id        as user_public_id_joined,
+      u.username         as user_username_joined,
+      u.email            as user_email,
+      u.full_name        as user_full_name,
+      u.country          as user_country,
+      u.phone            as user_phone,
+      u.is_active        as user_is_active,
+      u.is_verified       as user_is_verified,
+      u.balance_available as user_balance_available,
+      u.balance_locked    as user_balance_locked,
+      u.referred_by       as user_referred_by,
+      u.created_at        as user_registered_at,
+      u.last_login_at     as user_last_login_at,
+ 
+      -- Offer wall context
+      ow.name             as offer_wall_name_joined,
+      ow.internal_id      as offer_wall_internal_id_joined,
+      ow.type             as offer_wall_type,
+      ow.commission_rate  as offer_wall_commission_rate,
+ 
+      -- Survey click — the actual click record this traffic belongs to
+      sc.transaction_id        as click_transaction_id,
+      sc.status                as click_status,
+      sc.survey_id              as click_survey_id,
+      sc.survey_name            as click_survey_name,
+      sc.loi                    as click_loi,
+      sc.country                as click_country,
+      sc.cpa_original            as click_cpa_original,
+      sc.cpa_user                as click_cpa_user,
+      sc.commission_rate         as click_commission_rate,
+      sc.integration_type        as click_integration_type,
+      sc.external_transaction_id as click_external_transaction_id,
+      sc.created_at              as click_created_at,
+      sc.expires_at               as click_expires_at
+ 
     FROM traffic_logs tl
     LEFT JOIN users u ON tl.user_id = u.id
     LEFT JOIN offer_walls ow ON tl.offer_wall_id = ow.id

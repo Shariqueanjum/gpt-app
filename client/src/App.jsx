@@ -41,14 +41,8 @@ const AdminAnnouncementsPage = lazy(() => import('./pages/admin/AdminAnnouncemen
 const AdminAuditLogsPage = lazy(() => import('./pages/admin/AdminAuditLogsPage'))
 const AdminFraudPage = lazy(() => import('./pages/admin/AdminFraudPage'))
 const AdminReversalsPage = lazy(() => import('./pages/admin/AdminReversalsPage'))
+const AdminPaymentMethodsPage = lazy(() => import('./pages/admin/AdminPaymentMethodsPage'))
 
-
-// import AdminUsersPage from './pages/admin/AdminUsersPage'
-// import AdminWithdrawalsPage from './pages/admin/AdminWithdrawalsPage'
-// import AdminTicketsPage from './pages/admin/AdminTicketsPage'
-// import AdminOfferWallsPage from './pages/admin/AdminOfferWallsPage'
-// import AdminTransactionsPage from './pages/admin/AdminTransactionsPage'
-// import AdminSettingsPage from './pages/admin/AdminSettingsPage'
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute'
@@ -277,7 +271,13 @@ function App() {
             <Suspense fallback={<AdminPageLoader />}><AdminReversalsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
           </AdminProtectedRoute>
         } />
-       
+
+        <Route path="/admin/payment-methods" element={
+          <AdminProtectedRoute>
+            <Suspense fallback={<AdminPageLoader />}><AdminPaymentMethodsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+          </AdminProtectedRoute>
+        } />
+
       </Routes>
     </ThemeProvider>
   )

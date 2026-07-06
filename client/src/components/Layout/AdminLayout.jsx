@@ -33,6 +33,7 @@ import SupportAgentOutlinedIcon from '@mui/icons-material/SupportAgentOutlined'
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined'
 import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined'
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined'
+import PaymentIcon from '@mui/icons-material/Payment'
 import { getColors } from './SharedLayout'
 
 const ADMIN_NAV = [
@@ -49,6 +50,7 @@ const ADMIN_NAV = [
   { label: 'Announcements', icon: CampaignOutlinedIcon, color: '#8b5cf6', path: '/admin/announcements' },
   { label: 'Audit Logs', icon: HistoryOutlinedIcon, color: '#64748b', path: '/admin/audit-logs' },
   { label: 'Settings', icon: SettingsIcon, color: '#6b7280', path: '/admin/settings' },
+  { label: 'Payment Methods', icon: PaymentIcon, color: '#06b6d4', path: '/admin/payment-methods' },
 ]
 
 // ---- Shared nav content (used inside both the fixed sidebar and the drawer) ----

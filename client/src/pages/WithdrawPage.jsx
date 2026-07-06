@@ -39,37 +39,6 @@ const STATUS_COLORS = {
   cancelled: { bg: '#fee2e2', color: '#dc2626' },
 }
 
-// ─── Frontend hardcoded required fields (must match backend) ─
-const REQUIRED_FIELDS = {
-  upi: [
-    { name: 'upi_id', label: 'UPI ID', placeholder: 'name@upi' }
-  ],
-  bank: [
-    { name: 'account_holder_name', label: 'Account Holder Name', placeholder: 'Full name as per bank' },
-    { name: 'account_number', label: 'Account Number', placeholder: 'Enter account number' },
-    { name: 'ifsc_code', label: 'IFSC Code', placeholder: 'e.g. SBIN0001234' },
-    { name: 'bank_name', label: 'Bank Name', placeholder: 'e.g. State Bank of India' },
-  ],
-  paypal: [
-    { name: 'paypal_email', label: 'PayPal Email', placeholder: 'your@email.com' }
-  ],
-  paytm: [
-    { name: 'paytm_number', label: 'Paytm Number', placeholder: '10-digit mobile number' }
-  ],
-  amazon_pay: [
-    { name: 'amazon_pay_number', label: 'Amazon Pay Number', placeholder: '10-digit mobile number' }
-  ],
-}
-
-// ─── Method name map ───────────────────────────────────────
-const METHOD_NAMES = {
-  upi: 'UPI',
-  bank: 'Bank Transfer',
-  paypal: 'PayPal',
-  paytm: 'Paytm',
-  amazon_pay: 'Amazon Pay',
-}
-
 // ─── Helpers ───────────────────────────────────────────────
 const ptsToUsd = (pts) => ((pts || 0) / 100).toFixed(2)
 const usdToPts = (usd) => Math.round((parseFloat(usd) || 0) * 100)
@@ -108,7 +77,17 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
   const fetchPaymentMethods = async () => {
     try {
       const res = await axiosInstance.get('/payment-methods/')
-      setPaymentMethods(res.data.data || [])
+      const methods = res.data.data || []
+      
+      // Parse required_fields from JSONB (may come as string from pg)
+      const parsed = methods.map(m => ({
+        ...m,
+        required_fields: typeof m.required_fields === 'string'
+          ? JSON.parse(m.required_fields)
+          : (Array.isArray(m.required_fields) ? m.required_fields : [])
+      }))
+      
+      setPaymentMethods(parsed)
     } catch (err) {
       console.error('Failed to fetch payment methods:', err)
     }
@@ -127,9 +106,10 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
     }
   }
 
-  const handleMethodChange = (methodCode) => {
+    const handleMethodChange = (methodCode) => {
     setSelectedMethod(methodCode)
-    const fields = REQUIRED_FIELDS[methodCode]
+    const method = paymentMethods.find(m => m.code === methodCode)
+    const fields = method?.required_fields
     if (fields && fields.length > 0) {
       const initial = {}
       fields.forEach(f => { initial[f.name] = '' })
@@ -145,7 +125,8 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
       return
     }
 
-    const fields = REQUIRED_FIELDS[selectedMethod]
+    const method = paymentMethods.find(m => m.code === selectedMethod)
+    const fields = method?.required_fields
     if (fields && fields.length > 0) {
       for (const field of fields) {
         if (!methodDetails[field.name]?.trim()) {
@@ -184,7 +165,7 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
   }
 
   const selectedMethodObj = paymentMethods.find(m => m.code === selectedMethod)
-  const requiredFields = REQUIRED_FIELDS[selectedMethod] || []
+  const requiredFields = selectedMethodObj?.required_fields || []
 
   // ─── Net value calculation ───────────────────────────────
   const amountPts = amount ? usdToPts(amount) : 0
@@ -634,7 +615,7 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography sx={{ fontSize: '0.75rem', color: COLORS.textSecondary, fontWeight: 500 }}>
-                          {METHOD_NAMES[w.method] || w.method}
+                          {paymentMethods.find(m => m.code === w.method)?.name || w.method}
                         </Typography>
                         <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted }}>
                           {formatUTCDateTime(w.created_at)}
@@ -689,7 +670,7 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
                           </TableCell>
                           <TableCell sx={{ borderBottom: `1px solid ${COLORS.border}`, py: 1.8 }}>
                             <Typography sx={{ color: COLORS.textSecondary, fontSize: '0.85rem', fontWeight: 600 }}>
-                              {METHOD_NAMES[w.method] || w.method}
+                              {paymentMethods.find(m => m.code === w.method)?.name || w.method}
                             </Typography>
                           </TableCell>
                           <TableCell sx={{ borderBottom: `1px solid ${COLORS.border}`, py: 1.8 }}>

@@ -72,7 +72,7 @@ const StatCard = ({ icon: Icon, label, value, subvalue, color, COLORS }) => (
   </Paper>
 )
 
-const UserDetailDrawer = ({ userId, open, onClose, darkMode, onBanUnban }) => {
+export const UserDetailDrawer = ({ userId, open, onClose, darkMode, onBanUnban }) => {
   const COLORS = getColors(darkMode)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))

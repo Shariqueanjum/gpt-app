@@ -89,6 +89,7 @@ const getAdminTrafficLogs = async (query = {}) => {
   if (query.direction) filters.direction = query.direction;
   if (query.type) filters.type = query.type;
   if (query.user_id) filters.user_id = parseInt(query.user_id);
+  if (query.username) filters.username = query.username;
   if (query.offer_wall_id) filters.offer_wall_id = parseInt(query.offer_wall_id);
   if (query.internal_transaction_id) filters.internal_transaction_id = query.internal_transaction_id;
   if (query.external_transaction_id) filters.external_transaction_id = query.external_transaction_id;

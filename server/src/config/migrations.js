@@ -375,6 +375,9 @@ const runSchemaUpdates = async () => {
     `ALTER TABLE tickets ADD COLUMN IF NOT EXISTS image_url TEXT`,
 
      `ALTER TABLE offer_walls ADD COLUMN IF NOT EXISTS logo_url TEXT`,
+     `ALTER TABLE payment_methods ADD COLUMN IF NOT EXISTS required_fields JSONB DEFAULT '[]'`,
+     `ALTER TABLE payment_methods ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`,
+
 
 
 

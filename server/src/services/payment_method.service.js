@@ -11,7 +11,8 @@ const getPaymentMethods = async () => {
     max_amount: parseFloat(m.max_amount),
     processing_fee: parseFloat(m.processing_fee),
     instructions: m.instructions,
-    display_order: m.display_order
+    display_order: m.display_order,
+    required_fields: m.required_fields || [] 
   }));
 };
 
