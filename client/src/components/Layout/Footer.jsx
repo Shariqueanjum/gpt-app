@@ -87,7 +87,7 @@ const Footer = () => {
                 letterSpacing: '-0.02em',
               }}
             >
-              WABCASH
+              PickOpinion
             </Typography>
             <Typography
               sx={{
@@ -285,7 +285,7 @@ const Footer = () => {
               fontWeight: 500,
             }}
           >
-            © {new Date().getFullYear()} WABCASH. Secure GPT Platform. All rights reserved.
+            © {new Date().getFullYear()} PickOpinion. Secure GPT Platform. All rights reserved.
           </Typography>
         </Box>
       </Container>

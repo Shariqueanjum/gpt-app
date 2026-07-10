@@ -97,7 +97,7 @@ export const Sidebar = ({ darkMode, moreExpanded, setMoreExpanded }) => {
       {/* Logo */}
       <Box onClick={() => navigate('/dashboard')} sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 4, cursor: 'pointer' }}>
         <Box sx={{ width: 40, height: 40, borderRadius: 2.5, bgcolor: COLORS.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '1.2rem', boxShadow: '0 4px 12px rgba(83,18,188,0.3)' }}>W</Box>
-        <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: COLORS.textPrimary, letterSpacing: '-0.02em' }}>WABCASH</Typography>
+        <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: COLORS.textPrimary, letterSpacing: '-0.02em' }}>PickOpinion</Typography>
       </Box>
 
       {/* Main Nav */}
@@ -305,7 +305,7 @@ export const MobileTopBar = ({ darkMode, toggleDarkMode, scrolled }) => {
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box onClick={() => navigate('/dashboard')} sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
           <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: COLORS.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '0.95rem' }}>W</Box>
-          <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: COLORS.textPrimary, letterSpacing: '-0.01em' }}>WABCASH</Typography>
+          <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: COLORS.textPrimary, letterSpacing: '-0.01em' }}>PickOpinion</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <IconButton onClick={() => navigate('/notifications')} size="small" sx={{ color: COLORS.textSecondary }}>

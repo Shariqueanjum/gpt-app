@@ -55,16 +55,16 @@ const GiftCardIcon = () => (
 )
 
 const paymentMethods = [
-  { name: 'UPI', min: '$1.00', Icon: UPIIcon, color: '#5312bc' },
-  { name: 'NetBanking', min: '$5.00', Icon: NetBankingIcon, color: '#006e2f' },
-  { name: 'PayPal', min: '$5.00', Icon: PayPalIcon, color: '#003087' },
-  { name: 'Crypto', min: '$10.00', Icon: CryptoIcon, color: '#F7931A' },
-  { name: 'Google Play', min: '$1.00', Icon: GooglePlayIcon, color: '#34a853' },
-  { name: 'Gift Card', min: '$1.00', Icon: GiftCardIcon, color: '#E03110' },
+  { name: 'UPI', min: '$5.00', Icon: UPIIcon, color: '#5312bc' },
+  { name: 'NetBanking', min: '$10.00', Icon: NetBankingIcon, color: '#006e2f' },
+  { name: 'PayPal', min: '$50.00', Icon: PayPalIcon, color: '#003087' },
+  // { name: 'Crypto', min: '$100.00', Icon: CryptoIcon, color: '#F7931A' },
+  { name: 'Google Play', min: '$5.00', Icon: GooglePlayIcon, color: '#34a853' },
+  { name: 'Gift Card', min: '$5.00', Icon: GiftCardIcon, color: '#E03110' },
 ]
 
 const stats = [
-  { value: '$0.50', label: 'Min. Withdrawal', color: '#5312bc' },
+  { value: '$5', label: 'Min. Withdrawal', color: '#5312bc' },
   { value: '24h', label: 'Avg. Processing', color: '#006e2f' },
   { value: '0%', label: 'Hidden Fees', color: '#623c00' },
 ]

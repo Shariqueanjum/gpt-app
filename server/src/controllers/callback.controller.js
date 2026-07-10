@@ -22,9 +22,10 @@ const handleS2S = async (req, res, next) => {
   let parsed = null;
   let userId = null;
   let username = null;
+  let internal_id = null;
   
   try {
-    const { internal_id } = req.params;
+     ({ internal_id } = req.params);
     
     // Find offer wall
      offerWall = await findByInternalId(internal_id);
@@ -187,15 +188,16 @@ const handleS2S = async (req, res, next) => {
 
 // Browser Callback: GET /api/callback/:internal_id/browser/:status
 const handleBrowser = async (req, res, next) => {
-  const startTime = Date.now();
+    const startTime = Date.now();
 
-  try {
-    const { internal_id, status } = req.params;
+    let internal_id = null;
+     let status = null;
      let offerWall = null;
      let parsed = null;
      let userId = null;
      let username = null;
-    
+    try{
+     ({ internal_id, status } = req.params);
      offerWall = await findByInternalId(internal_id);
 
     if (!offerWall) {
@@ -285,7 +287,7 @@ const handleBrowser = async (req, res, next) => {
         normalizedStatus === 'security' || normalizedStatus === 'security_terminated' ? 'security_terminated' :
         normalizedStatus;
 
-      await processNonSuccessCallback(parsed, offerWall);
+      const result = processNonSuccessCallback(parsed, offerWall);
       
       await logIncomingTraffic({
         type: 'browser_callback',

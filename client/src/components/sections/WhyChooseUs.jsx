@@ -12,13 +12,13 @@ const features = [
   {
     icon: <SpeedIcon sx={{ fontSize: 28 }} />,
     title: 'Lightning Fast',
-    desc: 'Offers credit instantly. No more waiting days for approval.',
+    desc: 'New surveys drop every hour. Grab them before they fill up — the best ones go fast.',
     color: '#5312bc',
   },
   {
     icon: <SecurityIcon sx={{ fontSize: 28 }} />,
     title: 'Bank-Grade Security',
-    desc: '256-bit encryption and fraud detection keep your data safe.',
+    desc: 'Your personal data stays encrypted. We never share or sell your information.',
     color: '#006e2f',
   },
   {
@@ -36,7 +36,7 @@ const features = [
   {
     icon: <TrendingUpIcon sx={{ fontSize: 28 }} />,
     title: 'Level Up System',
-    desc: 'Earn XP with every task. Unlock exclusive high-paying offers.',
+    desc: 'Complete more surveys to climb levels. Higher levels unlock bigger rewards and exclusive offers',
     color: '#1e40af',
   },
   {
@@ -109,7 +109,7 @@ const WhyChooseUs = () => {
               mb: 1.5,
             }}
           >
-            Why Thousands Trust Us
+            Why Earners Choose Us
           </Typography>
           <Typography
             sx={{
@@ -122,7 +122,7 @@ const WhyChooseUs = () => {
               mx: 'auto',
             }}
           >
-            Built for earners, by earners. Every feature tested by real users.
+            From your first survey to your first payout — we've got you covered.
           </Typography>
         </Box>
 

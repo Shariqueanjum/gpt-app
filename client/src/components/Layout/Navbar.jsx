@@ -117,7 +117,7 @@ const Navbar = () => {
               whiteSpace: 'nowrap',
             }}
           >
-            WABCASH
+            PickOpinion
           </Typography>
 
           {/* Desktop Nav */}

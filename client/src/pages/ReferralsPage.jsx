@@ -58,8 +58,8 @@ const ReferralsPage = ({ darkMode, toggleDarkMode }) => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Join WWABCASH',
-          text: `Join me on WWABCASH and start earning! Use my referral code: ${user?.referral_code}`,
+          title: 'Join PickOpinion',
+          text: `Join me on PickOpinion and start earning! Use my referral code: ${user?.referral_code}`,
           url: referralLink,
         })
       } catch (err) {

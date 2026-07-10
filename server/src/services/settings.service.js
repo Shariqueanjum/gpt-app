@@ -5,7 +5,7 @@ const DEFAULT_SETTINGS = {
   lock_threshold_points: '300',
   referral_commission_percent: '10',
   daily_bonus_points: '1',
-  site_name: 'WABCASH',
+  site_name: 'PickOpinion',
   min_withdrawal_points: '500',
   points_to_dollar_rate: '100',
   vpn_detection_enabled: 'false' // 100 points = $1.00

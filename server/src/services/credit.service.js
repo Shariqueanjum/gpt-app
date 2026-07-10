@@ -345,7 +345,7 @@ const processNonSuccessCallback = async (parsedCallback, offerWall) => {
     
     await client.query('COMMIT');
 
-    return { click_id: click.id, status, user_id, username };
+    return { click_id: click.id, status: parsedCallback.status, user_id, username };
 
   } catch (err) {
     await client.query('ROLLBACK');

@@ -268,7 +268,7 @@ const RegisterPage = () => {
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5312bc]/60"><LockIcon /></div>
               <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange} placeholder="Password" minLength={8} maxLength={50} className={`${inputBase} ${touched.password && errors.password ? inputError : inputNormal} pr-12`} />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#7b7486] hover:text-[#5312bc] transition-colors p-1" title={showPassword ? 'Hide password' : 'Show password'}>
-                {showPassword ? <EyeIcon /> : <EyeOffIcon />}
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
               </button>
             </div>
             {touched.password && errors.password && (

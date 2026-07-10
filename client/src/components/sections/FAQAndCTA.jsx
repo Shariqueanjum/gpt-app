@@ -15,16 +15,16 @@ import RemoveIcon from '@mui/icons-material/Remove'
 
 const faqs = [
   {
-    question: 'How do I start earning on WABCASH?',
+    question: 'How do I start earning on PickOpinion?',
     answer: 'Simply create a free account, verify your email, and complete your profile. Once done, browse available offers, surveys, and tasks. Each completed task credits your balance instantly.',
   },
   {
     question: 'What is the minimum withdrawal amount?',
-    answer: 'The minimum withdrawal starts at just $0.50 for UPI and Google Play gift cards. PayPal and NetBanking require $5.00 minimum, while crypto withdrawals start at $10.00.',
+    answer:  'The minimum withdrawal is $5 for most payment methods. It may vary slightly depending on which method you choose — check your dashboard for exact details.',
   },
   {
-    question: 'Is my personal data safe with WABCASH?',
-    answer: 'Absolutely. We use 256-bit SSL encryption, bank-grade security protocols, and device fingerprinting. We are GDPR compliant and never sell your information.',
+    question: 'Is my personal data safe with PickOpinion?',
+    answer: 'Yes. Your information is encrypted and stored securely. We never share or sell your data to anyone.',
   },
   {
     question: 'How does the referral program work?',
@@ -80,7 +80,7 @@ const FAQAndCTA = () => {
                 fontWeight: 500,
               }}
             >
-              Everything you need to know about earning with WABCASH.
+              Everything you need to know about earning with PickOpinion.
             </Typography>
           </Box>
 
@@ -268,7 +268,7 @@ const FAQAndCTA = () => {
                   color: 'rgba(255, 255, 255, 0.7)',
                 }}
               >
-                Join 120,000+ members who have turned their free time into a wealth engine. Sign up in 30 seconds.
+                Join our elite community who have turned their free time into a wealth engine. Sign up in 30 seconds.
               </Typography>
 
               <Box sx={{ pt: '24px' }}>

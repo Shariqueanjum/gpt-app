@@ -1,4 +1,3 @@
-// client/src/components/sections/Hero.jsx
 import { Box, Typography, Button, Container } from '@mui/material'
 import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
@@ -6,8 +5,8 @@ import { useEffect, useState } from 'react'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 
-const words = ['cash', 'rewards', 'gift cards', 'crypto']
-
+ //const words = ['cash', 'rewards', 'gift cards', 'crypto']
+const words = ['Taking Surveys', 'Sharing Opinions', 'Testing Apps', 'Completing Offers']
 const HeroTypingWord = () => {
   const [wordIndex, setWordIndex] = useState(0)
   const [text, setText] = useState('')
@@ -48,8 +47,8 @@ const HeroTypingWord = () => {
         fontWeight: 800,
         lineHeight: 1.05,
         letterSpacing: '-0.03em',
-        fontSize: { xs: '2.3rem', sm: '2.8rem', md: '3.4rem', lg: '4rem' },
-        minWidth: { xs: '6ch', md: '12ch' },
+        fontSize: { xs: '1.5rem', sm: '1.8rem', md: '3.4rem', lg: '4rem' },
+        minWidth: { xs: '13ch', md: '12ch' },
         textAlign: 'left',
         display: 'inline-block',
         whiteSpace: 'nowrap',
@@ -298,7 +297,7 @@ const Hero = () => {
                   textTransform: 'uppercase',
                 }}
               >
-                Surveys Paying Right Now
+                Live Surveys — Start Earning
               </Typography>
             </Box>
 
@@ -312,10 +311,10 @@ const Hero = () => {
                   lineHeight: 1.05,
                   letterSpacing: '-0.03em',
                   color: '#131b2e',
-                  fontSize: { xs: '2.3rem', sm: '2.8rem', md: '3.4rem', lg: '4rem' },
+                  fontSize: { xs: '1.5rem', sm: '1.8rem', md: '3.4rem', lg: '4rem' },
                 }}
               >
-                Turn Your Opinions
+                Get Paid Real Cash
               </Typography>
               <Box
                 sx={{
@@ -333,10 +332,10 @@ const Hero = () => {
                     lineHeight: 1.05,
                     letterSpacing: '-0.03em',
                     color: '#131b2e',
-                    fontSize: { xs: '2.3rem', sm: '2.8rem', md: '3.4rem', lg: '4rem' },
+                    fontSize: { xs: '1.5rem', sm: '1.8rem', md: '3.4rem', lg: '4rem' },
                   }}
                 >
-                  into
+                  For
                 </Typography>
                 <HeroTypingWord />
               </Box>
@@ -346,14 +345,14 @@ const Hero = () => {
             <Typography
               sx={{
                 fontFamily: '"Plus Jakarta Sans", sans-serif',
-                fontSize: { xs: '1.1rem', md: '1.2rem' },     // bigger
+                fontSize: { xs: '1.0rem', md: '1.2rem' },     // bigger
                 lineHeight: 1.5,
                 color: '#1f2937',                               // almost black — maximum readability
                 maxWidth: 500,
                 mb: 4,
                 fontWeight: 500,
               }}
-            >Complete short surveys, test products, and share your feedback — then cash out to PayPal, UPI, crypto, or gift cards. No experience needed.
+            >Get paid for your opinions. Take surveys, join research studies, and complete tasks from real companies, all verified and secure. Your feedback shapes products, and your wallet gets heavier.
             </Typography>
 
             {/* CTA buttons */}
@@ -460,7 +459,7 @@ const Hero = () => {
                 width: '100%',
               }}
             >
-              {['No credit card needed', 'Instant withdrawals', 'Free forever'].map((item, i) => (
+              {['Sign up & start surveys', 'Multiple payout options', 'Zero fees'].map((item, i) => (
                 <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                   <CheckCircleIcon sx={{ fontSize: 14, color: '#006e2f' }} />
                   <Typography

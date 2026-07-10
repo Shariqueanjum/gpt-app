@@ -9,7 +9,7 @@ const steps = [
   {
     icon: <PersonAddIcon sx={{ fontSize: 28 }} />,
     title: 'Create Your Account',
-    desc: 'Sign up in seconds with your email. No credit card required, no hidden fees. Start your earning journey instantly.',
+    desc: 'Sign up in seconds with your email, no hidden fees. Start your earning journey instantly.',
     avgEarning: 'Free',
     color: '#5312bc',
     bgHover: '#5312bc',
@@ -32,7 +32,7 @@ const steps = [
   {
     icon: <PaymentsIcon sx={{ fontSize: 28 }} />,
     title: 'Cash Out Instantly',
-    desc: 'Withdraw your earnings via PayPal, crypto, or gift cards. Most payouts processed within hours, not days.',
+    desc: 'Withdraw your earnings via PayPal, UPI, Net Banking or gift cards. Most payouts processed within hours, not days.',
     avgEarning: '24h Avg.',
     color: '#623c00',
     bgHover: '#623c00',
@@ -81,38 +81,6 @@ const HowItWorks = () => {
     >
       {/* Section Header */}
       <Box sx={{ textAlign: 'center', mb: { xs: 5, md: 7 } }}>
-        {/* <Typography
-          sx={{
-            fontFamily: '"Sora", sans-serif',
-            fontSize: { xs: '12px', md: '13px' },
-            fontWeight: 600,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: '#5312bc',
-            mb: 2,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 1,
-            px: 3,
-            py: 1,
-            borderRadius: '9999px',
-            border: '1px solid rgba(83, 18, 188, 0.15)',
-            bgcolor: 'rgba(83, 18, 188, 0.04)',
-          }}
-        >
-          <Box
-            component="span"
-            sx={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              bgcolor: '#006e2f',
-              display: 'inline-block',
-            }}
-          />
-          Simple Process
-        </Typography> */}
-
         <Typography
           sx={{
             fontFamily: '"Sora", sans-serif',
@@ -138,7 +106,7 @@ const HowItWorks = () => {
             fontWeight: 500,
           }}
         >
-          Three simple steps to start earning real rewards today.
+          Few simple steps to start earning real rewards today.
         </Typography>
       </Box>
 
