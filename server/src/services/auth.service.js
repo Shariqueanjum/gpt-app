@@ -28,7 +28,8 @@ const getCountryFromIP = (ip) => {
   if (ip === '::1' || ip === '127.0.0.1') {
     return 'Unknown';
   }
-  const geo = geoip.lookup(ip);
+  const realIp = Array.isArray(ip) ? ip[0] : ip.split(',')[0].trim();
+  const geo = geoip.lookup(realIp);
   return geo?.country || 'Unknown';
 };
 
