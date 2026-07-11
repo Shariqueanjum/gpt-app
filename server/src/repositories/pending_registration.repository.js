@@ -38,4 +38,18 @@ const deleteByEmail = async (email) => {
   );
 };
 
-module.exports = { createPending, findByToken, findByEmail, deleteByEmail };
+const findByUsername = async (username) => {
+  const res = await pool.query(
+    `SELECT * FROM pending_registrations WHERE username = $1`,
+    [username]
+  );
+  return res.rows[0];
+};
+
+const deleteExpired = async () => {
+  await pool.query(
+    `DELETE FROM pending_registrations WHERE expires_at < NOW()`
+  );
+};
+
+module.exports = { createPending, findByToken, findByEmail, deleteByEmail, findByUsername, deleteExpired };

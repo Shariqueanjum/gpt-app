@@ -5,7 +5,7 @@ const pool = require('../config/db');
 const {generateToken} = require('../utils/jwt');
 const { generateDeviceFingerprint } = require('../utils/device');
 const {sendVerificationEmail, sendPasswordResetEmail, sendForgotUsernameEmail} = require('../utils/email')
-const { createPending, findByToken, findByEmail, deleteByEmail } = require('../repositories/pending_registration.repository');
+const { createPending, findByToken, findByEmail, deleteByEmail, findByUsername: findPendingByUsername, deleteExpired } = require('../repositories/pending_registration.repository');
 const {findByEmailOrUsername, findByReferralCode, findUserByEmail, findUserByUsername, createUser, findUserById} = require('../repositories/user.repository');
 const { emitActivity } = require('./activityEmitter.service');
 const {createLoginHistory} = require('../repositories/login_history.repository');
@@ -48,19 +48,27 @@ const registerUser = async (payload, meta) => {
   let { username, email, password, referred_by_code } = payload;
   email = email.toLowerCase().trim();
 
+   await deleteExpired();
+
   // Check if already registered
   const existingUser = await findByEmailOrUsername(email, username);
   if (existingUser) {
-    const error = new Error('Email already registered');
+    const isEmailMatch = existingUser.email === email;
+    const error = new Error(isEmailMatch ? 'Email already registered' : 'Username already taken');
     error.status = 409;
     throw error;
   }
 
   // Check if pending exists (resend scenario)
-  const existingPending = await findByEmail(email);
-  if (existingPending) {
+  const existingPendingByEmail = await findByEmail(email);
+  if (existingPendingByEmail) {
     // Delete old pending so they can re-register
     await deleteByEmail(email);
+  }
+
+   const existingPendingByUsername = await findPendingByUsername(username);
+  if (existingPendingByUsername) {
+    await deleteByEmail(existingPendingByUsername.email);
   }
 
   const password_hash = await bcrypt.hash(password, 10);
