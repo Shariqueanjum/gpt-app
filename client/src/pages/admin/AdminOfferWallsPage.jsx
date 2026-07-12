@@ -40,7 +40,7 @@ const emptyForm = {
   name: '', internal_id: '', type: 'api', endpoint_url: '', iframe_url: '',
   hash_algorithm: '', hash_key: '', commission_rate: 20, logo_url: '',
   url_params: [{ param: 'user_id', source: 'user.public_id', value: '' }, { param: 'transaction_id', source: 'transaction_id', value: '' }],
-  s2s: { transaction_id_field: 'transaction_id', sub_id_field: '', status_field: 'status', payout_field: 'payout', status_map: [{ key: 'completed', value: 'success' }, { key: 'rejected', value: 'failed' }] },
+  s2s: { transaction_id_field: 'transaction_id', sub_id_field: '', username_field: '', status_field: 'status', payout_field: 'payout', status_map: [{ key: 'completed', value: 'success' }, { key: 'rejected', value: 'failed' }] },
   browser: { transaction_id_field: 'transaction_id', sub_id_field: '', payout_field: 'payout', signature_field: 'hash', hash_fields: 'transaction_id, payout, status' },
 }
 
@@ -111,6 +111,7 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
       s2s: {
         transaction_id_field: cfg.s2s?.transaction_id_field || '',
         sub_id_field: cfg.s2s?.sub_id_field || '',
+        username_field: cfg.s2s?.username_field || '',
         status_field: cfg.s2s?.status_field || '',
         payout_field: cfg.s2s?.payout_field || '',
         status_map: cfg.s2s?.status_map
@@ -151,6 +152,7 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
         s2s: {
           transaction_id_field: form.s2s.transaction_id_field.trim(),
           sub_id_field: form.s2s.sub_id_field.trim() || undefined,
+          username_field: form.s2s.username_field.trim() || undefined,
           status_field: form.s2s.status_field.trim(),
           payout_field: form.s2s.payout_field.trim(),
           status_map,
@@ -424,6 +426,7 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
               </Typography>
               <TextField label="Transaction ID field" value={form.s2s.transaction_id_field} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, transaction_id_field: e.target.value } }))} fullWidth sx={fieldSx} helperText="e.g. transaction_id, tx_id, txn" />
               <TextField label="Sub ID field (optional)" value={form.s2s.sub_id_field} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, sub_id_field: e.target.value } }))} fullWidth sx={fieldSx} helperText="Field that echoes our internal TXN-... ID" />
+              <TextField label="Username field (optional)" value={form.s2s.username_field} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, username_field: e.target.value } }))} fullWidth sx={fieldSx} helperText="Only needed if the provider doesn't echo our transaction ID — we match the click by this username field instead (iframe fallback)" />
               <TextField label="Status field" value={form.s2s.status_field} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, status_field: e.target.value } }))} fullWidth sx={fieldSx} />
               <TextField label="Payout field" value={form.s2s.payout_field} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, payout_field: e.target.value } }))} fullWidth sx={fieldSx} />
 
