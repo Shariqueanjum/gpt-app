@@ -119,6 +119,53 @@ const findAndLockClickForCallback = async (client, parsedCallback, offerWall) =>
           }
         }
 
+  // ============================================================
+  // Priority 6 — IFRAME AUTO-CREATE
+  // No pending click found at all (already consumed, or user never
+  // triggered an entry). For iframe walls, the callback itself carries
+  // everything we need (username + payout), so build the click record
+  // now instead of failing the callback.
+  // ============================================================
+  if (!click && offerWall && offerWall.type === 'iframe') {
+    const identifier = parsedCallback.username || parsedCallback.userPublicId;
+ 
+    if (identifier && parsedCallback.payout !== null && parsedCallback.payout > 0) {
+      const userField = parsedCallback.username ? 'username' : 'public_id';
+      const userRes = await client.query(
+        `SELECT id, username, public_id FROM users WHERE ${userField} = $1`,
+        [identifier]
+      );
+ 
+      if (userRes.rows.length > 0) {
+        const user = userRes.rows[0];
+        const theirId = parsedCallback.externalTransactionId || parsedCallback.transactionId;
+ 
+        // Don't create a duplicate if this external ID was already credited
+        if (theirId) {
+          const exists = await externalTransactionIdExists(theirId);
+          if (exists) {
+            return { click: null, foundBy: 'iframe_auto_create_duplicate', user_id: null, username: null };
+          }
+        }
+ 
+        const internalTxnId = `TXN-AUTO-${offerWall.internal_id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+ 
+        const insertRes = await client.query(
+          `INSERT INTO survey_clicks
+             (user_id, offer_wall_id, transaction_id, integration_type, commission_rate, status, external_transaction_id, created_at)
+           VALUES ($1, $2, $3, $4, $5, 'pending', $6, NOW())
+           RETURNING *`,
+          [user.id, offerWall.id, internalTxnId, offerWall.type, offerWall.commission_rate, theirId || null]
+        );
+ 
+        click = insertRes.rows[0];
+        click.username = user.username;
+        foundBy = 'iframe_auto_create';
+        return { click, foundBy, user_id: user.id, username: user.username };
+      }
+    }
+  }
+
         return { click, foundBy, user_id: click.user_id, username: click.username };
       }
     }
@@ -181,8 +228,12 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
         err.status = 400;
         throw err;
       }
+      // Some providers send payout already in points (multiplier 1, default).
+      // Others (e.g. SurveyDekho) send it in real currency (e.g. $0.50), which
+      // must be converted to points (100 points = $1) before crediting.
+      const payoutMultiplier = parseFloat(offerWall.callback_config?.payout_multiplier) || 1;
       
-      cpaOriginal = parsedCallback.payout;
+      cpaOriginal = parseFloat((parsedCallback.payout * payoutMultiplier).toFixed(2));
       const commissionRate = parseFloat(click.commission_rate);
       cpaUser = parseFloat((cpaOriginal * (100 - commissionRate) / 100).toFixed(2));
       commissionEarned = parseFloat((cpaOriginal - cpaUser).toFixed(2));

@@ -107,6 +107,7 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
       hash_algorithm: wall.hash_algorithm || '', hash_key: wall.hash_key || '',
       commission_rate: wall.commission_rate ?? 20,
       logo_url: wall.logo_url || '',
+      payout_multiplier: cfg.payout_multiplier ? String(cfg.payout_multiplier) : '1',
       url_params: cfg.url_params?.length ? cfg.url_params : emptyForm.url_params,
       s2s: {
         transaction_id_field: cfg.s2s?.transaction_id_field || '',
@@ -148,6 +149,7 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
       commission_rate: Number(form.commission_rate),
       logo_url: form.logo_url.trim() || null,
       callback_config: {
+        payout_multiplier: parseFloat(form.payout_multiplier) || 1,
         url_params: form.url_params.filter((p) => p.param.trim()),
         s2s: {
           transaction_id_field: form.s2s.transaction_id_field.trim(),
@@ -339,6 +341,7 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
                 {TYPE_OPTIONS.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
               </Select>
               <TextField label="Commission Rate (%)" type="number" value={form.commission_rate} onChange={(e) => setForm((f) => ({ ...f, commission_rate: e.target.value }))} fullWidth sx={fieldSx} />
+              <TextField label="Payout multiplier" type="number" value={form.payout_multiplier} onChange={(e) => setForm((f) => ({ ...f, payout_multiplier: e.target.value }))} fullWidth sx={fieldSx} helperText="Applies to both S2S and Browser postbacks from this wall. Use 1 if their payout is already in points. Use 100 if their payout is in real currency (e.g. $0.50 → 50 points, since 100 points = $1)." />
               <TextField label="Logo URL" value={form.logo_url} onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value }))} fullWidth sx={fieldSx} helperText="Optional — image URL shown on frontend cards" />
 
               {form.type === 'iframe' ? (
