@@ -302,7 +302,7 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
                   src={iframeUrl}
                   style={{ width: '100%', height: '100%', border: 'none' }}
                   title={selectedWall.name}
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
                 />
               </Box>
             ) : (

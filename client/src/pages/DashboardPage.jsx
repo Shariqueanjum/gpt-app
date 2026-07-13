@@ -29,6 +29,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import LockIcon from '@mui/icons-material/Lock'
 import PaymentIcon from '@mui/icons-material/Payment'
 import BarChartIcon from '@mui/icons-material/BarChart'
@@ -256,10 +257,24 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
   const SidebarContent = () => (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', px: 2, py: 2.5 }}>
       {/* Logo */}
-      <Box onClick={() => navigate('/dashboard')} sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 4, cursor: 'pointer' }}>
-        <Box sx={{ width: 40, height: 40, borderRadius: 2.5, bgcolor: COLORS.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '1.2rem', boxShadow: '0 4px 12px rgba(83,18,188,0.3)' }}>W</Box>
+         <Box  onClick={() => navigate('/dashboard')}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: .75,
+              cursor: 'pointer',
+              flexShrink: 0,
+              mb: 4
+            }}
+          >
+            <Box
+              component="img"
+              src="/images/logo.png"
+              alt="PickOpinion logo"
+              sx={{ height: { xs: '28px', sm: '32px', md: '34px' }, width: 'auto', display: 'block' }}
+            />
         <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: COLORS.textPrimary, letterSpacing: '-0.02em' }}>PickOpinion</Typography>
-      </Box>
+        </Box>
 
       {/* Main Nav - Attractive like SuperPay.Me */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
@@ -406,8 +421,22 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
           px: 2.5, py: 1.5,
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box onClick={() => navigate('/dashboard')} sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-              <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: COLORS.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '0.95rem' }}>W</Box>
+            <Box onClick={() => navigate('/dashboard')}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.75,
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <Box
+              component="img"
+              src="/images/logo.png"
+              alt="PickOpinion logo"
+              sx={{ height: { xs: '28px', sm: '32px', md: '34px' }, width: 'auto', display: 'block' }}
+            />
+           
               <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: COLORS.textPrimary, letterSpacing: '-0.01em' }}>PickOpinion</Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -453,7 +482,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                 </Box>
                 <Box sx={{ bgcolor: 'rgba(255,255,255,0.12)', width: '1px', height: '100%', mx: 'auto' }} />
                 <Box sx={{ px: 1 }}>
-                  <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.5 }}>Locking Points</Typography>
+                  <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.5 }}>Locked Points</Typography>
                   <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.15rem', lineHeight: 1.2 }}>{loading ? <Skeleton width={55} height={20} sx={{ bgcolor: 'rgba(255,255,255,0.15)' }} /> : formatPoints(dashboard?.balance?.locked)}</Typography>
                   <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem', mt: 0.2 }}>Pending</Typography>
                 </Box>
@@ -501,8 +530,8 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
             <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
               <PollIcon sx={{ fontSize: 24, color: COLORS.primary, mb: 0.8 }} />
-              <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={40} sx={{ mx: 'auto' }} /> : (performance?.surveys?.total_clicks || 0)}</Typography>
-              <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted, mt: 0.3 }}>Surveys clicked</Typography>
+              <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={40} sx={{ mx: 'auto' }} /> : (performance?.surveys?.completed|| 0)}</Typography>
+              <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted, mt: 0.3 }}>Surveys Completed</Typography>
             </Paper>
             {/* <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
               <MonetizationOnIcon sx={{ fontSize: 24, color: COLORS.accent, mb: 0.8 }} />
@@ -511,9 +540,9 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
               <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted, mt: 0.2 }}>Total earnings</Typography>
             </Paper> */}
             <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
-              <PollIcon sx={{ fontSize: 24, color: COLORS.primary, mb: 0.8 }} />
-              <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={40} sx={{ mx: 'auto' }} /> : (performance?.surveys?.completed || 0)}</Typography>
-              <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted, mt: 0.2 }}>Surveys Completed</Typography>
+              <TrendingDownIcon sx={{ fontSize: 24, color: COLORS.primary, mb: 0.8 }} />
+              <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={40} sx={{ mx: 'auto' }} /> : (performance?.surveys?.reversed || 0)}</Typography>
+              <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted, mt: 0.2 }}>Surveys Reversed</Typography>
             </Paper>
           </Box>
         </Box>
@@ -546,9 +575,9 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                         <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: COLORS.textPrimary }}>{wall.name}</Typography>
                         <Typography sx={{ fontSize: '0.78rem', color: COLORS.textMuted, mt: 0.2, lineHeight: 1.4 }}>{wall.description || 'High paying surveys and offers'}</Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.6 }}>
-                          <StarIcon sx={{ fontSize: 14, color: COLORS.gold }} />
+                          {/* <StarIcon sx={{ fontSize: 14, color: COLORS.gold }} />
                           <Typography sx={{ fontSize: '0.8rem', color: COLORS.textSecondary, fontWeight: 600 }}>{wall.rating || '4.5'}</Typography>
-                          <Typography sx={{ fontSize: '0.72rem', color: COLORS.textMuted }}>({wall.review_count || '120'} reviews)</Typography>
+                          <Typography sx={{ fontSize: '0.72rem', color: COLORS.textMuted }}>({wall.review_count || '120'} reviews)</Typography> */}
                         </Box>
                       </Box>
                       <ArrowForwardIosIcon sx={{ fontSize: 16, color: COLORS.textMuted, flexShrink: 0 }} />
@@ -706,7 +735,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                 <Box sx={{ bgcolor: 'rgba(255,255,255,0.12)', width: '1px', my: 1 }} />
                 {/* Locking Points */}
                 <Box sx={{ px: 2, py: 0.5 }}>
-                  <Typography sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.6 }}>Locking Points</Typography>
+                  <Typography sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.6 }}>Locked Points</Typography>
                   <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.5rem', lineHeight: 1.2 }}>{loading ? <Skeleton width={90} height={30} sx={{ bgcolor: 'rgba(255,255,255,0.12)' }} /> : formatPoints(dashboard?.balance?.locked)}</Typography>
                   <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', mt: 0.4 }}>Pending clearance</Typography>
                 </Box>
@@ -755,8 +784,8 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
               <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2.5, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
                 <PollIcon sx={{ fontSize: 26, color: COLORS.primary, mb: 0.8 }} />
-                <Typography sx={{ fontWeight: 800, fontSize: '1.5rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={50} sx={{ mx: 'auto' }} /> : (performance?.surveys?.total_clicks || 0)}</Typography>
-                <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted, mt: 0.3 }}>Surveys clicked</Typography>
+                <Typography sx={{ fontWeight: 800, fontSize: '1.5rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={50} sx={{ mx: 'auto' }} /> : (performance?.surveys?.completed || 0)}</Typography>
+                <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted, mt: 0.3 }}>Surveys Completed</Typography>
               </Paper>
               {/* <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2.5, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
                 <MonetizationOnIcon sx={{ fontSize: 26, color: COLORS.accent, mb: 0.8 }} />
@@ -765,9 +794,9 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                 <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted, mt: 0.2 }}>Total earnings</Typography>
               </Paper> */}
               <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}`, textAlign: 'center' }}>
-                <PollIcon sx={{ fontSize: 24, color: COLORS.primary, mb: 0.8 }} />
-                <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={40} sx={{ mx: 'auto' }} /> : (performance?.surveys?.completed || 0)}</Typography>
-                <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted, mt: 0.2 }}>Surveys Completed</Typography>
+                <TrendingDownIcon sx={{ fontSize: 24, color: COLORS.primary, mb: 0.8 }} />
+                <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.textPrimary }}>{loading ? <Skeleton width={40} sx={{ mx: 'auto' }} /> : (performance?.surveys?.reversed || 0)}</Typography>
+                <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted, mt: 0.2 }}>Surveys Reversed</Typography>
               </Paper>
             </Box>
           </Box>
@@ -802,9 +831,9 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                             <Typography sx={{ fontWeight: 700, fontSize: '1.05rem', color: COLORS.textPrimary }}>{wall.name}</Typography>
                             <Typography sx={{ fontSize: '0.82rem', color: COLORS.textMuted, mt: 0.3, lineHeight: 1.4 }}>{wall.description || 'High paying surveys and offers'}</Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.8 }}>
-                              <StarIcon sx={{ fontSize: 14, color: COLORS.gold }} />
+                              {/* <StarIcon sx={{ fontSize: 14, color: COLORS.gold }} />
                               <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary, fontWeight: 600 }}>{wall.rating || '4.5'}</Typography>
-                              <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted }}>({wall.review_count || '120'} reviews)</Typography>
+                              <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted }}>({wall.review_count || '120'} reviews)</Typography> */}
                             </Box>
                           </Box>
                           <ArrowForwardIosIcon sx={{ fontSize: 18, color: COLORS.textMuted, flexShrink: 0 }} />

@@ -77,6 +77,13 @@ const Footer = () => {
         >
           {/* Brand Column — spans 2 on mobile, 2fr on desktop */}
           <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2', md: 'span 1' } }}>
+           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1.5 }}>
+              <Box
+                component="img"
+                src="/images/logo.png"
+                alt="PickOpinion logo"
+                sx={{ height: '40px', width: 'auto', display: 'block' }}
+              />
             <Typography
               sx={{
                 fontFamily: '"Sora", sans-serif',
@@ -89,6 +96,7 @@ const Footer = () => {
             >
               PickOpinion
             </Typography>
+             </Box>
             <Typography
               sx={{
                 fontFamily: '"Plus Jakarta Sans", sans-serif',

@@ -1,8 +1,3 @@
-// ============================================================
-// SharedLayout.jsx — Fixed to match DashboardPage layout exactly
-// All export names kept the same — NO breaking changes
-// Only fix: isActivePath now checks full path for exact match
-// ============================================================
 import { useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -95,8 +90,22 @@ export const Sidebar = ({ darkMode, moreExpanded, setMoreExpanded }) => {
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', px: 2, py: 2.5 }}>
       {/* Logo */}
-      <Box onClick={() => navigate('/dashboard')} sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 4, cursor: 'pointer' }}>
-        <Box sx={{ width: 40, height: 40, borderRadius: 2.5, bgcolor: COLORS.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '1.2rem', boxShadow: '0 4px 12px rgba(83,18,188,0.3)' }}>W</Box>
+ <Box  onClick={() => navigate('/dashboard')}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: .75,
+              cursor: 'pointer',
+              flexShrink: 0,
+              mb: 4
+            }}
+          >
+            <Box
+              component="img"
+              src="/images/logo.png"
+              alt="PickOpinion logo"
+              sx={{ height: { xs: '28px', sm: '32px', md: '34px' }, width: 'auto', display: 'block' }}
+            />
         <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: COLORS.textPrimary, letterSpacing: '-0.02em' }}>PickOpinion</Typography>
       </Box>
 
@@ -303,8 +312,21 @@ export const MobileTopBar = ({ darkMode, toggleDarkMode, scrolled }) => {
       px: 2.5, py: 1.5,
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box onClick={() => navigate('/dashboard')} sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-          <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: COLORS.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '0.95rem' }}>W</Box>
+        <Box  onClick={() => navigate('/dashboard')}
+                   sx={{
+                     display: 'flex',
+                     alignItems: 'center',
+                     gap: .75,
+                     cursor: 'pointer',
+                     flexShrink: 0,
+                   }}
+                 >
+                   <Box
+                     component="img"
+                     src="/images/logo.png"
+                     alt="PickOpinion logo"
+                     sx={{ height: { xs: '28px', sm: '32px', md: '34px' }, width: 'auto', display: 'block' }}
+                   />
           <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: COLORS.textPrimary, letterSpacing: '-0.01em' }}>PickOpinion</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>

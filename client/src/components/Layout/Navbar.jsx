@@ -103,6 +103,22 @@ const Navbar = () => {
           }}
         >
           {/* Logo */}
+           <Box
+            onClick={scrollToTop}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.75,
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <Box
+              component="img"
+              src="/images/logo.png"
+              alt="PickOpinion logo"
+              sx={{ height: { xs: '28px', sm: '32px', md: '34px' }, width: 'auto', display: 'block' }}
+            />
           <Typography
             onClick={scrollToTop}
             sx={{
@@ -119,6 +135,7 @@ const Navbar = () => {
           >
             PickOpinion
           </Typography>
+          </Box>
 
           {/* Desktop Nav */}
           <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5 }}>
