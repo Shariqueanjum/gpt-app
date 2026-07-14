@@ -41,7 +41,7 @@ const findUserById = async (id) => {
   const res = await pool.query(
     `SELECT id, public_id, username, email, password_hash, full_name, country, phone, dob, gender, address, upi_id,
             referral_code, referred_by, balance_available, balance_locked, balance_denied,
-            profile_completion, is_active, is_verified, created_at
+            profile_completion, is_active, is_verified, level, created_at
      FROM users WHERE id = $1`,
     [id]
   );

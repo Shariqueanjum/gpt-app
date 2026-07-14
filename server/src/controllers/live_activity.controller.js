@@ -78,6 +78,7 @@ const getRecentActivity = async (limit) => {
       WHERE tl.direction = 'incoming'
         AND tl.type      = 's2s_callback'
         AND (tl.processing_result->>'success')::boolean = true
+        AND (tl.processing_result->>'status') = 'completed'
         AND tl.user_username IS NOT NULL
     )
     UNION ALL

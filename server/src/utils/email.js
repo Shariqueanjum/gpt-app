@@ -28,7 +28,16 @@ const sendVerificationEmail = async (email, verificationToken) => {
                   <!-- Header -->
                   <tr>
                     <td align="center" style="background-color:#0f172a; padding:32px 24px;">
-                      <span style="font-size:24px; font-weight:800; color:#ffffff; letter-spacing:1px;">PickOpinion</span>
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
+                        <tr>
+                          <td style="padding-right:12px; vertical-align:middle;">
+                            <img src="${process.env.BACKEND_URL}/images/logo.png" alt="PickOpinion Logo" width="40" height="40" style="display:block; border-radius:8px;" />
+                          </td>
+                          <td style="vertical-align:middle;">
+                            <span style="font-size:24px; font-weight:800; color:#ffffff; letter-spacing:1px;">PickOpinion</span>
+                          </td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
 
@@ -127,8 +136,17 @@ const sendPasswordResetEmail = async (email, resetToken) => {
           <table width="100%" cellspacing="0" cellpadding="0" style="background:#f4f4f5;">
             <tr><td align="center" style="padding:40px 16px;">
               <table style="max-width:560px;width:100%;background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
-                <tr><td align="center" style="background:#0f172a;padding:32px 24px;">
-                  <span style="font-size:24px;font-weight:800;color:#fff;letter-spacing:1px;">PickOpinion</span>
+              <tr><td align="center" style="background:#0f172a;padding:32px 24px;">
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
+                    <tr>
+                      <td style="padding-right:12px; vertical-align:middle;">
+                        <img src="${process.env.BACKEND_URL}/images/logo.png" alt="PickOpinion Logo" width="40" height="40" style="display:block; border-radius:8px;" />
+                      </td>
+                      <td style="vertical-align:middle;">
+                        <span style="font-size:24px;font-weight:800;color:#fff;letter-spacing:1px;">PickOpinion</span>
+                      </td>
+                    </tr>
+                  </table>
                 </td></tr>
                 <tr><td align="center" style="padding:40px 32px 24px;">
                   <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#111827;">Reset Your Password</h1>
@@ -177,8 +195,17 @@ const sendForgotUsernameEmail = async (email, username) => {
           <table width="100%" cellspacing="0" cellpadding="0" style="background:#f4f4f5;">
             <tr><td align="center" style="padding:40px 16px;">
               <table style="max-width:560px;width:100%;background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
-                <tr><td align="center" style="background:#0f172a;padding:32px 24px;">
-                  <span style="font-size:24px;font-weight:800;color:#fff;letter-spacing:1px;">PickOpinion</span>
+                              <tr><td align="center" style="background:#0f172a;padding:32px 24px;">
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
+                    <tr>
+                      <td style="padding-right:12px; vertical-align:middle;">
+                        <img src="${process.env.BACKEND_URL}/images/logo.png" alt="PickOpinion Logo" width="40" height="40" style="display:block; border-radius:8px;" />
+                      </td>
+                      <td style="vertical-align:middle;">
+                        <span style="font-size:24px;font-weight:800;color:#fff;letter-spacing:1px;">PickOpinion</span>
+                      </td>
+                    </tr>
+                  </table>
                 </td></tr>
                 <tr><td align="center" style="padding:40px 32px 24px;">
                   <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#111827;">Your Username</h1>

@@ -3,6 +3,7 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ThemeProvider, createTheme, Box, Typography, GlobalStyles } from '@mui/material'
 import CssBaseline from '@mui/material/CssBaseline'
+import logo from '/public/images/logo.png'
 
 // Public pages
 import HomePage from './pages/HomePage'
@@ -123,7 +124,30 @@ function App() {
         <CssBaseline />
         <GlobalStyles styles={{ body: { backgroundColor: theme.palette.background.default } }} />
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-          <Typography>Loading...</Typography>
+          <Box
+            component="img"
+            src={logo}
+            alt="Logo"
+            sx={{
+              width: 180,
+              animation: "breathe 2s ease-in-out infinite",
+
+              "@keyframes breathe": {
+                "0%": {
+                  transform: "scale(0.96)",
+                  opacity: 0.75,
+                },
+                "50%": {
+                  transform: "scale(1)",
+                  opacity: 1,
+                },
+                "100%": {
+                  transform: "scale(0.96)",
+                  opacity: 0.75,
+                },
+              },
+            }}
+          />
         </Box>
       </ThemeProvider>
     )
