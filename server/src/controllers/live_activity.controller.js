@@ -60,7 +60,7 @@ const recent = async (req, res, next) => {
 // ── DB helpers ────────────────────────────────────────────────────────────────
 
 const getRecentActivity = async (limit) => {
-  // Merge survey completions + registrations, newest first
+  // Merge survey completions + registrations + level-ups, newest first
   const res = await pool.query(
     `(
       SELECT
@@ -69,6 +69,7 @@ const getRecentActivity = async (limit) => {
          tl.user_username AS username, 
         tl.offer_wall_name                                  AS offer_wall,
         (tl.processing_result->>'user_credited')::text      AS amount_raw,
+        NULL::text                                          AS level_raw,
         COALESCE(
           (SELECT country FROM users WHERE id = tl.user_id LIMIT 1),
           'Unknown'
@@ -89,10 +90,26 @@ const getRecentActivity = async (limit) => {
         username,
         NULL                                               AS offer_wall,
         NULL                                               AS amount_raw,
+        NULL::text                                          AS level_raw,
         COALESCE(country, 'Unknown')                       AS country,
         created_at
       FROM users
       WHERE created_at > NOW() - INTERVAL '7 days'
+    )
+    UNION ALL
+    (
+      SELECT
+        t.id::text                                          AS id,
+        'level_up'                                          AS type,
+        u.username                                          AS username,
+        NULL                                                AS offer_wall,
+        t.amount::text                                       AS amount_raw,
+        (t.metadata->>'new_level')                          AS level_raw,
+        COALESCE(u.country, 'Unknown')                      AS country,
+        t.created_at
+      FROM transactions t
+      JOIN users u ON u.id = t.user_id
+      WHERE t.type = 'level_up_bonus'
     )
     ORDER BY created_at DESC
     LIMIT $1`,
@@ -107,6 +124,7 @@ const formatRow = (row) => ({
   username:   row.username || 'Anonymous',
   offer_wall: row.offer_wall || null,
   amount:    row.amount_raw ? parseFloat(row.amount_raw).toFixed(0) : null,
+  level:      row.level_raw ? parseInt(row.level_raw, 10) : null,
   country:    row.country || 'Unknown',
   time:       row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
 })
