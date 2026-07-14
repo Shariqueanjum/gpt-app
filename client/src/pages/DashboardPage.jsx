@@ -468,7 +468,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                   <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>{user?.username || 'User'}</Typography>
                   <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>ID: #{user?.public_id || '---'} · {getMemberSince()}</Typography>
                 </Box>
-                <Chip size="small" label={user?.level_name || `Level ${user?.level_id || 1}`} sx={{ bgcolor: 'rgba(255,255,255,0.12)', color: '#fff', fontWeight: 700, fontSize: '0.65rem', border: '1px solid rgba(255,255,255,0.2)', '& .MuiChip-label': { px: 1 } }} />
+                <Chip size="small" label={user?.level_name || `Level ${user?.level || 1}`} sx={{ bgcolor: 'rgba(255,255,255,0.12)', color: '#fff', fontWeight: 700, fontSize: '0.65rem', border: '1px solid rgba(255,255,255,0.2)', '& .MuiChip-label': { px: 1 } }} />
               </Box>
             </Box>
             {/* Bottom section - lighter purple with THIN VERTICAL LINES */}
@@ -564,7 +564,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {offerWalls.slice(0, 5).map((wall, idx) => {
                 const color = WALL_COLORS[idx % WALL_COLORS.length]
-                const isLocked = wall.min_level && user?.level_id < wall.min_level
+                const isLocked = wall.min_level && user?.level < wall.min_level
                 return (
                   <Paper key={wall.id} elevation={0} onClick={() => !isLocked && navigate(`/earn?wall=${wall.internal_id || wall.id}`)} sx={{ borderRadius: 3, p: 2.5, border: `1px solid ${COLORS.border}`, bgcolor: COLORS.cardBg, cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1, transition: 'all 0.2s', '&:active': !isLocked && { transform: 'scale(0.98)' } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -820,7 +820,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                   {offerWalls.map((wall, idx) => {
                     const color = WALL_COLORS[idx % WALL_COLORS.length]
-                    const isLocked = wall.min_level && user?.level_id < wall.min_level
+                    const isLocked = wall.min_level && user?.level < wall.min_level
                     return (
                       <Paper key={wall.id} elevation={0} onClick={() => !isLocked && navigate(`/earn?wall=${wall.internal_id || wall.id}`)} sx={{ borderRadius: 3, p: 3, border: `1px solid ${COLORS.border}`, bgcolor: COLORS.cardBg, cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1, transition: 'all 0.25s ease', '&:hover': !isLocked && { boxShadow: '0 8px 30px rgba(83,18,188,0.08)', transform: 'translateY(-2px)', borderColor: `${COLORS.primary}30` } }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
