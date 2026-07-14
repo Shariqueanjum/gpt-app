@@ -6,7 +6,7 @@ const sendVerificationEmail = async (email, verificationToken) => {
 
   try {
     await resend.emails.send({
-      from: 'PickOpinion <onboarding@resend.dev>',
+      from: 'PickOpinion <no-reply@PickOpinion.com>',
       to: email,
       subject: 'Verify Your Email - PickOpinion',
       html: `
@@ -125,7 +125,7 @@ const sendPasswordResetEmail = async (email, resetToken) => {
 
   try {
     await resend.emails.send({
-      from: 'PickOpinion <onboarding@resend.dev>',
+      from: 'PickOpinion <no-reply@PickOpinion.com>',
       to: email,
       subject: 'Reset Your Password - PickOpinion',
       html: `
@@ -184,7 +184,7 @@ const sendPasswordResetEmail = async (email, resetToken) => {
 const sendForgotUsernameEmail = async (email, username) => {
   try {
     await resend.emails.send({
-      from: 'PickOpinion <onboarding@resend.dev>',
+      from: 'PickOpinion <no-reply@PickOpinion.com>',
       to: email,
       subject: 'Your PickOpinion Username',
       html: `

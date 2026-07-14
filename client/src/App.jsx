@@ -38,7 +38,7 @@ const AdminOfferWallsPage = lazy(() => import('./pages/admin/AdminOfferWallsPage
 const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'))
 const AdminPaymentProofsPage = lazy(() => import('./pages/admin/AdminPaymentProofsPage'))
 const AdminTrafficLogsPage = lazy(() => import('./pages/admin/AdminTrafficLogsPage'))
-const AdminAnnouncementsPage = lazy(() => import('./pages/admin/AdminAnnouncementsPage'))
+const AdminAnnouncementsPage = lazy(() => import('./pages/admin/Adminannouncementspage'))
 const AdminAuditLogsPage = lazy(() => import('./pages/admin/AdminAuditLogsPage'))
 const AdminFraudPage = lazy(() => import('./pages/admin/AdminFraudPage'))
 const AdminReversalsPage = lazy(() => import('./pages/admin/AdminReversalsPage'))
