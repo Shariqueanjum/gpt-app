@@ -719,7 +719,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                   <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem' }}>{user?.username || 'User'}</Typography>
                   <Typography sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.8rem' }}>ID: #{user?.public_id || '---'} · {getMemberSince()}</Typography>
                 </Box>
-                <Chip label={user?.level_name || `Level ${user?.level_id || 1}`} sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fff', fontWeight: 700, fontSize: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', '& .MuiChip-label': { px: 1.5 } }} />
+                <Chip label={user?.level_name || `Level ${user?.level || 1}`} sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fff', fontWeight: 700, fontSize: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', '& .MuiChip-label': { px: 1.5 } }} />
               </Box>
             </Box>
             {/* Bottom section - lighter purple with THIN VERTICAL LINES */}
