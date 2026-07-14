@@ -77,7 +77,10 @@ const LiveActivityFeed = ({ isDark }) => {
                 <Skeleton width={`${60 + Math.random() * 30}%`} height={14} sx={{ bgcolor: isDark ? '#334155' : '#e2e8f0', borderRadius: 1 }} />
               </Box>
             ))
-          : activities.map((a, i) => (
+          : activities.map((a, i) => {
+              const isLevelUp = a.type === 'level_up'
+
+              return (
               <Box
                 key={`${a.id}-${i}`}
                 sx={{
@@ -85,8 +88,14 @@ const LiveActivityFeed = ({ isDark }) => {
                   borderBottom: `1px solid ${cardBorder}`,
                   display: 'flex', alignItems: 'center', gap: 1.5,
                   '&:last-child': { borderBottom: 'none' },
-                  '&:hover': { bgcolor: rowBg },
+                  '&:hover': { bgcolor: isLevelUp ? undefined : rowBg },
                   transition: 'background 0.15s ease',
+                  ...(isLevelUp && {
+                    background: isDark
+                      ? 'linear-gradient(90deg, rgba(245,158,11,0.16), rgba(245,158,11,0.04))'
+                      : 'linear-gradient(90deg, rgba(245,158,11,0.14), rgba(245,158,11,0.02))',
+                    boxShadow: 'inset 3px 0 0 #f59e0b',
+                  }),
                   // Slide-in for new items
                   animation: i === 0 ? 'slideIn 0.3s ease' : 'none',
                   '@keyframes slideIn': {
@@ -97,48 +106,71 @@ const LiveActivityFeed = ({ isDark }) => {
               >
                 {/* Flag */}
                 <Typography sx={{ fontSize: '1.1rem', flexShrink: 0, lineHeight: 1 }}>
-                  {countryFlag(a.country)}
+                  {isLevelUp ? '🏆' : countryFlag(a.country)}
                 </Typography>
 
                 {/* Text */}
                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: textPrimary,
-                      fontWeight: 500,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      fontSize: '0.82rem',
-                    }}
-                  >
-                    <Box component="span" sx={{ fontWeight: 700 }}>{a.username}</Box>
-                    {' completed a survey on '}
-                    <Box component="span" sx={{ color: textSecondary }}>{a.offer_wall}</Box>
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: textSecondary }}>
-                    {a.country} · {timeAgo(a.time)}
+                  {isLevelUp ? (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 700,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        fontSize: '0.82rem',
+                        background: 'linear-gradient(90deg, #f59e0b, #d97706)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                      }}
+                    >
+                      🎉 {a.username} just leveled up to Level {a.level}!
+                    </Typography>
+                  ) : (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: textPrimary,
+                        fontWeight: 500,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        fontSize: '0.82rem',
+                      }}
+                    >
+                      <Box component="span" sx={{ fontWeight: 700 }}>{a.username}</Box>
+                      {' completed a survey on '}
+                      <Box component="span" sx={{ color: textSecondary }}>{a.offer_wall}</Box>
+                    </Typography>
+                  )}
+                  <Typography variant="caption" sx={{ color: isLevelUp ? '#d97706' : textSecondary, fontWeight: isLevelUp ? 600 : 400 }}>
+                    {isLevelUp ? `Bonus unlocked · ${a.country} · ${timeAgo(a.time)}` : `${a.country} · ${timeAgo(a.time)}`}
                   </Typography>
                 </Box>
 
                 {/* Amount */}
                 {a.amount && (
                   <Chip
-                    label={`+$${parseFloat(a.amount).toFixed(2)}`}
+                    label={isLevelUp ? `🎁 +${parseFloat(a.amount).toFixed(0)} pts` : `+$${parseFloat(a.amount).toFixed(2)}`}
                     size="small"
                     sx={{
-                      bgcolor: isDark ? 'rgba(16,185,129,0.15)' : '#ecfdf5',
-                      color: '#10b981',
+                      bgcolor: isLevelUp
+                        ? (isDark ? 'rgba(245,158,11,0.2)' : '#fffbeb')
+                        : (isDark ? 'rgba(16,185,129,0.15)' : '#ecfdf5'),
+                      color: isLevelUp ? '#d97706' : '#10b981',
                       fontWeight: 700,
                       fontSize: '0.72rem',
                       height: 20,
                       flexShrink: 0,
+                      border: isLevelUp ? '1px solid rgba(245,158,11,0.4)' : 'none',
                     }}
                   />
                 )}
               </Box>
-            ))}
+              )
+            })}
       </Box>
     </Box>
   )
