@@ -107,7 +107,7 @@ const getTransactionsByUserId = async (userId, filters = {}, pagination = {}, so
       t.reference_id, t.created_at, t.updated_at,
       t.metadata,
       ow.name as offer_wall_name,
-      ow.internal_id as offer_wall_internal_id
+      ow.internal_id as offer_wall_internal_id,
       ref_user.username as referred_username
     FROM transactions t
     LEFT JOIN offer_walls ow ON t.offer_wall_id = ow.id
