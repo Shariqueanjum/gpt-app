@@ -175,6 +175,7 @@ const ProgressPage = ({ darkMode, toggleDarkMode }) => {
   const failed               = surveys.failed                || 0
   const quotaFull            = surveys.quota_full            || 0
   const securityTerminated   = surveys.security_terminated   || 0
+  const terminated           = surveys.terminated            || 0
   const reversed             = surveys.reversed              || 0
   const completionRate       = surveys.completion_rate       || 0
   const reversalRate         = surveys.reversal_rate         || 0
@@ -554,12 +555,12 @@ const ProgressPage = ({ darkMode, toggleDarkMode }) => {
                   </TableHead>
                   <TableBody>
                     {[
-                      { label: 'Total Clicks',        value: totalClicks,        pct: 100,                                                              color: COLORS.primary },
+                      { label: 'Terminated',          value: Terminated,         pct: totalClicks ? (Terminated / totalClicks) * 100 : 0,               color: '#c92828'      },
                       { label: 'Completed',           value: completed,          pct: completionRate,                                                   color: '#10b981'      },
                       { label: 'Failed',              value: failed,             pct: totalClicks ? (failed / totalClicks) * 100 : 0,                   color: '#ef4444'      },
                       { label: 'Quota Full',          value: quotaFull,          pct: totalClicks ? (quotaFull / totalClicks) * 100 : 0,                color: '#f59e0b'      },
                       { label: 'Security Terminated', value: securityTerminated, pct: totalClicks ? (securityTerminated / totalClicks) * 100 : 0,       color: '#dc2626'      },
-                      { label: 'Reversed',            value: reversed,           pct: totalClicks ? (reversed / completed) * 100 : 0,                 color: '#6b7280'      },
+                      { label: 'Reversed',            value: reversed,           pct: totalClicks ? (reversed / completed) * 100 : 0,                   color: '#6b7280'      },
                     ].map((row, idx) => (
                       <TableRow key={idx} sx={{ '&:hover': { bgcolor: darkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' } }}>
                         <TableCell sx={{ ...tbCell, py: 1.3 }}>

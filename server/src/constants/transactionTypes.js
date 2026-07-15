@@ -29,6 +29,7 @@ const SURVEY_CLICK_STATUS = Object.freeze({
   FAILED: 'failed',
   QUOTA_FULL: 'quota_full',
   SECURITY_TERMINATED: 'security_terminated',
+  TERMINATED: 'terminated',
   REVERSED: 'reversed'
 });
 
