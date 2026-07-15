@@ -8,6 +8,7 @@ const getSurveyClickStats = async (userId) => {
       COUNT(CASE WHEN status = 'failed' THEN 1 END)::int as failed,
       COUNT(CASE WHEN status = 'quota_full' THEN 1 END)::int as quota_full,
       COUNT(CASE WHEN status = 'security_terminated' THEN 1 END)::int as security_terminated,
+      COUNT(CASE WHEN status = 'terminated' THEN 1 END)::int as terminated,
       COUNT(CASE WHEN status = 'reversed' THEN 1 END)::int as reversed
      FROM survey_clicks 
      WHERE user_id = $1`,
