@@ -227,27 +227,57 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
     return `$${parseFloat(val).toFixed(2)}`
   }
 
-  const renderActivityItem = (activity, idx) => (
-    <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, p: 1.5, borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(83,18,188,0.03)', mb: 1 }}>
-      <Avatar sx={{ width: 32, height: 32, bgcolor: activity.type === 'user_registered' ? COLORS.primary : COLORS.accent, fontSize: '0.75rem', fontWeight: 700 }}>
-        {activity.username ? activity.username[0].toUpperCase() : 'U'}
-      </Avatar>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        {activity.type === 'user_registered' ? (
-          <Typography sx={{ fontSize: '0.8rem', color: COLORS.textPrimary, lineHeight: 1.4 }}>
-            <Box component="span" sx={{ fontWeight: 600 }}>{activity.username || 'User'}</Box>{' '}from {activity.country || 'Unknown'} joined
-          </Typography>
-        ) : (
-          <Typography sx={{ fontSize: '0.8rem', color: COLORS.textPrimary, lineHeight: 1.4 }}>
-            <Box component="span" sx={{ fontWeight: 600 }}>{activity.username || 'User'}</Box>{' '}from {activity.country || 'Unknown'} completed{' '}
-            <Box component="span" sx={{ color: COLORS.primary, fontWeight: 600 }}>{activity.offer_wall || 'Survey'}</Box>{' '}worth{' '}
-            <Box component="span" sx={{ color: COLORS.accent, fontWeight: 700 }}>{formatPoints(activity.amount)} pts</Box>
-          </Typography>
-        )}
-        <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted, mt: 0.3 }}>{formatUTCDateTime(activity.time)}</Typography>
+  // const renderActivityItem = (activity, idx) => (
+  //   <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, p: 1.5, borderRadius: 2, bgcolor: darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(83,18,188,0.03)', mb: 1 }}>
+  //     <Avatar sx={{ width: 32, height: 32, bgcolor: activity.type === 'user_registered' ? COLORS.primary : COLORS.accent, fontSize: '0.75rem', fontWeight: 700 }}>
+  //       {activity.username ? activity.username[0].toUpperCase() : 'U'}
+  //     </Avatar>
+  //     <Box sx={{ flex: 1, minWidth: 0 }}>
+  //       {activity.type === 'user_registered' ? (
+  //         <Typography sx={{ fontSize: '0.8rem', color: COLORS.textPrimary, lineHeight: 1.4 }}>
+  //           <Box component="span" sx={{ fontWeight: 600 }}>{activity.username || 'User'}</Box>{' '}from {activity.country || 'Unknown'} joined
+  //         </Typography>
+  //       ) : (
+  //         <Typography sx={{ fontSize: '0.8rem', color: COLORS.textPrimary, lineHeight: 1.4 }}>
+  //           <Box component="span" sx={{ fontWeight: 600 }}>{activity.username || 'User'}</Box>{' '}from {activity.country || 'Unknown'} completed{' '}
+  //           <Box component="span" sx={{ color: COLORS.primary, fontWeight: 600 }}>{activity.offer_wall || 'Survey'}</Box>{' '}worth{' '}
+  //           <Box component="span" sx={{ color: COLORS.accent, fontWeight: 700 }}>{formatPoints(activity.amount)} pts</Box>
+  //         </Typography>
+  //       )}
+  //       <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted, mt: 0.3 }}>{formatUTCDateTime(activity.time)}</Typography>
+  //     </Box>
+  //   </Box>
+  // )
+
+   const renderActivityItem = (activity, idx) => {
+    const isLevelUp = activity.type === 'level_up'
+    return (
+      <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, p: 1.5, borderRadius: 2, bgcolor: isLevelUp ? (darkMode ? 'rgba(234,179,8,0.10)' : 'rgba(234,179,8,0.06)') : (darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(83,18,188,0.03)'), mb: 1, ...(isLevelUp && { boxShadow: `inset 3px 0 0 ${COLORS.gold}` }) }}>
+        <Avatar sx={{ width: 32, height: 32, bgcolor: isLevelUp ? COLORS.gold : (activity.type === 'user_registered' ? COLORS.primary : COLORS.accent), fontSize: '0.9rem', fontWeight: 700 }}>
+          {isLevelUp ? '🏆' : (activity.username ? activity.username[0].toUpperCase() : 'U')}
+        </Avatar>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          {isLevelUp ? (
+            <Typography sx={{ fontSize: '0.8rem', lineHeight: 1.4, fontWeight: 700, background: `linear-gradient(90deg, ${COLORS.gold}, #d97706)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              🎉 {activity.username || 'User'} just leveled up to Level {activity.level}!{' '}
+              {activity.amount && <Box component="span" sx={{ color: '#d97706' }}>🎁 +{formatPoints(activity.amount)} pts bonus</Box>}
+            </Typography>
+          ) : activity.type === 'user_registered' ? (
+            <Typography sx={{ fontSize: '0.8rem', color: COLORS.textPrimary, lineHeight: 1.4 }}>
+              <Box component="span" sx={{ fontWeight: 600 }}>{activity.username || 'User'}</Box>{' '}from {activity.country || 'Unknown'} joined
+            </Typography>
+          ) : (
+            <Typography sx={{ fontSize: '0.8rem', color: COLORS.textPrimary, lineHeight: 1.4 }}>
+              <Box component="span" sx={{ fontWeight: 600 }}>{activity.username || 'User'}</Box>{' '}from {activity.country || 'Unknown'} completed{' '}
+              <Box component="span" sx={{ color: COLORS.primary, fontWeight: 600 }}>{activity.offer_wall || 'Survey'}</Box>{' '}worth{' '}
+              <Box component="span" sx={{ color: COLORS.accent, fontWeight: 700 }}>{formatPoints(activity.amount)} pts</Box>
+            </Typography>
+          )}
+          <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted, mt: 0.3 }}>{formatUTCDateTime(activity.time)}</Typography>
+        </Box>
       </Box>
-    </Box>
-  )
+    )
+  }
 
   const isActivePath = (path) => {
     if (!path) return false
