@@ -43,6 +43,7 @@ const getUserPerformance = async (userId) => {
       failed: parseInt(clickStats.failed) || 0,
       quota_full: parseInt(clickStats.quota_full) || 0,
       security_terminated: parseInt(clickStats.security_terminated) || 0,
+      terminated : parseInt(clickStats.terminated) || 0,
       reversed: reversed,
       completion_rate: parseFloat(completionRate),
       reversal_rate: parseFloat(reversalRate)
