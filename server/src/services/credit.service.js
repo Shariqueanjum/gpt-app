@@ -37,7 +37,7 @@ const findAndLockClickForCallback = async (client, parsedCallback, offerWall) =>
         await updateExternalTransactionId(client, click.id, parsedCallback.externalTransactionId);
         click.external_transaction_id = parsedCallback.externalTransactionId;
       }
-      return { click, foundBy, user_id: click.user_id, username: click.username};
+      return { click, foundBy, user_id: click.user_id, username: click.username };
     }
   }
 
@@ -74,7 +74,7 @@ const findAndLockClickForCallback = async (client, parsedCallback, offerWall) =>
     return { click, foundBy, user_id: click.user_id, username: click.username };
   }
 
-    // ============================================
+  // ============================================
   // NEW: Priority 5 — IFRAME FALLBACK
   // For iframe-type offer walls where 3rd party does NOT echo back our transaction_id
   // We fallback to looking up by username or user_public_id
@@ -119,52 +119,52 @@ const findAndLockClickForCallback = async (client, parsedCallback, offerWall) =>
           }
         }
 
-  // ============================================================
-  // Priority 6 — IFRAME AUTO-CREATE
-  // No pending click found at all (already consumed, or user never
-  // triggered an entry). For iframe walls, the callback itself carries
-  // everything we need (username + payout), so build the click record
-  // now instead of failing the callback.
-  // ============================================================
-  if (!click && offerWall && offerWall.type === 'iframe') {
-    const identifier = parsedCallback.username || parsedCallback.userPublicId;
- 
-    if (identifier && parsedCallback.payout !== null && parsedCallback.payout > 0) {
-      const userField = parsedCallback.username ? 'username' : 'public_id';
-      const userRes = await client.query(
-        `SELECT id, username, public_id FROM users WHERE ${userField} = $1`,
-        [identifier]
-      );
- 
-      if (userRes.rows.length > 0) {
-        const user = userRes.rows[0];
-        const theirId = parsedCallback.externalTransactionId || parsedCallback.transactionId;
- 
-        // Don't create a duplicate if this external ID was already credited
-        if (theirId) {
-          const exists = await externalTransactionIdExists(theirId);
-          if (exists) {
-            return { click: null, foundBy: 'iframe_auto_create_duplicate', user_id: null, username: null };
-          }
-        }
- 
-        const internalTxnId = `TXN-AUTO-${offerWall.internal_id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
- 
-        const insertRes = await client.query(
-          `INSERT INTO survey_clicks
+        // ============================================================
+        // Priority 6 — IFRAME AUTO-CREATE
+        // No pending click found at all (already consumed, or user never
+        // triggered an entry). For iframe walls, the callback itself carries
+        // everything we need (username + payout), so build the click record
+        // now instead of failing the callback.
+        // ============================================================
+        if (!click && offerWall && offerWall.type === 'iframe') {
+          const identifier = parsedCallback.username || parsedCallback.userPublicId;
+
+          if (identifier && parsedCallback.payout !== null && parsedCallback.payout > 0) {
+            const userField = parsedCallback.username ? 'username' : 'public_id';
+            const userRes = await client.query(
+              `SELECT id, username, public_id FROM users WHERE ${userField} = $1`,
+              [identifier]
+            );
+
+            if (userRes.rows.length > 0) {
+              const user = userRes.rows[0];
+              const theirId = parsedCallback.externalTransactionId || parsedCallback.transactionId;
+
+              // Don't create a duplicate if this external ID was already credited
+              if (theirId) {
+                const exists = await externalTransactionIdExists(theirId);
+                if (exists) {
+                  return { click: null, foundBy: 'iframe_auto_create_duplicate', user_id: null, username: null };
+                }
+              }
+
+              const internalTxnId = `TXN-AUTO-${offerWall.internal_id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+              const insertRes = await client.query(
+                `INSERT INTO survey_clicks
              (user_id, offer_wall_id, transaction_id, integration_type, commission_rate, status, external_transaction_id, created_at)
            VALUES ($1, $2, $3, $4, $5, 'pending', $6, NOW())
            RETURNING *`,
-          [user.id, offerWall.id, internalTxnId, offerWall.type, offerWall.commission_rate, theirId || null]
-        );
- 
-        click = insertRes.rows[0];
-        click.username = user.username;
-        foundBy = 'iframe_auto_create';
-        return { click, foundBy, user_id: user.id, username: user.username };
-      }
-    }
-  }
+                [user.id, offerWall.id, internalTxnId, offerWall.type, offerWall.commission_rate, theirId || null]
+              );
+
+              click = insertRes.rows[0];
+              click.username = user.username;
+              foundBy = 'iframe_auto_create';
+              return { click, foundBy, user_id: user.id, username: user.username };
+            }
+          }
+        }
 
         return { click, foundBy, user_id: click.user_id, username: click.username };
       }
@@ -181,7 +181,7 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
     await client.query('BEGIN');
 
     // FIX: Use unified finder
-   const { click, foundBy, user_id, username } = await findAndLockClickForCallback(client, parsedCallback, offerWall);
+    const { click, foundBy, user_id, username } = await findAndLockClickForCallback(client, parsedCallback, offerWall);
 
     if (!click) {
       const err = new Error('Transaction ID not found');
@@ -189,7 +189,7 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
       throw err;
     }
 
-     console.log(`[Credit] Found click by: ${foundBy}, click_id: ${click.id}`);
+    console.log(`[Credit] Found click by: ${foundBy}, click_id: ${click.id}`);
 
     assertClickBelongsToOfferWall(click, offerWall);
 
@@ -220,7 +220,7 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
         throw err;
       }
       commissionEarned = parseFloat((cpaOriginal - cpaUser).toFixed(2));
-    } 
+    }
     else {
       // Router/iFrame type: We didn't know CPA upfront. Accept from callback.
       if (parsedCallback.payout === null || parsedCallback.payout <= 0) {
@@ -232,7 +232,7 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
       // Others (e.g. SurveyDekho) send it in real currency (e.g. $0.50), which
       // must be converted to points (100 points = $1) before crediting.
       const payoutMultiplier = parseFloat(offerWall.callback_config?.payout_multiplier) || 1;
-      
+
       cpaOriginal = parseFloat((parsedCallback.payout * payoutMultiplier).toFixed(2));
       const commissionRate = parseFloat(click.commission_rate);
       cpaUser = parseFloat((cpaOriginal * (100 - commissionRate) / 100).toFixed(2));
@@ -315,7 +315,9 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
             referral_percent: referralPercent,
             survey_earned: cpaUser,
             is_locked: isLocked,  // FIX: track if this referral was locked
-            parent_transaction_status: transactionStatus
+            parent_transaction_status: transactionStatus,
+            referred_username: user.username,    // ← ADD THIS
+            referred_user_id: user.id
           }
         });
 
@@ -338,16 +340,16 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
       console.error(`[AutoLevel] User ${click.user_id}: ${err.message}`);
     });
 
-     // Fire real-time live activity event instantly
+    // Fire real-time live activity event instantly
     try {
       emitActivity({
-        type:       'survey_completed',
-        username:   username,
+        type: 'survey_completed',
+        username: username,
         offer_wall: offerWall?.name || 'Survey',
-        amount:     cpaUser ? cpaUser.toString() : null,
-        country:    user?.country || 'Unknown',
+        amount: cpaUser ? cpaUser.toString() : null,
+        country: user?.country || 'Unknown',
       });
-    } catch (_) {}
+    } catch (_) { }
 
     return {
       click_id: click.id,
@@ -359,7 +361,7 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
       referral_credited: referralTransaction ? {
         referrer_id: user.referred_by,
         amount: referralTransaction.amount,
-        is_locked: isLocked 
+        is_locked: isLocked
       } : null
     };
 
@@ -378,7 +380,7 @@ const processNonSuccessCallback = async (parsedCallback, offerWall) => {
     await client.query('BEGIN');
 
     const { click, foundBy, user_id, username } = await findAndLockClickForCallback(client, parsedCallback, offerWall);
-    
+
     if (!click) {
       const err = new Error('Transaction ID not found');
       err.status = 404;
@@ -393,7 +395,7 @@ const processNonSuccessCallback = async (parsedCallback, offerWall) => {
     }
 
     await updateSurveyClickStatus(client, click.id, parsedCallback.status);
-    
+
     await client.query('COMMIT');
 
     return { click_id: click.id, status: parsedCallback.status, user_id, username };

@@ -108,8 +108,10 @@ const getTransactionsByUserId = async (userId, filters = {}, pagination = {}, so
       t.metadata,
       ow.name as offer_wall_name,
       ow.internal_id as offer_wall_internal_id
+      ref_user.username as referred_username
     FROM transactions t
     LEFT JOIN offer_walls ow ON t.offer_wall_id = ow.id
+    LEFT JOIN users ref_user ON t.type = 'referral' AND t.reference_type = 'user' AND ref_user.id = t.reference_id
     WHERE ${whereClause}
     ORDER BY t.${sortColumn} ${sortOrder}
     LIMIT $${idx++} OFFSET $${idx++}

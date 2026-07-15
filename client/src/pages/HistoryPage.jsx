@@ -93,9 +93,9 @@ const buildDescription = (tx) => {
       return meta.survey_name || 'Survey completed'
 
     case 'referral':
-      return meta.referred_username
-        ? `Commission from ${meta.referred_username}'s survey completion`
-        : 'Referral commission earned'
+      return tx.referred_username
+        ? `Earned from referral: ${tx.referred_username}`
+        : (meta.referred_username ? `Earned from referral: ${meta.referred_username}` : 'Referral commission earned')
 
     case 'bonus':
       return meta.reason || 'Bonus credited by admin'
