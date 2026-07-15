@@ -555,7 +555,7 @@ const ProgressPage = ({ darkMode, toggleDarkMode }) => {
                   </TableHead>
                   <TableBody>
                     {[
-                      { label: 'Terminated',          value: Terminated,         pct: totalClicks ? (Terminated / totalClicks) * 100 : 0,               color: '#c92828'      },
+                      { label: 'Terminated',          value: terminated,         pct: totalClicks ? (terminated / totalClicks) * 100 : 0,               color: '#c92828'      },
                       { label: 'Completed',           value: completed,          pct: completionRate,                                                   color: '#10b981'      },
                       { label: 'Failed',              value: failed,             pct: totalClicks ? (failed / totalClicks) * 100 : 0,                   color: '#ef4444'      },
                       { label: 'Quota Full',          value: quotaFull,          pct: totalClicks ? (quotaFull / totalClicks) * 100 : 0,                color: '#f59e0b'      },
