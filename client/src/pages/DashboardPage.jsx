@@ -31,6 +31,7 @@ import MonetizationOnIcon from '@mui/icons-material/MonetizationOn'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import LockIcon from '@mui/icons-material/Lock'
+import HomeIcon from '@mui/icons-material/Home'
 import PaymentIcon from '@mui/icons-material/Payment'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import axiosInstance from '../utils/axiosInstance'
@@ -59,8 +60,8 @@ const getColors = (darkMode) => ({
 const WALL_COLORS = ['#5312bc', '#2563eb', '#10b981', '#f59e0b', '#ec4899', '#14b8a6']
 
 const MAIN_NAV = [
+  { label: 'Home', icon: HomeIcon, color: '#10b981', path: '/dashboard' },
   { label: 'Surveys', icon: PollIcon, color: '#5312bc', path: '/earn' },
-  { label: 'Games', icon: SportsEsportsIcon, color: '#10b981', path: '/earn?tab=games' },
   { label: 'Offers', icon: LocalOfferIcon, color: '#f59e0b', path: '/earn?tab=offers' },
 ]
 
@@ -75,8 +76,8 @@ const MORE_NAV = [
 ]
 
 const MOBILE_NAV = [
+  { label: 'Home', icon: HomeIcon, color: '#10b981', path: '/dashboard' },
   { label: 'Surveys', icon: PollIcon, path: '/earn' },
-  { label: 'Games', icon: SportsEsportsIcon, path: '/earn?tab=games' },
   { label: 'Offers', icon: LocalOfferIcon, path: '/earn?tab=offers' },
   { label: 'More', icon: MoreHorizIcon, path: null, action: 'more' },
 ]
@@ -100,7 +101,6 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
   const [moreExpanded, setMoreExpanded] = useState(false)
   const [loading, setLoading] = useState(true)
   const [scrolled, setScrolled] = useState(false)
-  const [activeTab, setActiveTab] = useState('/earn')
   const [unreadNotifCount, setUnreadNotifCount] = useState(0)
   const sseRef = useRef(null)
 
@@ -650,14 +650,13 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
         {/* BOTTOM NAV - Active tab turns purple */}
         <Box sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1100, bgcolor: COLORS.navBg, borderTop: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-around', py: 1, px: 1, height: '64px' }}>
           {MOBILE_NAV.map((item) => {
-            const isActive = activeTab === item.path || (item.action === 'more' && moreOpen)
+            const isActive = isActivePath(item.path) || (item.action === 'more' && moreOpen)
             const Icon = item.icon
             return (
               <Box key={item.label} onClick={() => {
                 if (item.action === 'more') {
                   setMoreOpen(true)
                 } else {
-                  setActiveTab(item.path)
                   navigate(item.path)
                 }
               }} sx={{
@@ -681,7 +680,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
           transition: 'bottom 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
           boxShadow: moreOpen ? '0 -4px 20px rgba(0,0,0,0.15)' : 'none',
         }}>
-          <Box sx={{ width: 36, height: 3, borderRadius: 2, bgcolor: COLORS.border, mx: 'auto', mb: 2 }} />
+          { <Box onClick={() => setMoreOpen(false)} sx={{ width: 36, height: 4, borderRadius: 999, bgcolor: COLORS.border, mx: 'auto', mb: 2, cursor: 'pointer', }} /> }
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
             <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: COLORS.textPrimary }}>More Options</Typography>
             <IconButton onClick={() => setMoreOpen(false)} sx={{ color: COLORS.textSecondary }}><CloseIcon sx={{ fontSize: 20 }} /></IconButton>

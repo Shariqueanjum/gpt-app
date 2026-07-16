@@ -3,7 +3,7 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ThemeProvider, createTheme, Box, Typography, GlobalStyles } from '@mui/material'
 import CssBaseline from '@mui/material/CssBaseline'
-import logo from '/public/images/logo.png'
+import logo from '/images/logo.png'
 
 // Public pages
 import HomePage from './pages/HomePage'

@@ -18,6 +18,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard'
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
 import PeopleIcon from '@mui/icons-material/People'
 import HistoryIcon from '@mui/icons-material/History'
+import HomeIcon from '@mui/icons-material/Home'
 import SupportAgentIcon from '@mui/icons-material/SupportAgent'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
@@ -49,8 +50,8 @@ export const getColors = (darkMode) => ({
 export const WALL_COLORS = ['#5312bc', '#2563eb', '#10b981', '#f59e0b', '#ec4899', '#14b8a6']
 
 export const MAIN_NAV = [
+  { label: 'Home', icon: HomeIcon, color: '#10b981', path: '/dashboard' },
   { label: 'Surveys', icon: PollIcon, color: '#5312bc', path: '/earn' },
-  { label: 'Games', icon: SportsEsportsIcon, color: '#10b981', path: '/earn?tab=games' },
   { label: 'Offers', icon: LocalOfferIcon, color: '#f59e0b', path: '/earn?tab=offers' },
 ]
 
@@ -65,11 +66,17 @@ export const MORE_NAV = [
 ]
 
 export const MOBILE_NAV = [
+  { label: 'Home', icon: HomeIcon, color: '#10b981', path: '/dashboard' },
   { label: 'Surveys', icon: PollIcon, path: '/earn' },
-  { label: 'Games', icon: SportsEsportsIcon, path: '/earn?tab=games' },
   { label: 'Offers', icon: LocalOfferIcon, path: '/earn?tab=offers' },
   { label: 'More', icon: MoreHorizIcon, path: null, action: 'more' },
 ]
+
+  const isActivePath = (location, path) => {
+    if (!path) return false
+    const currentPath = location.pathname + location.search
+    return currentPath === path
+  }
 
 // ============================================================
 // Sidebar — SAME export name
@@ -79,13 +86,6 @@ export const Sidebar = ({ darkMode, moreExpanded, setMoreExpanded }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const COLORS = getColors(darkMode)
-
-  // FIXED: Check full path including query params for exact match
-  const isActivePath = (path) => {
-    if (!path) return false
-    const currentPath = location.pathname + location.search
-    return currentPath === path
-  }
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', px: 2, py: 2.5 }}>
@@ -112,7 +112,7 @@ export const Sidebar = ({ darkMode, moreExpanded, setMoreExpanded }) => {
       {/* Main Nav */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
         {MAIN_NAV.map((item) => {
-          const isActive = isActivePath(item.path)
+          const isActive = isActivePath(location, item.path)
           const Icon = item.icon
           return (
             <Box key={item.label} onClick={() => navigate(item.path)} sx={{
@@ -178,7 +178,7 @@ export const Sidebar = ({ darkMode, moreExpanded, setMoreExpanded }) => {
           <Collapse in={moreExpanded} timeout={200}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 1, pl: 1 }}>
               {MORE_NAV.map((item) => {
-                const isActive = isActivePath(item.path)
+                const isActive = isActivePath(location, item.path)
                 const Icon = item.icon
                 return (
                   <Box key={item.label} onClick={() => navigate(item.path)} sx={{
@@ -348,21 +348,21 @@ export const MobileTopBar = ({ darkMode, toggleDarkMode, scrolled }) => {
 // MobileBottomNav — SAME export name
 // FIXED: Only highlight clicked item, not More when drawer opens
 // ============================================================
-export const MobileBottomNav = ({ darkMode, activeTab, setActiveTab, setMoreOpen }) => {
+export const MobileBottomNav = ({ darkMode, setMoreOpen }) => {
   const navigate = useNavigate()
+  const location = useLocation()
   const COLORS = getColors(darkMode)
 
   return (
     <Box sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1100, bgcolor: COLORS.navBg, borderTop: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-around', py: 1, px: 1, height: '64px' }}>
       {MOBILE_NAV.map((item) => {
-        const isActive = activeTab === item.path
+        const isActive = isActivePath(location, item.path)
         const Icon = item.icon
         return (
           <Box key={item.label} onClick={() => {
             if (item.action === 'more') {
               setMoreOpen(true)
             } else {
-              setActiveTab(item.path)
               navigate(item.path)
             }
           }} sx={{
@@ -384,7 +384,7 @@ export const MobileBottomNav = ({ darkMode, activeTab, setActiveTab, setMoreOpen
 // ============================================================
 // MobileMoreDrawer — SAME export name
 // ============================================================
-export const MobileMoreDrawer = ({ darkMode, moreOpen, setMoreOpen, setActiveTab }) => {
+export const MobileMoreDrawer = ({ darkMode, moreOpen, setMoreOpen }) => {
   const navigate = useNavigate()
   const COLORS = getColors(darkMode)
 
@@ -395,7 +395,7 @@ export const MobileMoreDrawer = ({ darkMode, moreOpen, setMoreOpen, setActiveTab
       transition: 'bottom 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
       boxShadow: moreOpen ? '0 -4px 20px rgba(0,0,0,0.15)' : 'none',
     }}>
-      <Box sx={{ width: 36, height: 3, borderRadius: 2, bgcolor: COLORS.border, mx: 'auto', mb: 2 }} />
+      <Box  onClick={() => setMoreOpen(false)} sx={{ width: 36, height: 4, borderRadius: 999, bgcolor: COLORS.border, mx: 'auto', mb: 2, cursor: 'pointer',}} />
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
         <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: COLORS.textPrimary }}>More Options</Typography>
         <IconButton onClick={() => setMoreOpen(false)} sx={{ color: COLORS.textSecondary }}><CloseIcon sx={{ fontSize: 20 }} /></IconButton>
@@ -427,7 +427,6 @@ export const PageWrapper = ({ children, darkMode, toggleDarkMode }) => {
   const [scrolled, setScrolled] = useState(false)
   const [moreExpanded, setMoreExpanded] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState('/earn')
   const COLORS = getColors(darkMode)
 
   useEffect(() => {
@@ -444,15 +443,12 @@ export const PageWrapper = ({ children, darkMode, toggleDarkMode }) => {
         {children}
         <MobileBottomNav
           darkMode={darkMode}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
           setMoreOpen={setMoreOpen}
         />
         <MobileMoreDrawer
           darkMode={darkMode}
           moreOpen={moreOpen}
           setMoreOpen={setMoreOpen}
-          setActiveTab={setActiveTab}
         />
       </Box>
     )
