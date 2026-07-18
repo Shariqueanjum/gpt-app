@@ -605,9 +605,6 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                         <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: COLORS.textPrimary }}>{wall.name}</Typography>
                         <Typography sx={{ fontSize: '0.78rem', color: COLORS.textMuted, mt: 0.2, lineHeight: 1.4 }}>{wall.description || 'High paying surveys and offers'}</Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.6 }}>
-                          {/* <StarIcon sx={{ fontSize: 14, color: COLORS.gold }} />
-                          <Typography sx={{ fontSize: '0.8rem', color: COLORS.textSecondary, fontWeight: 600 }}>{wall.rating || '4.5'}</Typography>
-                          <Typography sx={{ fontSize: '0.72rem', color: COLORS.textMuted }}>({wall.review_count || '120'} reviews)</Typography> */}
                         </Box>
                       </Box>
                       <ArrowForwardIosIcon sx={{ fontSize: 16, color: COLORS.textMuted, flexShrink: 0 }} />

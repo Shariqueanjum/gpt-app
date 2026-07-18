@@ -16,13 +16,27 @@ const getReferralStats = async (userId) => {
     [userId]
   );
 
-  // Referral list with basic info
+ // Referral list with per-referral earnings
+  // Join users with transactions to sum how much YOU earned from EACH referred user
   const listRes = await pool.query(
-    `SELECT id, public_id, username, email, full_name, country, 
-            balance_available, created_at
-     FROM users 
-     WHERE referred_by = $1 
-     ORDER BY created_at DESC`,
+    `SELECT 
+       u.id,
+       u.public_id,
+       u.username,
+       u.email,
+       u.full_name,
+       u.country,
+       u.created_at,
+       COALESCE(SUM(t.amount), 0) as earned_from_referral
+     FROM users u
+     LEFT JOIN transactions t 
+       ON t.reference_id = u.id        -- t.reference_id = the referred user
+       AND t.user_id = $1                -- t.user_id = YOU (the referrer)
+       AND t.type = 'referral'
+       AND t.status = 'completed'
+     WHERE u.referred_by = $1
+     GROUP BY u.id, u.public_id, u.username, u.email, u.full_name, u.country, u.created_at
+     ORDER BY u.created_at DESC`,
     [userId]
   );
 
@@ -31,8 +45,7 @@ const getReferralStats = async (userId) => {
     total_earned: parseFloat(earningsRes.rows[0].total_earned),
     referrals: listRes.rows.map(r => ({
       ...r,
-      balance_available: parseFloat(r.balance_available),
-      created_at: r.created_at ? new Date(r.created_at).toISOString() : null
+     earned_from_referral: parseFloat(r.earned_from_referral)
     }))
   };
 };
