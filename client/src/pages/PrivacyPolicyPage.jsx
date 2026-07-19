@@ -5,6 +5,7 @@ import MenuIcon from '@mui/icons-material/Menu'
 import CloseIcon from '@mui/icons-material/Close'
 import Navbar from '../components/Layout/Navbar'
 import Footer from '../components/Layout/Footer'
+import SEO from '../components/common/SEO'
 
 // Theme colors matching your getColors() function
 const colors = {
