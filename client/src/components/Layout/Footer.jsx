@@ -9,10 +9,10 @@ const supportLinks = [
 ]
 
 const legalLinks = [
-  { label: 'Privacy Policy', href: '#' },
-  { label: 'Terms & Conditions', href: '#' },
-  { label: 'Cookies', href: '#' },
-  { label: 'Disclaimer', href: '#' },
+  { label: 'Privacy Policy', href: '/privacy-policy' },
+  { label: 'Terms & Conditions', href: 'terms-condition' },
+  { label: 'Cookies', href: '/cookies' },
+  { label: 'Disclaimer', href: 'disclaimer' },
 ]
 
 // SVG icons — no external URLs, no loading issues

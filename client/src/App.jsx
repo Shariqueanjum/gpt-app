@@ -14,6 +14,10 @@ import CompleteProfilePage from './pages/CompleteProfilePage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import ForgotUsernamePage from './pages/ForgotUsernamePage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsOfServicePage from './pages/TermsOfServicePage'
+import CookiePolicyPage from './pages/CookiePolicyPage'
+import DisclaimerPage from './pages/DisclaimerPage'
 
 // Dashboard & protected pages
 import DashboardPage from './pages/DashboardPage'
@@ -175,6 +179,10 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/forgot-username" element={<ForgotUsernamePage />} />
+        <Route path="/privacy-policy"  element={<PrivacyPolicyPage />} />
+        <Route path="/terms-condition" element={<TermsOfServicePage/>} />
+        <Route path="/cookies" element={<CookiePolicyPage/>} />
+        <Route path="/disclaimer" element={<DisclaimerPage/>} />
 
         {/* Protected User Routes (require profile completion) */}
         <Route path="/dashboard" element={
