@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { loginUser, clearError } from '../slices/authSlice'
+import SEO from '../components/common/SEO'
 
 const MailIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -156,6 +157,12 @@ const LoginPage = () => {
   const inputNormal = 'border-[#cbc3d7]/40 focus:border-[#5312bc] focus:ring-[#5312bc]/10'
 
   return (
+    <>
+    <SEO
+  title="Login | PickOpinion - Access Your Account"
+  description="Sign in to your PickOpinion account to start earning. Access surveys, track earnings, and request withdrawals. New user? Register now!"
+  keywords="PickOpinion login, survey login, earn money login, paid survey account, sign in PickOpinion"
+/>
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-24 pb-6 px-4 sm:px-6" onClick={handleBackdropClick}>
       <div className="absolute inset-0 bg-[#131b2e]/70" />
 
@@ -234,6 +241,7 @@ const LoginPage = () => {
         </div>
       </div>
     </div>
+     </>
   )
 }
 

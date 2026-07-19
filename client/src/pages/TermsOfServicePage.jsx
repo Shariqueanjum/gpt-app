@@ -5,6 +5,7 @@ import MenuIcon from '@mui/icons-material/Menu'
 import CloseIcon from '@mui/icons-material/Close'
 import Navbar from '../components/Layout/Navbar'
 import Footer from '../components/Layout/Footer'
+import SEO from '../components/common/SEO'
 
 const colors = {
   primary: '#5312bc',
@@ -208,6 +209,12 @@ const TermsOfServicePage = () => {
   )
 
   return (
+    <>
+    <SEO
+  title="Terms & Cnnditions | PickOpinion - Rules & Guidelines"
+  description="Read PickOpinion's Terms of Service. Learn about our eligibility, earnings, payments, Net 60 payouts, and user policies for our survey rewards platform."
+  keywords="terms and conditions, survey terms, paid survey rules, PickOpinion terms, user agreement, Net 60 payment"
+/>
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
@@ -592,6 +599,7 @@ const TermsOfServicePage = () => {
 
       <Footer />
     </Box>
+    </>
   )
 }
 

@@ -1,0 +1,53 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://www.pickopinion.com/sitemap.xml
+
+# ========================
+# ALLOWED PUBLIC ROUTES
+# ========================
+# These are all publicly accessible and should be indexed:
+# / (homepage)
+# /login
+# /register
+# /forgot-password
+# /reset-password
+# /forgot-username
+# /privacy-policy
+# /terms-condition
+# /cookies
+# /disclaimer
+
+# ========================
+# DISALLOWED PROTECTED ROUTES
+# ========================
+# These require authentication and should NOT be indexed:
+Disallow: /complete-profile
+Disallow: /dashboard
+Disallow: /earn
+Disallow: /withdraw
+Disallow: /history
+Disallow: /referrals
+Disallow: /settings
+Disallow: /profile
+Disallow: /support
+Disallow: /notifications
+Disallow: /progress
+
+# ========================
+# DISALLOWED ADMIN ROUTES
+# /admin/ blocks ALL routes starting with /admin/ including:
+# /admin/login, /admin/dashboard, /admin/users, etc.
+# ========================
+Disallow: /admin/
+
+# ========================
+# DISALLOWED API & ASSETS
+# ========================
+Disallow: /api/
+Disallow: /assets/
+Disallow: /static/
+Disallow: /*.json$
+Disallow: /*.js$
+Disallow: /*.css$

@@ -5,6 +5,7 @@ import MenuIcon from '@mui/icons-material/Menu'
 import CloseIcon from '@mui/icons-material/Close'
 import Navbar from '../components/Layout/Navbar'
 import Footer from '../components/Layout/Footer'
+import SEO from '../components/common/SEO'
 
 const colors = {
   primary: '#5312bc',
@@ -203,6 +204,12 @@ const CookiePolicyPage = () => {
   )
 
   return (
+    <>
+    <SEO
+  title="Cookie Policy | PickOpinion - How We Use Cookies"
+  description="Learn how PickOpinion uses cookies to improve your experience. Understand essential, functional, and third-party cookies on our survey rewards platform."
+  keywords="cookie policy, cookies, PickOpinion cookies, survey cookies, third party cookies, cookie settings, essential cookies"
+/>
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
@@ -580,6 +587,7 @@ const CookiePolicyPage = () => {
 
       <Footer />
     </Box>
+    </>
   )
 }
 

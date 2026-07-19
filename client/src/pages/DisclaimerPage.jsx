@@ -5,6 +5,7 @@ import MenuIcon from '@mui/icons-material/Menu'
 import CloseIcon from '@mui/icons-material/Close'
 import Navbar from '../components/Layout/Navbar'
 import Footer from '../components/Layout/Footer'
+import SEO from '../components/common/SEO'
 
 const colors = {
   primary: '#5312bc',
@@ -203,6 +204,12 @@ const DisclaimerPage = () => {
   )
 
   return (
+    <>
+    <SEO
+  title="Disclaimer | PickOpinion - Important Information"
+  description="Read our disclaimer regarding earnings, third-party offers, and platform usage. PickOpinion is a rewards platform, not a financial service."
+  keywords="disclaimer, earnings disclaimer, survey disclaimer, PickOpinion disclaimer, no guaranteed earnings, third party offers"
+/>
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
@@ -491,6 +498,7 @@ const DisclaimerPage = () => {
 
       <Footer />
     </Box>
+      </>
   )
 }
 

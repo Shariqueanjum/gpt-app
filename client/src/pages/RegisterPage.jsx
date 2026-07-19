@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { registerUser, clearError, clearMessage } from '../slices/authSlice'
+import SEO from '../components/common/SEO'
 
 const PersonIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -225,6 +226,12 @@ const RegisterPage = () => {
   }
 
   return (
+    <>
+    <SEO
+  title="Register | PickOpinion - Start Earning Today"
+  description="Create your free PickOpinion account and start earning money by sharing your opinions. Take surveys, complete offers, and get paid. Join now!"
+  keywords="PickOpinion register, sign up, create account, free registration, earn money signup, paid survey registration"
+/>
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-18 pb-6 px-4 sm:px-6" onClick={handleBackdropClick}>
       <div className="absolute inset-0 bg-[#131b2e]/70" />
       <div ref={cardRef} className="relative w-full max-w-[400px] mx-auto bg-white rounded-[2rem] border border-[#cbc3d7]/40 shadow-[0_25px_80px_-20px_rgba(83,18,188,0.25)] p-6 sm:p-8">
@@ -330,6 +337,7 @@ const RegisterPage = () => {
         </div>
       </div>
     </div>
+    </>
   )
 }
 

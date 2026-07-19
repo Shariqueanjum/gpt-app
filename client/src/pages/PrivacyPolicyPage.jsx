@@ -209,6 +209,12 @@ const PrivacyPolicyPage = () => {
   )
 
   return (
+    <>
+    <SEO
+  title="Privacy Policy | PickOpinion - Your Data, Your Control"
+  description="Learn how PickOpinion protects your personal information. Read our Privacy Policy to understand what data we collect, how we use it, and your rights."
+  keywords="privacy policy, data protection, survey privacy, PickOpinion privacy, personal data safety, cookie policy"
+/>
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Navbar */}
       <Navbar />
@@ -681,6 +687,7 @@ const PrivacyPolicyPage = () => {
       {/* Footer */}
       <Footer />
     </Box>
+    </>
   )
 }
 
