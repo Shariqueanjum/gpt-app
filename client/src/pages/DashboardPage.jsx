@@ -730,7 +730,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
         </Box> */}
 
                {/* OUR PARTNERS - HERO */}
-        <Box sx={{ px: 2.5, mt: 3, mb: 2 }}>
+        {/* <Box sx={{ px: 2.5, mt: 3, mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: COLORS.primary }} />
@@ -749,7 +749,6 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                 const isLocked = wall.min_level && user?.level < wall.min_level
                 return (
                   <Paper key={wall.id} elevation={0} onClick={() => !isLocked && navigate(`/earn?wall=${wall.internal_id || wall.id}`)} sx={{ borderRadius: 3, p: 2.5, border: `1px solid ${COLORS.border}`, bgcolor: COLORS.cardBg, cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1, transition: 'all 0.2s', '&:active': !isLocked && { transform: 'scale(0.98)' }, overflow: 'hidden', position: 'relative' }}>
-                    {/* Top row: Bigger Logo + Badge with shimmer */}
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1.5 }}>
                       <Box
                         component="img"
@@ -790,7 +789,6 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                         TOP PICK
                       </Box>
                     </Box>
-                    {/* Name + Arrow row */}
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                       <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: COLORS.textPrimary }}>{wall.name}</Typography>
                       <Box sx={{
@@ -809,7 +807,80 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
               })}
             </Box>
           )}
+        </Box> */}
+
+          {/* OUR PARTNERS - HERO */}
+        <Box sx={{ px: 2.5, mt: 3, mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: COLORS.primary }} />
+              <Typography sx={{ fontSize: '1.15rem', fontWeight: 800, color: COLORS.textPrimary, letterSpacing: '-0.01em' }}>Our Partners</Typography>
+            </Box>
+            <Typography onClick={() => navigate('/earn')} sx={{ fontSize: '0.8rem', fontWeight: 600, color: COLORS.primary, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View All</Typography>
+          </Box>
+          {offerWalls.length === 0 ? (
+            <Paper elevation={0} sx={{ borderRadius: 3, p: 4, textAlign: 'center', bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
+              <Typography sx={{ color: COLORS.textMuted, fontSize: '0.9rem' }}>No partners available yet. Check back soon!</Typography>
+            </Paper>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              {offerWalls.slice(0, 5).map((wall, idx) => {
+                const color = WALL_COLORS[idx % WALL_COLORS.length]
+                const isLocked = wall.min_level && user?.level < wall.min_level
+                return (
+                  <Paper key={wall.id} elevation={0} onClick={() => !isLocked && navigate(`/earn?wall=${wall.internal_id || wall.id}`)} sx={{ borderRadius: 3, p: 2.5, border: `1px solid ${COLORS.border}`, bgcolor: COLORS.cardBg, cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1, transition: 'all 0.2s', '&:active': !isLocked && { transform: 'scale(0.98)' }, overflow: 'hidden', position: 'relative' }}>
+                    {/* Top row: Logo (no box) + Badge with shimmer */}
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+                      <Box
+                        component="img"
+                        src="/images/newlogosurveydekho.png"
+                        alt={wall.name}
+                        sx={{ width: 64, height: 64, objectFit: 'contain', display: 'block' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                      <Box sx={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                        bgcolor: COLORS.primary,
+                        color: '#fff',
+                        fontWeight: 700,
+                        fontSize: '0.6rem',
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        height: 24,
+                        px: 1.2,
+                        borderRadius: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        '&::after': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: '-100%',
+                          width: '50%',
+                          height: '100%',
+                          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                          animation: 'shimmerBadge 2.5s ease-in-out infinite',
+                        },
+                        '@keyframes shimmerBadge': {
+                          '0%': { left: '-100%' },
+                          '100%': { left: '200%' },
+                        },
+                      }}>
+                        TOP PICK
+                      </Box>
+                    </Box>
+                    {/* Catchy earn text — no name repeat, no arrow */}
+                    <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary, fontWeight: 500, lineHeight: 1.6 }}>
+                      <Box component="span" sx={{ color: COLORS.accent, fontWeight: 700 }}>💰 Earn up to $5.00</Box> per survey. Tap card to start earning now!
+                    </Typography>
+                  </Paper>
+                )
+              })}
+            </Box>
+          )}
         </Box>
+
 
         {/* Chat FAB */}
         <Zoom in={true}>
