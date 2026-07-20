@@ -82,6 +82,29 @@ const MOBILE_NAV = [
   { label: 'More', icon: MoreHorizIcon, path: null, action: 'more' },
 ]
 
+const WavingHand = () => (
+  <Box
+    component="span"
+    sx={{
+      display: 'inline-block',
+      animation: 'waveHand 2.5s ease-in-out infinite',
+      transformOrigin: '70% 70%',
+      '@keyframes waveHand': {
+        '0%': { transform: 'rotate(0deg)' },
+        '10%': { transform: 'rotate(14deg)' },
+        '20%': { transform: 'rotate(-8deg)' },
+        '30%': { transform: 'rotate(14deg)' },
+        '40%': { transform: 'rotate(-4deg)' },
+        '50%': { transform: 'rotate(10deg)' },
+        '60%': { transform: 'rotate(0deg)' },
+        '100%': { transform: 'rotate(0deg)' },
+      },
+    }}
+  >
+    👋
+  </Box>
+)
+
 const DashboardPage = ({ darkMode, toggleDarkMode }) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -483,7 +506,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
         {/* Greeting */}
         <Box sx={{ px: 2.5, pt: 2, pb: 1 }}>
           <Typography sx={{ fontSize: '1.4rem', fontWeight: 800, color: COLORS.textPrimary, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{getGreeting()},</Typography>
-          <Typography sx={{ fontSize: '1.4rem', fontWeight: 800, color: COLORS.primary, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{user?.username || 'User'}! 👋</Typography>
+          <Typography sx={{ fontSize: '1.4rem', fontWeight: 800, color: COLORS.primary, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{user?.username || 'User'}! <WavingHand/></Typography>
           <Typography sx={{ fontSize: '0.85rem', color: COLORS.textMuted, mt: 0.5 }}>Here is your earning summary</Typography>
         </Box>
 
@@ -617,6 +640,96 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
         </Box>
 
           {/* OUR PARTNERS - HERO */}
+        {/* <Box sx={{ px: 2.5, mt: 3, mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: COLORS.primary }} />
+              <Typography sx={{ fontSize: '1.15rem', fontWeight: 800, color: COLORS.textPrimary, letterSpacing: '-0.01em' }}>Our Partners</Typography>
+            </Box>
+            <Typography onClick={() => navigate('/earn')} sx={{ fontSize: '0.8rem', fontWeight: 600, color: COLORS.primary, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View All</Typography>
+          </Box>
+          {offerWalls.length === 0 ? (
+            <Paper elevation={0} sx={{ borderRadius: 3, p: 4, textAlign: 'center', bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
+              <Typography sx={{ color: COLORS.textMuted, fontSize: '0.9rem' }}>No partners available yet. Check back soon!</Typography>
+            </Paper>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              {offerWalls.slice(0, 5).map((wall, idx) => {
+                const color = WALL_COLORS[idx % WALL_COLORS.length]
+                const isLocked = wall.min_level && user?.level < wall.min_level
+                return (
+                  <Paper key={wall.id} elevation={0} onClick={() => !isLocked && navigate(`/earn?wall=${wall.internal_id || wall.id}`)} sx={{ borderRadius: 3, p: 2.5, border: `1px solid ${COLORS.border}`, bgcolor: COLORS.cardBg, cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1, transition: 'all 0.2s', '&:active': !isLocked && { transform: 'scale(0.98)' }, overflow: 'hidden', position: 'relative' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1.5 }}>
+                      <Box
+                        component="img"
+                        src="/images/newlogosurveydekho.png"
+                        alt={wall.name}
+                        sx={{ width: 64, height: 64, objectFit: 'contain', display: 'block' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                      <Box sx={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                        bgcolor: COLORS.primary,
+                        color: '#fff',
+                        fontWeight: 700,
+                        fontSize: '0.6rem',
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        height: 24,
+                        px: 1.2,
+                        borderRadius: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        '&::after': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: '-100%',
+                          width: '50%',
+                          height: '100%',
+                          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                          animation: 'shimmerBadge 2.5s ease-in-out infinite',
+                        },
+                        '@keyframes shimmerBadge': {
+                          '0%': { left: '-100%' },
+                          '100%': { left: '200%' },
+                        },
+                      }}>
+                        TOP PICK
+                      </Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: COLORS.textPrimary }}>{wall.name}</Typography>
+                      <Box sx={{
+                        width: 40, height: 40, borderRadius: '50%', bgcolor: COLORS.primary,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0, position: 'relative', overflow: 'hidden',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          width: '100%', height: '100%',
+                          borderRadius: '50%',
+                          bgcolor: 'rgba(255,255,255,0.2)',
+                          animation: 'rippleArrow 3s ease-out infinite',
+                        },
+                        '@keyframes rippleArrow': {
+                          '0%': { transform: 'scale(0.6)', opacity: 0.8 },
+                          '100%': { transform: 'scale(1.6)', opacity: 0 },
+                        },
+                      }}>
+                        <ArrowForwardIosIcon sx={{ fontSize: 16, color: '#fff', position: 'relative', zIndex: 1 }} />
+                      </Box>
+                    </Box>
+                    <Typography sx={{ fontSize: '0.78rem', color: COLORS.textSecondary, fontWeight: 500, lineHeight: 1.5 }}>{wall.description || 'High paying surveys and offers'}</Typography>
+                  </Paper>
+                )
+              })}
+            </Box>
+          )}
+        </Box> */}
+
+               {/* OUR PARTNERS - HERO */}
         <Box sx={{ px: 2.5, mt: 3, mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -683,24 +796,14 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                       <Box sx={{
                         width: 40, height: 40, borderRadius: '50%', bgcolor: COLORS.primary,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        flexShrink: 0, position: 'relative', overflow: 'hidden',
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          width: '100%', height: '100%',
-                          borderRadius: '50%',
-                          bgcolor: 'rgba(255,255,255,0.2)',
-                          animation: 'rippleArrow 3s ease-out infinite',
-                        },
-                        '@keyframes rippleArrow': {
-                          '0%': { transform: 'scale(0.6)', opacity: 0.8 },
-                          '100%': { transform: 'scale(1.6)', opacity: 0 },
-                        },
+                        flexShrink: 0,
                       }}>
-                        <ArrowForwardIosIcon sx={{ fontSize: 16, color: '#fff', position: 'relative', zIndex: 1 }} />
+                        <ArrowForwardIosIcon sx={{ fontSize: 16, color: '#fff' }} />
                       </Box>
                     </Box>
-                    <Typography sx={{ fontSize: '0.78rem', color: COLORS.textSecondary, fontWeight: 500, lineHeight: 1.5 }}>{wall.description || 'High paying surveys and offers'}</Typography>
+                    <Typography sx={{ fontSize: '0.78rem', color: COLORS.textSecondary, fontWeight: 500, lineHeight: 1.5 }}>
+                      💰 Earn up to <Box component="span" sx={{ color: COLORS.accent, fontWeight: 700 }}>$5.00</Box> per survey — tap to start earning!
+                    </Typography>
                   </Paper>
                 )
               })}
@@ -807,7 +910,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
         <Box sx={{ position: 'sticky', top: 0, zIndex: 1100, bgcolor: COLORS.headerBg, borderBottom: scrolled ? `1px solid ${COLORS.headerBorder}` : '1px solid transparent', boxShadow: scrolled ? '0 2px 8px rgba(0,0,0,0.08)' : 'none', transition: 'box-shadow 0.2s ease', px: 4, py: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box>
-              <Typography sx={{ fontSize: '1.6rem', fontWeight: 800, color: COLORS.textPrimary, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{getGreeting()}, {user?.username || 'User'}! 👋</Typography>
+              <Typography sx={{ fontSize: '1.6rem', fontWeight: 800, color: COLORS.textPrimary, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{getGreeting()}, {user?.username || 'User'}! <WavingHand /></Typography>
               <Typography sx={{ fontSize: '0.9rem', color: COLORS.textMuted, mt: 0.3 }}>Here is your earning summary</Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
