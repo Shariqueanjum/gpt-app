@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 const supportLinks = [
   { label: 'Live Chat', href: '/login', isRoute: true },
   { label: 'Submit a Ticket', href: '/login', isRoute: true },
-  { label: 'Email Support', href: 'mailto:support@wabcash.com', isRoute: false },
+  { label: 'Email Support', href: 'mailto:support@pickopinion.com', isRoute: false },
 ]
 
 const legalLinks = [
