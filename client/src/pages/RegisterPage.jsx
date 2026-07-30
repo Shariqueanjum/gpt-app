@@ -350,7 +350,8 @@ const RegisterPage = () => {
     <span className="w-1 h-1 rounded-full bg-[#ba1a1a]" />{errors.turnstile}
   </p>
 )} */}
-<div className="flex flex-col items-center min-h-[70px] justify-center">
+{/* Cloudflare Turnstile */}
+<div className="flex justify-center">
   <Turnstile
     ref={turnstileRef}
     sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
@@ -359,18 +360,16 @@ const RegisterPage = () => {
       setErrors(prev => ({ ...prev, turnstile: '' }))
     }}
     onExpire={() => setTurnstileToken('')}
-    onError={(errorCode) => {
-      console.error('Turnstile error:', errorCode)
-      setErrors(prev => ({ 
-        ...prev, 
-        turnstile: 'Verification failed. Please refresh the page and try again.' 
-      }))
-    }}
     theme="light"
     retry="auto"
     refreshExpired="auto"
   />
 </div>
+{touched.turnstile && errors.turnstile && (
+  <p className="mt-1.5 text-xs text-[#ba1a1a] font-medium flex items-center gap-1">
+    <span className="w-1 h-1 rounded-full bg-[#ba1a1a]" />{errors.turnstile}
+  </p>
+)}
 
           {/* Backend Error - from Redux state.error */}
           {error && (
