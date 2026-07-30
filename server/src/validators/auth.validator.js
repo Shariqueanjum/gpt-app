@@ -9,12 +9,14 @@ const registerSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 chars').max(50, 'Password cannot exceed 50 chars')
     .regex( /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/, 'Password must contain uppercase, lowercase, number and special character'),
     
-  referred_by_code: z.string().trim().max(50, 'Referral code too long').optional()
+  referred_by_code: z.string().trim().max(50, 'Referral code too long').optional(),
+  turnstileToken: z.string().min(1, 'CAPTCHA verification required')
 });
 
 const loginSchema = z.object({
   email_or_username: z.string().trim().min(1, 'Email or username is required'),
-  password: z.string().min(1, 'Password is required')
+  password: z.string().min(1, 'Password is required'),
+  turnstileToken: z.string().min(1, 'CAPTCHA verification required')
 });
 
 const forgotPasswordSchema = z.object({

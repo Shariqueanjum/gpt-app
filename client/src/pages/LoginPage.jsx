@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { loginUser, clearError } from '../slices/authSlice'
+import {Turnstile} from 'react-turnstile'
 import SEO from '../components/common/SEO'
 
 const MailIcon = () => (
@@ -61,15 +62,17 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [touched, setTouched] = useState({})
   const [errors, setErrors] = useState({})
-  const [securityQuestion, setSecurityQuestion] = useState(() => {
-    const operators = ['+', '-']
-    const operator = operators[Math.floor(Math.random() * operators.length)]
-    let num1 = Math.floor(Math.random() * 20) + 1
-    let num2 = Math.floor(Math.random() * 20) + 1
-    if (operator === '-' && num2 > num1) [num1, num2] = [num2, num1]
-    const answer = operator === '+' ? num1 + num2 : num1 - num2
-    return { num1, num2, operator, answer, userAnswer: '' }
-  })
+  // const [securityQuestion, setSecurityQuestion] = useState(() => {
+  //   const operators = ['+', '-']
+  //   const operator = operators[Math.floor(Math.random() * operators.length)]
+  //   let num1 = Math.floor(Math.random() * 20) + 1
+  //   let num2 = Math.floor(Math.random() * 20) + 1
+  //   if (operator === '-' && num2 > num1) [num1, num2] = [num2, num1]
+  //   const answer = operator === '+' ? num1 + num2 : num1 - num2
+  //   return { num1, num2, operator, answer, userAnswer: '' }
+  // })
+
+  const [turnstileToken, setTurnstileToken] = useState('')
 
   // Redirect after successful login
   useEffect(() => {
@@ -114,11 +117,14 @@ const LoginPage = () => {
       email_or_username: validateField('email_or_username', formData.email_or_username),
       password: validateField('password', formData.password),
     }
-    if (parseInt(securityQuestion.userAnswer) !== securityQuestion.answer) {
-      newErrors.security = 'Incorrect answer. Try again.'
-    }
+    // if (parseInt(securityQuestion.userAnswer) !== securityQuestion.answer) {
+    //   newErrors.security = 'Incorrect answer. Try again.'
+    // }
+    if (!turnstileToken) {
+  newErrors.turnstile = 'Please complete the CAPTCHA'
+}
     setErrors(newErrors)
-    setTouched({ email_or_username: true, password: true, security: true })
+    setTouched({ email_or_username: true, password: true, turnstile: true })
     return !Object.values(newErrors).some(e => e)
   }
 
@@ -126,7 +132,8 @@ const LoginPage = () => {
     e.preventDefault()
     dispatch(clearError())
     if (!validateAll()) return
-    dispatch(loginUser(formData))
+    // dispatch(loginUser(formData))
+     dispatch(loginUser({ ...formData, turnstileToken }))
   }
 
   const handleClose = () => {
@@ -202,7 +209,7 @@ const LoginPage = () => {
             )}
           </div>
 
-          <div className="bg-[#f2f3ff] rounded-2xl p-3.5 border border-[#cbc3d7]/30">
+          {/* <div className="bg-[#f2f3ff] rounded-2xl p-3.5 border border-[#cbc3d7]/30">
             <p className="text-xs font-semibold text-[#494454] uppercase tracking-[0.08em] mb-2.5">Security Check</p>
             <div className="flex items-center gap-2.5">
               <span className="text-[#131b2e] font-bold text-base font-mono bg-white px-3 py-2 rounded-xl border border-[#cbc3d7]/30 whitespace-nowrap shrink-0">
@@ -216,7 +223,25 @@ const LoginPage = () => {
             {touched.security && errors.security && (
               <p className="mt-1.5 text-xs text-[#ba1a1a] font-medium flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-[#ba1a1a]" />{errors.security}</p>
             )}
-          </div>
+          </div> */}
+
+          {/* Cloudflare Turnstile */}
+<div className="flex justify-center">
+  <Turnstile
+    sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+    onVerify={(token) => {
+      setTurnstileToken(token)
+      setErrors(prev => ({ ...prev, turnstile: '' }))
+    }}
+    onExpire={() => setTurnstileToken('')}
+    theme="light"
+  />
+</div>
+{touched.turnstile && errors.turnstile && (
+  <p className="mt-1.5 text-xs text-[#ba1a1a] font-medium flex items-center gap-1">
+    <span className="w-1 h-1 rounded-full bg-[#ba1a1a]" />{errors.turnstile}
+  </p>
+)}
 
           {error && (
             <div className="p-3 bg-[#ba1a1a]/[0.08] border border-[#ba1a1a]/[0.15] rounded-xl text-[#ba1a1a] text-sm font-semibold flex items-center gap-2">

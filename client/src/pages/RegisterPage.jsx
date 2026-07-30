@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { registerUser, clearError, clearMessage } from '../slices/authSlice'
+import { Turnstile } from 'react-turnstile'
 import SEO from '../components/common/SEO'
 
 const PersonIcon = () => (
@@ -71,26 +72,27 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [touched, setTouched] = useState({})
   const [errors, setErrors] = useState({})
-  const [securityQuestion, setSecurityQuestion] = useState({ num1: 0, num2: 0, operator: '+', answer: 0, userAnswer: '' })
+  // const [securityQuestion, setSecurityQuestion] = useState({ num1: 0, num2: 0, operator: '+', answer: 0, userAnswer: '' })
+  const [turnstileToken, setTurnstileToken] = useState('')
   const [submitted, setSubmitted] = useState(false)
 
   const referralCode = searchParams.get('ref') || ''
 
   // NO isAuthenticated redirect here — after register, user must verify email first
 
-  const generateSecurityQuestion = () => {
-    const operators = ['+', '-']
-    const operator = operators[Math.floor(Math.random() * operators.length)]
-    let num1 = Math.floor(Math.random() * 20) + 1
-    let num2 = Math.floor(Math.random() * 20) + 1
-    if (operator === '-' && num2 > num1) [num1, num2] = [num2, num1]
-    const answer = operator === '+' ? num1 + num2 : num1 - num2
-    setSecurityQuestion({ num1, num2, operator, answer, userAnswer: '' })
-    setErrors(prev => ({ ...prev, security: '' }))
-  }
+  // const generateSecurityQuestion = () => {
+  //   const operators = ['+', '-']
+  //   const operator = operators[Math.floor(Math.random() * operators.length)]
+  //   let num1 = Math.floor(Math.random() * 20) + 1
+  //   let num2 = Math.floor(Math.random() * 20) + 1
+  //   if (operator === '-' && num2 > num1) [num1, num2] = [num2, num1]
+  //   const answer = operator === '+' ? num1 + num2 : num1 - num2
+  //   setSecurityQuestion({ num1, num2, operator, answer, userAnswer: '' })
+  //   setErrors(prev => ({ ...prev, security: '' }))
+  // }
 
   useEffect(() => {
-    generateSecurityQuestion()
+    // generateSecurityQuestion()
     dispatch(clearError())
     dispatch(clearMessage())
     document.body.style.overflow = 'hidden'
@@ -149,11 +151,15 @@ const RegisterPage = () => {
       password: validateField('password', formData.password),
       agreeTerms: validateField('agreeTerms', formData.agreeTerms),
     }
-    if (parseInt(securityQuestion.userAnswer) !== securityQuestion.answer) {
-      newErrors.security = 'Incorrect answer. Try again.'
-    }
+    // if (parseInt(securityQuestion.userAnswer) !== securityQuestion.answer) {
+    //   newErrors.security = 'Incorrect answer. Try again.'
+    // }
+    if (!turnstileToken) {
+  newErrors.turnstile = 'Please complete the CAPTCHA'
+}
+
     setErrors(newErrors)
-    setTouched({ username: true, email: true, password: true, agreeTerms: true, security: true })
+    setTouched({ username: true, email: true, password: true, agreeTerms: true, turnstile: true })
     return !Object.values(newErrors).some(e => e)
   }
 
@@ -165,7 +171,8 @@ const RegisterPage = () => {
     if (referralCode) {
       registerData.referred_by_code = referralCode
     }
-    dispatch(registerUser(registerData))
+    // dispatch(registerUser(registerData))
+      dispatch(registerUser({ ...registerData, turnstileToken }))
   }
 
   const handleClose = () => {
@@ -302,7 +309,7 @@ const RegisterPage = () => {
           </div>
 
           {/* Security */}
-          <div className="bg-[#f2f3ff] rounded-2xl p-3.5 border border-[#cbc3d7]/30">
+          {/* <div className="bg-[#f2f3ff] rounded-2xl p-3.5 border border-[#cbc3d7]/30">
             <p className="text-xs font-semibold text-[#494454] uppercase tracking-[0.08em] mb-2.5">Security Check</p>
             <div className="flex items-center gap-2.5">
               <span className="text-[#131b2e] font-bold text-base font-mono bg-white px-3 py-2 rounded-xl border border-[#cbc3d7]/30 whitespace-nowrap shrink-0">
@@ -316,7 +323,25 @@ const RegisterPage = () => {
             {touched.security && errors.security && (
               <p className="mt-1.5 text-xs text-[#ba1a1a] font-medium flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-[#ba1a1a]" />{errors.security}</p>
             )}
-          </div>
+          </div> */}
+
+          {/* Cloudflare Turnstile */}
+<div className="flex justify-center">
+  <Turnstile
+    sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+    onVerify={(token) => {
+      setTurnstileToken(token)
+      setErrors(prev => ({ ...prev, turnstile: '' }))
+    }}
+    onExpire={() => setTurnstileToken('')}
+    theme="light"
+  />
+</div>
+{touched.turnstile && errors.turnstile && (
+  <p className="mt-1.5 text-xs text-[#ba1a1a] font-medium flex items-center gap-1">
+    <span className="w-1 h-1 rounded-full bg-[#ba1a1a]" />{errors.turnstile}
+  </p>
+)}
 
           {/* Backend Error - from Redux state.error */}
           {error && (

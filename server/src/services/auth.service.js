@@ -5,6 +5,7 @@ const pool = require('../config/db');
 const {generateToken} = require('../utils/jwt');
 const { generateDeviceFingerprint } = require('../utils/device');
 const {sendVerificationEmail, sendPasswordResetEmail, sendForgotUsernameEmail} = require('../utils/email')
+const { verifyTurnstileToken } = require('../utils/turnstile');
 const { createPending, findByToken, findByEmail, deleteByEmail, findByUsername: findPendingByUsername, deleteExpired } = require('../repositories/pending_registration.repository');
 const {findByEmailOrUsername, findByReferralCode, findUserByEmail, findUserByUsername, createUser, findUserById} = require('../repositories/user.repository');
 const { emitActivity } = require('./activityEmitter.service');
@@ -46,7 +47,9 @@ const findUserByEmailOrUsername = async (identifier) => {
 };
 
 const registerUser = async (payload, meta) => {
-  let { username, email, password, referred_by_code } = payload;
+  let { username, email, password, referred_by_code, turnstileToken } = payload;
+
+  await verifyTurnstileToken(turnstileToken, meta.ip);
   email = email.toLowerCase().trim();
 
    await deleteExpired();
@@ -179,7 +182,9 @@ const verifyEmail = async (token, meta) => {
 };
 
 const loginUser = async (payload, meta) => {
-  let { email_or_username, password } = payload;
+  let { email_or_username, password, turnstileToken } = payload;
+
+  await verifyTurnstileToken(turnstileToken, meta.ip);
   const identifier = email_or_username.trim();
 
   const user = await findUserByEmailOrUsername(identifier);
