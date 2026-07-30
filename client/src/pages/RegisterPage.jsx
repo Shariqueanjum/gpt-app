@@ -74,7 +74,7 @@ const RegisterPage = () => {
   const [errors, setErrors] = useState({})
   // const [securityQuestion, setSecurityQuestion] = useState({ num1: 0, num2: 0, operator: '+', answer: 0, userAnswer: '' })
   const [turnstileToken, setTurnstileToken] = useState('')
-  const turnstileRef = useRef(null) 
+  const [turnstileKey, setTurnstileKey] = useState(0)
   const [submitted, setSubmitted] = useState(false)
 
   const referralCode = searchParams.get('ref') || ''
@@ -109,7 +109,7 @@ const RegisterPage = () => {
   useEffect(() => {
   if (error) {
     setTurnstileToken('')
-    turnstileRef.current?.reset()
+    setTurnstileKey(prev => prev + 1)
   }
 }, [error])
 
@@ -353,7 +353,7 @@ const RegisterPage = () => {
 {/* Cloudflare Turnstile */}
 <div className="flex justify-center">
   <Turnstile
-    ref={turnstileRef}
+    key={turnstileKey}
     sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
     onVerify={(token) => {
       setTurnstileToken(token)

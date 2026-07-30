@@ -73,7 +73,7 @@ const LoginPage = () => {
   // })
 
   const [turnstileToken, setTurnstileToken] = useState('')
-  const turnstileRef = useRef(null) 
+  const [turnstileKey, setTurnstileKey] = useState(0)
 
   // Redirect after successful login
   useEffect(() => {
@@ -92,10 +92,10 @@ const LoginPage = () => {
     return () => { document.body.style.overflow = 'unset' }
   }, [])
 
-  useEffect(() => {
+ useEffect(() => {
   if (error) {
     setTurnstileToken('')
-    turnstileRef.current?.reset()
+    setTurnstileKey(prev => prev + 1)
   }
 }, [error])
 
@@ -236,7 +236,7 @@ const LoginPage = () => {
           {/* Cloudflare Turnstile */}
 <div className="flex justify-center">
   <Turnstile
-    ref={turnstileRef}
+    key={turnstileKey}
     sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
     onVerify={(token) => {
       setTurnstileToken(token)
