@@ -74,6 +74,7 @@ const RegisterPage = () => {
   const [errors, setErrors] = useState({})
   // const [securityQuestion, setSecurityQuestion] = useState({ num1: 0, num2: 0, operator: '+', answer: 0, userAnswer: '' })
   const [turnstileToken, setTurnstileToken] = useState('')
+  const turnstileRef = useRef(null) 
   const [submitted, setSubmitted] = useState(false)
 
   const referralCode = searchParams.get('ref') || ''
@@ -104,6 +105,13 @@ const RegisterPage = () => {
       setSubmitted(true)
     }
   }, [message])
+
+  useEffect(() => {
+  if (error) {
+    setTurnstileToken('')
+    turnstileRef.current?.reset()
+  }
+}, [error])
 
   const validateField = (name, value) => {
     if (name === 'username') {
@@ -326,7 +334,7 @@ const RegisterPage = () => {
           </div> */}
 
           {/* Cloudflare Turnstile */}
-<div className="flex justify-center">
+{/* <div className="flex justify-center">
   <Turnstile
     sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
     onVerify={(token) => {
@@ -341,7 +349,28 @@ const RegisterPage = () => {
   <p className="mt-1.5 text-xs text-[#ba1a1a] font-medium flex items-center gap-1">
     <span className="w-1 h-1 rounded-full bg-[#ba1a1a]" />{errors.turnstile}
   </p>
-)}
+)} */}
+<div className="flex flex-col items-center min-h-[70px] justify-center">
+  <Turnstile
+    ref={turnstileRef}
+    sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+    onVerify={(token) => {
+      setTurnstileToken(token)
+      setErrors(prev => ({ ...prev, turnstile: '' }))
+    }}
+    onExpire={() => setTurnstileToken('')}
+    onError={(errorCode) => {
+      console.error('Turnstile error:', errorCode)
+      setErrors(prev => ({ 
+        ...prev, 
+        turnstile: 'Verification failed. Please refresh the page and try again.' 
+      }))
+    }}
+    theme="light"
+    retry="auto"
+    refreshExpired="auto"
+  />
+</div>
 
           {/* Backend Error - from Redux state.error */}
           {error && (

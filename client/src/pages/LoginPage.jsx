@@ -73,6 +73,7 @@ const LoginPage = () => {
   // })
 
   const [turnstileToken, setTurnstileToken] = useState('')
+  const turnstileRef = useRef(null) 
 
   // Redirect after successful login
   useEffect(() => {
@@ -90,6 +91,13 @@ const LoginPage = () => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = 'unset' }
   }, [])
+
+  useEffect(() => {
+  if (error) {
+    setTurnstileToken('')
+    turnstileRef.current?.reset()
+  }
+}, [error])
 
   const validateField = (name, value) => {
     if (name === 'email_or_username' && !value.trim()) return 'Email or username is required'
@@ -226,7 +234,7 @@ const LoginPage = () => {
           </div> */}
 
           {/* Cloudflare Turnstile */}
-<div className="flex justify-center">
+{/* <div className="flex justify-center">
   <Turnstile
     sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
     onVerify={(token) => {
@@ -241,7 +249,29 @@ const LoginPage = () => {
   <p className="mt-1.5 text-xs text-[#ba1a1a] font-medium flex items-center gap-1">
     <span className="w-1 h-1 rounded-full bg-[#ba1a1a]" />{errors.turnstile}
   </p>
-)}
+)} */}
+
+<div className="flex flex-col items-center min-h-[70px] justify-center">
+  <Turnstile
+    ref={turnstileRef}
+    sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+    onVerify={(token) => {
+      setTurnstileToken(token)
+      setErrors(prev => ({ ...prev, turnstile: '' }))
+    }}
+    onExpire={() => setTurnstileToken('')}
+    onError={(errorCode) => {
+      console.error('Turnstile error:', errorCode)
+      setErrors(prev => ({ 
+        ...prev, 
+        turnstile: 'Verification failed. Please refresh the page and try again.' 
+      }))
+    }}
+    theme="light"
+    retry="auto"
+    refreshExpired="auto"
+  />
+</div>
 
           {error && (
             <div className="p-3 bg-[#ba1a1a]/[0.08] border border-[#ba1a1a]/[0.15] rounded-xl text-[#ba1a1a] text-sm font-semibold flex items-center gap-2">
