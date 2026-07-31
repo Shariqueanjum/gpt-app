@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import AssignmentIcon from '@mui/icons-material/Assignment'
 import PaymentsIcon from '@mui/icons-material/Payments'
+import FadeInSection from '../common/FadeInSection'
 
 const steps = [
   {
@@ -119,6 +120,8 @@ const HowItWorks = () => {
         }}
       >
         {/* Card 1 — Create Account */}
+
+       <FadeInSection delay={0} direction="zoomUp">
         <Paper
           elevation={0}
           sx={{
@@ -232,8 +235,10 @@ const HowItWorks = () => {
             </Link>
           </Box>
         </Paper>
+        </FadeInSection>
 
         {/* Card 2 — Complete Offers (Featured) */}
+        <FadeInSection delay={0.15} direction="zoomUp">
         <Paper
           elevation={0}
           sx={{
@@ -331,8 +336,10 @@ const HowItWorks = () => {
             </Box>
           </Box>
         </Paper>
+        </FadeInSection>
 
         {/* Card 3 — Cash Out */}
+        <FadeInSection delay={0.3} direction="zoomUp">
         <Paper
           elevation={0}
           sx={{
@@ -447,6 +454,8 @@ const HowItWorks = () => {
             </Box>
           </Box>
         </Paper>
+        </FadeInSection>
+
       </Box>
 
       {/* Bottom Row */}
@@ -459,6 +468,7 @@ const HowItWorks = () => {
         }}
       >
         {/* Refer & Earn — DUMMY */}
+        <FadeInSection delay={0} direction="left" distance={60}>
         <Paper
           elevation={0}
           sx={{
@@ -570,8 +580,10 @@ const HowItWorks = () => {
             </Box>
           </Box>
         </Paper>
+        </FadeInSection>
 
         {/* Daily Lootbox — DUMMY */}
+        <FadeInSection delay={0.15} direction="right" distance={60}>
         <Paper
           elevation={0}
           sx={{
@@ -683,6 +695,7 @@ const HowItWorks = () => {
             </Box>
           </Box>
         </Paper>
+        </FadeInSection>
       </Box>
     </Box>
   )
