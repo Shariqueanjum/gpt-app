@@ -43,10 +43,10 @@ const LinkedInIcon = () => (
 )
 
 const socialLinks = [
-  { label: 'Instagram', href: 'https://instagram.com', Icon: InstagramIcon },
+  { label: 'Instagram', href: 'https://www.instagram.com/pickopinion', Icon: InstagramIcon },
   { label: 'Discord', href: 'https://discord.com', Icon: DiscordIcon },
-  { label: 'Facebook', href: 'https://facebook.com', Icon: FacebookIcon },
-  { label: 'LinkedIn', href: 'https://linkedin.com', Icon: LinkedInIcon },
+  { label: 'Facebook', href: 'https://www.facebook.com/profile.php?id=61592230200807', Icon: FacebookIcon },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/company/pickopinion/', Icon: LinkedInIcon },
 ]
 
 const Footer = () => {
