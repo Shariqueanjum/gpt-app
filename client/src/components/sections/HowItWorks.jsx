@@ -468,7 +468,7 @@ const HowItWorks = () => {
         }}
       >
         {/* Refer & Earn — DUMMY */}
-        <FadeInSection delay={0} direction="left" distance={60}>
+        <FadeInSection delay={0} direction="zoomUp">
         <Paper
           elevation={0}
           sx={{
