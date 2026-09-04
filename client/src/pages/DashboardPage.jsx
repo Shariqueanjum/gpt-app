@@ -276,14 +276,20 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
     const isLevelUp = activity.type === 'level_up'
     return (
       <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, p: 1.5, borderRadius: 2, bgcolor: isLevelUp ? (darkMode ? 'rgba(234,179,8,0.10)' : 'rgba(234,179,8,0.06)') : (darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(83,18,188,0.03)'), mb: 1, ...(isLevelUp && { boxShadow: `inset 3px 0 0 ${COLORS.gold}` }) }}>
-        <Avatar sx={{ width: 32, height: 32, bgcolor: isLevelUp ? COLORS.gold : (activity.type === 'user_registered' ? COLORS.primary : COLORS.accent), fontSize: '0.9rem', fontWeight: 700 }}>
-          {isLevelUp ? '🏆' : (activity.username ? activity.username[0].toUpperCase() : 'U')}
+        <Avatar sx={{ width: 32, height: 32, bgcolor: isLevelUp ? COLORS.gold : (activity.type === 'user_registered' ? COLORS.primary : (activity.type === 'withdrawal_requested' ? '#2563eb' : COLORS.accent)), fontSize: '0.9rem', fontWeight: 700 }}>
+          {isLevelUp ? '🏆' : (activity.type === 'withdrawal_requested' ? '💰' : (activity.username ? activity.username[0].toUpperCase() : 'U'))}
         </Avatar>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           {isLevelUp ? (
             <Typography sx={{ fontSize: '0.8rem', lineHeight: 1.4, fontWeight: 700, background: `linear-gradient(90deg, ${COLORS.gold}, #d97706)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
               🎉 {activity.username || 'User'} just leveled up to Level {activity.level}!{' '}
               {activity.amount && <Box component="span" sx={{ color: '#d97706' }}>🎁 +{formatPoints(activity.amount)} pts bonus</Box>}
+            </Typography>
+            ): activity.type === 'withdrawal_requested' ? (
+            <Typography sx={{ fontSize: '0.8rem', color: COLORS.textPrimary, lineHeight: 1.4 }}>
+              <Box component="span" sx={{ fontWeight: 600 }}>{activity.username || 'User'}</Box>{' '}from {activity.country || 'Unknown'} just cashed out{' '}
+              <Box component="span" sx={{ color: COLORS.accent, fontWeight: 700 }}>${(parseFloat(activity.amount || 0) / 100).toFixed(2)}</Box>{' '}via{' '}
+              <Box component="span" sx={{ color: COLORS.primary, fontWeight: 600 }}>{activity.offer_wall || 'Payment'}</Box>
             </Typography>
           ) : activity.type === 'user_registered' ? (
             <Typography sx={{ fontSize: '0.8rem', color: COLORS.textPrimary, lineHeight: 1.4 }}>

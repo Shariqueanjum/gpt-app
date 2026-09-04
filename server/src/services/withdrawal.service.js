@@ -5,6 +5,8 @@ const { findUserById } = require('../repositories/user.repository');
 const { createTransaction } = require('../repositories/transaction.repository');
 const { TRANSACTION_TYPES, TRANSACTION_STATUS } = require('../constants/transactionTypes');
 
+const { emitActivity } = require('./activityEmitter.service');
+
 const requestWithdrawal = async (userId, payload) => {
   const client = await pool.connect();
 
@@ -13,7 +15,7 @@ const requestWithdrawal = async (userId, payload) => {
 
     // 1. Get user with lock to prevent race conditions
     const userRes = await client.query(
-      `SELECT id, balance_available, is_active, upi_id, bank_account, bank_ifsc, bank_name, paypal_email
+      `SELECT id, username, country, balance_available, is_active, upi_id, bank_account, bank_ifsc, bank_name, paypal_email
        FROM users WHERE id = $1 FOR UPDATE`,
       [userId]
     );
@@ -37,11 +39,15 @@ const requestWithdrawal = async (userId, payload) => {
     const amount = parseFloat(payload.amount);
 
     if (amount < parseFloat(method.min_amount)) {
-      throw new Error(`Minimum withdrawal amount is ${method.min_amount} points`);
+      const error = new Error(`Minimum withdrawal amount is $${(method.min_amount / 100).toFixed(2)}`);
+      error.status = 400;
+      throw error;
     }
 
     if (amount > parseFloat(method.max_amount)) {
-      throw new Error(`Maximum withdrawal amount is ${method.max_amount} points`);
+      const error = new Error(`Maximum withdrawal amount is $${(method.max_amount / 100).toFixed(2)}`);
+      error.status = 400;
+      throw error;
     }
 
     // 4. Validate user has sufficient balance
@@ -97,6 +103,17 @@ const requestWithdrawal = async (userId, payload) => {
     });
 
     await client.query('COMMIT');
+
+    // Emit real-time live activity
+    try {
+      emitActivity({
+        type: 'withdrawal_requested',
+        username: user.username,
+        country: user.country || 'Unknown',
+        amount: amount,
+        offer_wall: method.name
+      });
+    } catch (_) {}
 
     return {
       withdrawal: {

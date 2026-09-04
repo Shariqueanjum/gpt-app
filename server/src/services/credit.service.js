@@ -206,11 +206,14 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
     }
 
     // 3. Check expiry
-    if (click.expires_at && new Date() > new Date(click.expires_at)) {
-      const err = new Error('Survey click expired');
-      err.status = 400;
-      throw err;
-    }
+    // commneting this line on 04-09-2026 because many callabcks are not crediting , some fundamental problem need a redesign
+
+
+    // if (click.expires_at && new Date() > new Date(click.expires_at)) {
+    //   const err = new Error('Survey click expired');
+    //   err.status = 400;
+    //   throw err;
+    // }
 
     // 4. Handle payout based on integration type
     let cpaOriginal = parseFloat(click.cpa_original) || 0;

@@ -90,8 +90,35 @@ const ReferralsPage = ({ darkMode, toggleDarkMode }) => {
           }}>
             Refer & Earn
           </Typography>
-          <Typography sx={{ fontSize: '0.9rem', color: COLORS.textSecondary }}>
+          {/* <Typography sx={{ fontSize: '0.9rem', color: COLORS.textSecondary }}>
             Invite friends and earn 10% of their earnings forever
+          </Typography> */}
+
+          <Typography sx={{ fontSize: '0.9rem', color: COLORS.textSecondary, lineHeight: 1.7 }}>
+            Invite friends and earn{' '}
+            <Box
+              component="span"
+              sx={{
+                display: 'inline-block',
+                fontWeight: 900,
+                fontSize: '1.25em',
+                color: COLORS.primary,
+                verticalAlign: 'middle',
+                mx: 0.3,
+                animation: `referralFloat 2.5s ease-in-out infinite, referralSoftGlow 2.5s ease-in-out infinite`,
+                '@keyframes referralFloat': {
+                  '0%, 100%': { transform: 'translateY(0)' },
+                  '50%': { transform: 'translateY(-5px)' },
+                },
+                '@keyframes referralSoftGlow': {
+                  '0%, 100%': { filter: `drop-shadow(0 0 4px ${COLORS.primary}40)` },
+                  '50%': { filter: `drop-shadow(0 0 10px ${COLORS.primary}70)` },
+                },
+              }}
+            >
+              10%
+            </Box>
+            {' '}of their earnings forever
           </Typography>
         </Box>
 

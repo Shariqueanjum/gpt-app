@@ -96,6 +96,22 @@ const getRecentActivity = async (limit) => {
       FROM users
       WHERE created_at > NOW() - INTERVAL '7 days'
     )
+        UNION ALL
+    (
+      SELECT
+        w.id::text                                          AS id,
+        'withdrawal_requested'                              AS type,
+        u.username                                          AS username,
+        COALESCE(pm.name, w.method)                         AS offer_wall,
+        w.amount::text                                       AS amount_raw,
+        NULL::text                                          AS level_raw,
+        COALESCE(u.country, 'Unknown')                      AS country,
+        w.created_at
+      FROM withdrawals w
+      JOIN users u ON u.id = w.user_id
+      LEFT JOIN payment_methods pm ON pm.code = w.method
+      WHERE w.created_at > NOW() - INTERVAL '7 days'
+    )
     UNION ALL
     (
       SELECT

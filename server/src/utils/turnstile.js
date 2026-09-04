@@ -1,4 +1,10 @@
 const verifyTurnstileToken = async (token, remoteip) => {
+
+  // Skip Turnstile in local development
+  if (process.env.NODE_ENV === 'development') {
+    return true;
+  }
+  
   const secretKey = process.env.TURNSTILE_SECRET_KEY;
 
   if (!secretKey) {

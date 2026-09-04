@@ -66,9 +66,9 @@ const AdminPaymentMethodsPage = ({ darkMode, toggleDarkMode }) => {
     setForm({
       name: method.name,
       code: method.code,
-      min_amount: method.min_amount,
-      max_amount: method.max_amount,
-      processing_fee: method.processing_fee,
+      min_amount: (method.min_amount || 0) / 100,
+      max_amount: (method.max_amount || 0) / 100,
+      processing_fee: (method.processing_fee || 0) / 100,
       instructions: method.instructions || '',
       display_order: method.display_order || 0,
       is_active: method.is_active,
@@ -86,6 +86,9 @@ const AdminPaymentMethodsPage = ({ darkMode, toggleDarkMode }) => {
     try {
       const payload = {
         ...form,
+        min_amount: Math.round((form.min_amount || 0) * 100),
+        max_amount: Math.round((form.max_amount || 0) * 100),
+        processing_fee: Math.round((form.processing_fee || 0) * 100),
         required_fields: form.required_fields.filter(f => f.name.trim() && f.label.trim())
       }
 
@@ -214,19 +217,19 @@ const AdminPaymentMethodsPage = ({ darkMode, toggleDarkMode }) => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>Min Amount</Typography>
                       <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: COLORS.textPrimary }}>
-                        ${method.min_amount}
+                        ${(method.min_amount / 100).toFixed(2)}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>Max Amount</Typography>
                       <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: COLORS.textPrimary }}>
-                        ${method.max_amount}
+                        ${(method.max_amount / 100).toFixed(2)}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>Processing Fee</Typography>
                       <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: COLORS.textPrimary }}>
-                        ${method.processing_fee}
+                        ${(method.processing_fee / 100).toFixed(2)}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>

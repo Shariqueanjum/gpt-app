@@ -108,24 +108,26 @@ const SimpleBarChart = ({ data, darkMode, labelKey, valueKey, height = 180 }) =>
   const COLORS = getColors(darkMode)
   if (!data || data.length === 0) return null
   const maxVal = Math.max(...data.map(d => d[valueKey] || 0), 1)
-  return (
+   return (
     <Box sx={{ width: '100%', height, display: 'flex', alignItems: 'flex-end', gap: 1, px: 1, pb: 3 }}>
       {data.map((item, idx) => {
-        const h = Math.max((( item[valueKey] || 0) / maxVal) * (height - 30), 4)
+        const h = Math.max(((item[valueKey] || 0) / maxVal) * (height - 30), 4)
         return (
-          <Tooltip key={idx} title={`${item[labelKey]}: ${formatPts(item[valueKey])} pts`} arrow placement="top">
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-              <Box sx={{
-                width: '100%', height: h, bgcolor: COLORS.primary,
-                borderRadius: '6px 6px 0 0', opacity: 0.85,
-                transition: 'all 0.4s ease', transformOrigin: 'bottom',
-                '&:hover': { opacity: 1, transform: 'scaleY(1.05)' },
-              }} />
-              <Typography sx={{ fontSize: '0.62rem', fontWeight: 600, color: COLORS.textMuted, textAlign: 'center', lineHeight: 1.1 }}>
-                {item[labelKey]}
-              </Typography>
-            </Box>
-          </Tooltip>
+          <Box key={idx} sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, height: '100%', justifyContent: 'flex-end' }}>
+            <Tooltip title={`${item[labelKey]}: ${formatPts(item[valueKey])} pts`} arrow placement="top" enterTouchDelay={0} leaveTouchDelay={3000}>
+              <Box sx={{ width: '100%', display: 'flex', alignItems: 'flex-end', minHeight: 24, cursor: 'pointer' }}>
+                <Box sx={{
+                  width: '100%', height: h, bgcolor: COLORS.primary,
+                  borderRadius: '6px 6px 0 0', opacity: 0.85,
+                  transition: 'all 0.4s ease', transformOrigin: 'bottom',
+                  '&:hover': { opacity: 1, transform: 'scaleY(1.05)' },
+                }} />
+              </Box>
+            </Tooltip>
+            <Typography sx={{ fontSize: '0.62rem', fontWeight: 600, color: COLORS.textMuted, textAlign: 'center', lineHeight: 1.1, wordBreak: 'break-word', maxWidth: '100%' }}>
+              {item[labelKey]}
+            </Typography>
+          </Box>
         )
       })}
     </Box>
@@ -185,10 +187,10 @@ const ProgressPage = ({ darkMode, toggleDarkMode }) => {
 
   const monthlyData = (perf.monthly_breakdown || []).slice().reverse().map(m => ({
     label: new Date(m.month).toLocaleDateString('en-US', { month: 'short' }),
-    value: m.total_earnings || 0,
+    value: m.earnings || 0,
   }))
   const wallData = (perf.offer_walls || []).slice(0, 6).map(w => ({
-    label: w.offer_wall_name?.substring(0, 8) || 'Wall', value: w.total_earned || 0,
+    label: w.offer_wall_name || 'Wall', value: w.total_earned || 0,
   }))
 
   if (loading) return (
@@ -520,7 +522,7 @@ const ProgressPage = ({ darkMode, toggleDarkMode }) => {
             }}>
               <Paper elevation={0} sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 3, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
                 <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', mb: 2 }}>
-                  Monthly Earnings (All Types)
+                  Monthly Earnings
                 </Typography>
                 {monthlyData.length > 0
                   ? <SimpleBarChart data={monthlyData} darkMode={darkMode} labelKey="label" valueKey="value" height={180} />
@@ -555,9 +557,9 @@ const ProgressPage = ({ darkMode, toggleDarkMode }) => {
                   </TableHead>
                   <TableBody>
                     {[
-                      { label: 'Terminated',          value: terminated,         pct: totalClicks ? (terminated / totalClicks) * 100 : 0,               color: '#c92828'      },
                       { label: 'Completed',           value: completed,          pct: completionRate,                                                   color: '#10b981'      },
-                      { label: 'Failed',              value: failed,             pct: totalClicks ? (failed / totalClicks) * 100 : 0,                   color: '#ef4444'      },
+                      { label: 'Terminated',          value: terminated,         pct: totalClicks ? (terminated / totalClicks) * 100 : 0,               color: '#c92828'      },
+                     // { label: 'Failed',              value: failed,             pct: totalClicks ? (failed / totalClicks) * 100 : 0,                   color: '#ef4444'      },
                       { label: 'Quota Full',          value: quotaFull,          pct: totalClicks ? (quotaFull / totalClicks) * 100 : 0,                color: '#f59e0b'      },
                       { label: 'Security Terminated', value: securityTerminated, pct: totalClicks ? (securityTerminated / totalClicks) * 100 : 0,       color: '#dc2626'      },
                       { label: 'Reversed',            value: reversed,           pct: totalClicks ? (reversed / completed) * 100 : 0,                   color: '#6b7280'      },

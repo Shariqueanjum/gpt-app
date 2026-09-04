@@ -66,6 +66,8 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
   const [amount, setAmount] = useState('')
   const [methodDetails, setMethodDetails] = useState({})
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [detailItem, setDetailItem] = useState(null)
 
   // ─── Fetch everything on mount ───────────────────────────
   useEffect(() => {
@@ -126,6 +128,28 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
     }
 
     const method = paymentMethods.find(m => m.code === selectedMethod)
+
+    const amountPts = usdToPts(parseFloat(amount))
+
+    // Validate min amount
+    if (method && amountPts < method.min_amount ) {
+      setError(`Minimum withdrawal for ${method.name} is $${ptsToUsd(method.min_amount)}`)
+      return
+    }
+
+    // Validate max amount
+    if (method && amountPts > method.max_amount ) {
+      setError(`Maximum withdrawal for ${method.name} is $${ptsToUsd(method.max_amount)}`)
+      return
+    }
+
+    // Validate sufficient balance
+    if ( amountPts > (user?.balance_available || 0)) {
+      setError('Insufficient available balance')
+      return
+    }
+
+
     const fields = method?.required_fields
     if (fields && fields.length > 0) {
       for (const field of fields) {
@@ -159,10 +183,16 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
       dispatch(fetchCurrentUser())
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit withdrawal')
+      setConfirmOpen(false)  
     } finally {
       setSubmitting(false)
     }
   }
+
+  const openDetail = (item) => {
+  setDetailItem(item)
+  setDetailOpen(true)
+}
 
   const selectedMethodObj = paymentMethods.find(m => m.code === selectedMethod)
   const requiredFields = selectedMethodObj?.required_fields || []
@@ -579,7 +609,7 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
               ) : isMobile ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   {withdrawals.map((w) => (
-                    <Paper key={w.id} sx={{
+                    <Paper key={w.id} onClick={() => openDetail(w)}  sx={{ cursor: 'pointer',
                       p: 1.2,
                       px: 1.5,
                       borderRadius: 2,
@@ -653,7 +683,7 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
                     </TableHead>
                     <TableBody>
                       {withdrawals.map((w) => (
-                        <TableRow key={w.id} sx={{
+                        <TableRow key={w.id} onClick={() => openDetail(w)} sx={{ cursor: 'pointer',
                           transition: 'background 0.15s',
                           '&:hover': { bgcolor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.015)' },
                           '&:last-child td': { borderBottom: 'none' },
@@ -803,6 +833,94 @@ const WithdrawPage = ({ darkMode, toggleDarkMode }) => {
             </Button>
           </DialogActions>
         </Dialog>
+
+  {/* DETAIL DIALOG */}
+        <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="xs" fullWidth
+          PaperProps={{ sx: { borderRadius: 3, bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` } }}>
+          <DialogTitle sx={{ color: COLORS.textPrimary, fontWeight: 800, fontSize: '1.1rem', pt: 3, px: 3 }}>
+            Withdrawal Details
+          </DialogTitle>
+          <DialogContent sx={{ px: 3 }}>
+            {detailItem && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>Amount</Typography>
+                  <Typography sx={{ fontSize: '0.9rem', fontWeight: 700, color: COLORS.textPrimary }}>
+                    ${ptsToUsd(detailItem.amount)}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>Method</Typography>
+                  <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: COLORS.textSecondary }}>
+                    {paymentMethods.find(m => m.code === detailItem.method)?.name || detailItem.method}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>Status</Typography>
+                  <Chip size="small" label={detailItem.status} sx={{
+                    bgcolor: STATUS_COLORS[detailItem.status]?.bg,
+                    color: STATUS_COLORS[detailItem.status]?.color,
+                    fontWeight: 700, fontSize: '0.7rem', textTransform: 'capitalize'
+                  }} />
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>Requested</Typography>
+                  <Typography sx={{ fontSize: '0.85rem', color: COLORS.textSecondary }}>
+                    {formatUTCDateTime(detailItem.created_at)}
+                  </Typography>
+                </Box>
+                {detailItem.updated_at !== detailItem.created_at && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted }}>Updated</Typography>
+                    <Typography sx={{ fontSize: '0.85rem', color: COLORS.textSecondary }}>
+                      {formatUTCDateTime(detailItem.updated_at)}
+                    </Typography>
+                  </Box>
+                )}
+                {detailItem.status === 'rejected' && detailItem.rejection_reason && (
+                  <Box sx={{
+                    p: 1.5, borderRadius: 2, mt: 0.5,
+                    bgcolor: darkMode ? 'rgba(239,68,68,0.08)' : 'rgba(239,68,68,0.04)',
+                    border: `1px solid ${darkMode ? 'rgba(239,68,68,0.2)' : 'rgba(239,68,68,0.1)'}`,
+                  }}>
+                    <Typography sx={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 700, mb: 0.5 }}>
+                      Rejection Reason
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.85rem', color: COLORS.textPrimary }}>
+                      {detailItem.rejection_reason}
+                    </Typography>
+                  </Box>
+                )}
+                {detailItem.method_details && Object.keys(detailItem.method_details).length > 0 && (
+                  <Box sx={{ pt: 1, mt: 0.5, borderTop: `1px dashed ${COLORS.border}` }}>
+                    <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted, fontWeight: 700, mb: 1 }}>
+                      Payment Details
+                    </Typography>
+                    {Object.entries(detailItem.method_details).map(([key, val]) => (
+                      <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography sx={{ fontSize: '0.8rem', color: COLORS.textMuted, textTransform: 'capitalize' }}>
+                          {key.replace(/_/g, ' ')}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.85rem', color: COLORS.textPrimary, fontWeight: 600 }}>
+                          {val}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5 }}>
+            <Button onClick={() => setDetailOpen(false)} sx={{
+              color: COLORS.textSecondary, textTransform: 'none', fontWeight: 600,
+              borderRadius: 2, px: 2,
+            }}>
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+
       </Box>
     </PageWrapper>
   )

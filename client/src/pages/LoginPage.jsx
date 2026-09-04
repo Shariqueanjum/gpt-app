@@ -128,7 +128,7 @@ const LoginPage = () => {
     // if (parseInt(securityQuestion.userAnswer) !== securityQuestion.answer) {
     //   newErrors.security = 'Incorrect answer. Try again.'
     // }
-    if (!turnstileToken) {
+    if (import.meta.env.MODE !== 'development' && !turnstileToken) {
   newErrors.turnstile = 'Please complete the CAPTCHA'
 }
     setErrors(newErrors)
@@ -141,7 +141,7 @@ const LoginPage = () => {
     dispatch(clearError())
     if (!validateAll()) return
     // dispatch(loginUser(formData))
-     dispatch(loginUser({ ...formData, turnstileToken }))
+     dispatch(loginUser({ ...formData, turnstileToken: import.meta.env.MODE === 'development' ? 'dev-bypass' : turnstileToken }))
   }
 
   const handleClose = () => {
@@ -234,6 +234,8 @@ const LoginPage = () => {
           </div> */}
 
           {/* Cloudflare Turnstile */}
+{import.meta.env.MODE !== 'development' && (
+  <>
 <div className="flex justify-center">
   <Turnstile
     key={turnstileKey}
@@ -252,6 +254,8 @@ const LoginPage = () => {
   <p className="mt-1.5 text-xs text-[#ba1a1a] font-medium flex items-center gap-1">
     <span className="w-1 h-1 rounded-full bg-[#ba1a1a]" />{errors.turnstile}
   </p>
+   )}
+   </>
 )}
 
           {error && (

@@ -162,7 +162,7 @@ const RegisterPage = () => {
     // if (parseInt(securityQuestion.userAnswer) !== securityQuestion.answer) {
     //   newErrors.security = 'Incorrect answer. Try again.'
     // }
-    if (!turnstileToken) {
+    if (import.meta.env.MODE !== 'development' && !turnstileToken) {
   newErrors.turnstile = 'Please complete the CAPTCHA'
 }
 
@@ -180,7 +180,7 @@ const RegisterPage = () => {
       registerData.referred_by_code = referralCode
     }
     // dispatch(registerUser(registerData))
-      dispatch(registerUser({ ...registerData, turnstileToken }))
+      dispatch(registerUser({ ...registerData,  turnstileToken: import.meta.env.MODE === 'development' ? 'dev-bypass' : turnstileToken }))
   }
 
   const handleClose = () => {
@@ -351,6 +351,8 @@ const RegisterPage = () => {
   </p>
 )} */}
 {/* Cloudflare Turnstile */}
+{import.meta.env.MODE !== 'development' && (
+  <>
 <div className="flex justify-center">
   <Turnstile
     key={turnstileKey}
@@ -369,6 +371,8 @@ const RegisterPage = () => {
   <p className="mt-1.5 text-xs text-[#ba1a1a] font-medium flex items-center gap-1">
     <span className="w-1 h-1 rounded-full bg-[#ba1a1a]" />{errors.turnstile}
   </p>
+   )}
+   </>
 )}
 
           {/* Backend Error - from Redux state.error */}
