@@ -546,11 +546,17 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                   <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem', mt: 0.2 }}>Pending</Typography>
                 </Box>
                 {/* Row 2: Payments | Line | This Month */}
-                <Box sx={{ px: 1 }}>
+                {/* <Box sx={{ px: 1 }}>
                   <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.5 }}>Payments Received</Typography>
                   <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.15rem', lineHeight: 1.2 }}>{loading ? <Skeleton width={55} height={20} sx={{ bgcolor: 'rgba(255,255,255,0.15)' }} /> : formatDollar(dashboard?.lifetime?.total_withdrawn)}</Typography>
                   <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem', mt: 0.2 }}>Lifetime</Typography>
-                </Box>
+                </Box> */}
+                <Box sx={{ px: 1 }}>
+                 <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.5 }}>Payments Received</Typography>
+                <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.15rem', lineHeight: 1.2 }}>  {loading ? <Skeleton width={55} height={20} sx={{ bgcolor: 'rgba(255,255,255,0.15)' }} />: formatPoints(dashboard?.lifetime?.total_withdrawn)}</Typography>
+                <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem', mt: 0.2 }}>≈ {formatDollar((dashboard?.lifetime?.total_withdrawn || 0) / 100)}</Typography>
+               </Box>
+
                 <Box sx={{ bgcolor: 'rgba(255,255,255,0.12)', width: '1px', height: '100%', mx: 'auto' }} />
                 <Box sx={{ px: 1 }}>
                   <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.5 }}>This Month</Typography>
@@ -1040,11 +1046,18 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                 {/* Thin line */}
                 <Box sx={{ bgcolor: 'rgba(255,255,255,0.12)', width: '1px', my: 1 }} />
                 {/* Payments Received */}
-                <Box sx={{ px: 2, py: 0.5 }}>
+                {/* <Box sx={{ px: 2, py: 0.5 }}>
                   <Typography sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.6 }}>Payments Received</Typography>
                   <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.5rem', lineHeight: 1.2 }}>{loading ? <Skeleton width={90} height={30} sx={{ bgcolor: 'rgba(255,255,255,0.12)' }} /> : formatDollar(dashboard?.lifetime?.total_withdrawn)}</Typography>
                   <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', mt: 0.4 }}>Lifetime total</Typography>
-                </Box>
+                </Box> */}
+
+                <Box sx={{ px: 2, py: 0.5  }}>
+                 <Typography sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.6 }}> Payments Received</Typography>
+                 <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.5rem', lineHeight: 1.2 }}>{loading? <Skeleton width={90} height={30} sx={{ bgcolor: 'rgba(255,255,255,0.12)' }} />: formatPoints(dashboard?.lifetime?.total_withdrawn) }</Typography>
+                 <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', mt: 0.4}}>≈ {formatDollar((dashboard?.lifetime?.total_withdrawn || 0) / 100)}</Typography>
+              </Box>
+
                 {/* Thin line */}
                 <Box sx={{ bgcolor: 'rgba(255,255,255,0.12)', width: '1px', my: 1 }} />
                 {/* This Month */}

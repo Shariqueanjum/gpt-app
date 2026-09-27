@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { ThemeProvider, createTheme, Box, Typography, GlobalStyles } from '@mui/material'
 import CssBaseline from '@mui/material/CssBaseline'
 import logo from '/images/logo.png'
+import smallLogo from '/android-chrome-192x192.png'
 
 // Public pages
 import HomePage from './pages/HomePage'
@@ -122,40 +123,241 @@ function App() {
 
   const toggleDarkMode = () => setDarkMode(!darkMode)
 
+  // if (!authChecked) {
+  //   return (
+  //     <ThemeProvider theme={theme}>
+  //       <CssBaseline />
+  //       <GlobalStyles styles={{ body: { backgroundColor: theme.palette.background.default } }} />
+  //       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+  //         <Box
+  //           component="img"
+  //           src={smallLogo}
+  //           alt="Logo"
+  //           sx={{
+  //             width: 180,
+  //             animation: "breathe 2s ease-in-out infinite",
+
+  //             "@keyframes breathe": {
+  //               "0%": {
+  //                 transform: "scale(0.96)",
+  //                 opacity: 0.75,
+  //               },
+  //               "50%": {
+  //                 transform: "scale(1)",
+  //                 opacity: 1,
+  //               },
+  //               "100%": {
+  //                 transform: "scale(0.96)",
+  //                 opacity: 0.75,
+  //               },
+  //             },
+  //           }}
+  //         />
+  //       </Box>
+  //     </ThemeProvider>
+  //   )
+  // }
+
   if (!authChecked) {
-    return (
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <GlobalStyles styles={{ body: { backgroundColor: theme.palette.background.default } }} />
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+
+      <GlobalStyles
+        styles={{
+          body: {
+            backgroundColor: theme.palette.background.default,
+          },
+        }}
+      />
+
+      <Box
+        sx={{
+          height: "100vh",
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
+        {/* Loading animation container */}
+        <Box
+          sx={{
+            position: "relative",
+            width: 220,
+            height: 220,
+
+            /* =========================
+               OUTER GLOW
+            ========================= */
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              inset: 18,
+              borderRadius: "50%",
+              border: "1px solid rgba(139, 40, 255, 0.15)",
+              animation: "pulseRing 2.4s ease-in-out infinite",
+            },
+
+            /* =========================
+               ROTATING ORBIT
+            ========================= */
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              inset: 8,
+              borderRadius: "50%",
+              border: "1.5px solid transparent",
+              borderTopColor: "rgba(139, 40, 255, 0.75)",
+              borderRightColor: "rgba(139, 40, 255, 0.25)",
+              animation: "orbit 2.8s linear infinite",
+            },
+
+            "@keyframes orbit": {
+              "0%": {
+                transform: "rotate(0deg)",
+              },
+              "100%": {
+                transform: "rotate(360deg)",
+              },
+            },
+
+            "@keyframes pulseRing": {
+              "0%, 100%": {
+                transform: "scale(0.94)",
+                opacity: 0.35,
+              },
+              "50%": {
+                transform: "scale(1.06)",
+                opacity: 0.8,
+              },
+            },
+
+            "@keyframes logoBreathe": {
+              "0%, 100%": {
+                transform: "scale(0.96)",
+                opacity: 0.88,
+              },
+              "50%": {
+                transform: "scale(1)",
+                opacity: 1,
+              },
+            },
+
+            "@keyframes glow": {
+              "0%, 100%": {
+                opacity: 0.25,
+                transform: "scale(0.9)",
+              },
+              "50%": {
+                opacity: 0.55,
+                transform: "scale(1.05)",
+              },
+            },
+
+            "@keyframes dot1": {
+              "0%": {
+                transform: "rotate(0deg) translateX(92px) rotate(0deg)",
+              },
+              "100%": {
+                transform: "rotate(360deg) translateX(92px) rotate(-360deg)",
+              },
+            },
+
+            "@keyframes dot2": {
+              "0%": {
+                transform: "rotate(180deg) translateX(78px) rotate(-180deg)",
+              },
+              "100%": {
+                transform: "rotate(-180deg) translateX(78px) rotate(180deg)",
+              },
+            },
+          }}
+        >
+          {/* Soft glow behind logo */}
+          <Box
+            sx={{
+              position: "absolute",
+              width: 130,
+              height: 130,
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(139,40,255,0.22) 0%, rgba(139,40,255,0.08) 45%, transparent 70%)",
+              filter: "blur(14px)",
+              animation: "glow 2.4s ease-in-out infinite",
+            }}
+          />
+
+          {/* Logo */}
           <Box
             component="img"
             src={logo}
             alt="Logo"
             sx={{
-              width: 180,
-              animation: "breathe 2s ease-in-out infinite",
+              position: "absolute",
+              width: 145,
+              height: 145,
+              objectFit: "contain",
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 3,
 
-              "@keyframes breathe": {
-                "0%": {
-                  transform: "scale(0.96)",
-                  opacity: 0.75,
-                },
-                "50%": {
-                  transform: "scale(1)",
-                  opacity: 1,
-                },
-                "100%": {
-                  transform: "scale(0.96)",
-                  opacity: 0.75,
-                },
-              },
+              animation:
+                "logoBreathe 2.2s ease-in-out infinite",
+
+              /* Very subtle shadow */
+              filter:
+                "drop-shadow(0 0 12px rgba(139, 40, 255, 0.18))",
+            }}
+          />
+
+          {/* Orbiting dot 1 */}
+          <Box
+            sx={{
+              position: "absolute",
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: "#8B28FF",
+              left: "50%",
+              top: "50%",
+              marginLeft: -3.5,
+              marginTop: -3.5,
+              zIndex: 4,
+              boxShadow: "0 0 12px rgba(139, 40, 255, 0.7)",
+              animation: "dot1 3s linear infinite",
+            }}
+          />
+
+          {/* Orbiting dot 2 */}
+          <Box
+            sx={{
+              position: "absolute",
+              width: 4,
+              height: 4,
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.75)",
+              left: "50%",
+              top: "50%",
+              marginLeft: -2,
+              marginTop: -2,
+              zIndex: 4,
+              boxShadow: "0 0 8px rgba(255,255,255,0.5)",
+              animation: "dot2 4.5s linear infinite",
             }}
           />
         </Box>
-      </ThemeProvider>
-    )
-  }
+      </Box>
+    </ThemeProvider>
+  );
+}
+
 
   return (
     <ThemeProvider theme={theme}>

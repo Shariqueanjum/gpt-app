@@ -1,8 +1,3 @@
-// ============================================================
-// AdminLayout.jsx — Shared Admin Sidebar + Top Bar + Mobile Drawer
-// Same color/typography system as the user-facing app, single
-// responsive layout for all screen sizes (hamburger on mobile).
-// ============================================================
 import { useState, useEffect, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -35,6 +30,8 @@ import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined'
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined'
 import PaymentIcon from '@mui/icons-material/Payment'
 import { getColors } from './SharedLayout'
+
+import useAdminLiveEvents from '../../hooks/useAdminLiveEvents'
 
 const ADMIN_NAV = [
   { label: 'Dashboard', icon: DashboardIcon, color: '#7c3aed', path: '/admin' },
@@ -184,6 +181,7 @@ const NOTIF_CONFIG = [
   { key: 'tickets', label: 'Open support tickets', icon: SupportAgentOutlinedIcon, color: '#f59e0b', path: '/admin/tickets' },
   { key: 'proofs', label: 'Payment proofs to review', icon: ReceiptLongOutlinedIcon, color: '#2563eb', path: '/admin/payment-proofs' },
   { key: 'fraud', label: 'High-risk fraud flags', icon: GppMaybeOutlinedIcon, color: '#ef4444', path: '/admin/fraud' },
+  { key: 'reversals', label: 'Provider reversals', icon: GavelOutlinedIcon, color: '#f97316', path: '/admin/reversals' },
 ]
 
 const useAdminNotifications = () => {
@@ -223,7 +221,10 @@ const NotificationBell = ({ darkMode }) => {
   const { counts, loading } = useAdminNotifications()
   const [anchorEl, setAnchorEl] = useState(null)
 
-  const items = NOTIF_CONFIG.map((cfg) => ({ ...cfg, count: counts?.[cfg.key] ?? 0 }))
+  const { events } = useAdminLiveEvents()
+  const liveReversals = events.filter(e => e.type === 'reversal_processed').length
+
+  const items = NOTIF_CONFIG.map((cfg) => ({ ...cfg, count: ( counts?.[cfg.key] ?? 0 ) + (cfg.key === 'reversals' ? liveReversals : 0), }))
   const total = items.reduce((sum, item) => sum + item.count, 0)
 
   return (

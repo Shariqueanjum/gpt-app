@@ -1,15 +1,3 @@
-/**
- * activityEmitter.service.js
- *
- * In-process event bus for real-time live activity.
- * Any part of the server emits an event here.
- * The SSE controller subscribes and pushes to all connected clients instantly.
- *
- * Usage:
- *   const { emitActivity } = require('./activityEmitter.service')
- *   emitActivity({ type: 'survey_completed', username: 'jo***', ... })
- */
-
 const EventEmitter = require('events')
 
 class ActivityEmitter extends EventEmitter {}
@@ -29,4 +17,8 @@ const emitActivity = (event) => {
   })
 }
 
-module.exports = { emitter, emitActivity }
+const emitAdminEvent = (event) => {
+  emitter.emit('admin', { id: Date.now(), time: new Date().toISOString(), ...event })
+}
+
+module.exports = { emitter, emitActivity, emitAdminEvent }

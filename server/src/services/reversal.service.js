@@ -16,6 +16,7 @@ const { findByExternalTransactionId } = require('../repositories/survey_click.re
 const { createTransaction } = require('../repositories/transaction.repository');
 const { parseReversalCSV } = require('../utils/csvParser');
 const { TRANSACTION_TYPES, TRANSACTION_STATUS, SURVEY_CLICK_STATUS } = require('../constants/transactionTypes');
+const { emitAdminEvent } = require('./activityEmitter.service');
 
 /**
  * Core reversal logic — single transaction, all reads use client
@@ -186,6 +187,15 @@ const processSingleReversal = async (transactionId, reason, source, adminId, adm
     );
 
     await client.query('COMMIT');
+
+        try {
+      emitAdminEvent({
+        type: 'reversal_processed', source,
+        amount: cpaUser, username: click.username,
+        user_id: click.user_id, transaction_id: transactionId,
+        offer_wall_id: click.offer_wall_id,
+      })
+    } catch (_) {}
 
     return {
       reversed: true,

@@ -135,9 +135,9 @@ const getLevelProgress = async (userId) => {
   // Progress to next level
   let progress = null;
   if (nextConfig) {
-    const surveysNeeded = nextConfig.surveys_required - currentConfig.surveys_required;
+    const surveysNeeded = nextConfig.surveys_required - stats.total_completed;
     const surveysDone = stats.total_completed - currentConfig.surveys_required;
-    const percentage = Math.min(100, Math.max(0, Math.floor((surveysDone / surveysNeeded) * 100)));
+    const percentage = Math.min(100, Math.max(0, Math.floor((stats.total_completed / nextConfig.surveys_required) * 100)));
     
     progress = {
       next_level: nextConfig.level,

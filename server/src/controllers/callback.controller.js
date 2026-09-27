@@ -4,6 +4,7 @@ const { verifyCallbackHash } = require('../utils/hashVerifier');
 const { parseS2SCallback, parseBrowserCallback } = require('../services/callbackParser.service');
 const { processSurveyCompletion, processNonSuccessCallback } = require('../services/credit.service');
 const { logIncomingTraffic } = require('../services/traffic_log.service');
+const { processSingleReversal } = require('../services/reversal.service');
 
 
 // Helper to build processing result
@@ -122,6 +123,43 @@ const handleS2S = async (req, res, next) => {
         success: true,
         message: 'Survey credited successfully',
         data: result
+      });
+    } else if (parsed.status === 'reversed') {
+      const lookupId = parsed.subId || parsed.externalTransactionId || parsed.transactionId;
+      let reversalResult, reversalError = null;
+      try {
+        reversalResult = await processSingleReversal(
+          lookupId,
+          `Provider reversal postback (raw status: ${parsed.rawStatus || parsed.status})`,
+          'callback', null, req.ip
+        );
+      } catch (err) {
+        reversalError = err;
+        reversalResult = { reversed: false, error: err.message };
+      }
+
+      await logIncomingTraffic({
+        type: 's2s_callback',
+        offer_wall_id: offerWall.id,
+        offer_wall_name: offerWall.name,
+        offer_wall_internal_id: offerWall.internal_id,
+        user_id: reversalResult.user_id,
+        user_username: reversalResult.username,
+        internal_transaction_id: parsed.subId || parsed.transactionId,
+        external_transaction_id: parsed.externalTransactionId,
+        url: req.originalUrl, method: req.method,
+        headers: req.headers, query_params: req.query, request_body: req.body,
+        response_status: 200,
+        response_body: { success: !reversalError, message: reversalError?.message || 'Reversal processed', data: reversalResult },
+        ip_address: req.ip, user_agent: req.headers['user-agent'],
+        processing_time_ms: Date.now() - startTime,
+        processing_result: buildProcessingResult(!reversalError, reversalError?.message || 'Reversal processed via callback', reversalResult)
+      });
+
+      return res.json({
+        success: !reversalError,
+        message: reversalError ? reversalError.message : 'Reversal processed successfully',
+        data: reversalResult
       });
     } else {
       // Failed, rejected, etc.
@@ -287,7 +325,7 @@ const handleBrowser = async (req, res, next) => {
         normalizedStatus === 'security' || normalizedStatus === 'security_terminated' ? 'security_terminated' :
         normalizedStatus;
 
-      const result = processNonSuccessCallback(parsed, offerWall);
+      const result = await processNonSuccessCallback(parsed, offerWall);
       
       await logIncomingTraffic({
         type: 'browser_callback',
