@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 
-const verifyCallbackHash = (params, hashAlgorithm, hashKey, hashFields) => {
+const verifyCallbackHash = (params, hashAlgorithm, hashKey, hashFields, hashSeparator = '') => {
   // No hash configured — skip verification (safe for providers without signatures)
   if (!hashAlgorithm || !hashKey) {
     return { valid: true, skipped: true };
@@ -13,7 +13,7 @@ const verifyCallbackHash = (params, hashAlgorithm, hashKey, hashFields) => {
   }
 
   // Build string to hash from specified fields
-  const values = hashFields.map(field => (params[field] || '').toString()).join('');
+  const values = hashFields.map(field => (params[field] || '').toString()).join(hashSeparator);
   
   let expected;
   
@@ -22,7 +22,7 @@ const verifyCallbackHash = (params, hashAlgorithm, hashKey, hashFields) => {
       expected = crypto.createHmac('sha256', hashKey).update(values).digest('hex');
       break;
     case 'md5':
-      expected = crypto.createHash('md5').update(values + hashKey).digest('hex');
+      expected = crypto.createHash('md5').update(values + hashSeparator + hashKey).digest('hex');
       break;
     default:
       return { valid: false, reason: `Unsupported hash algorithm: ${hashAlgorithm}` };

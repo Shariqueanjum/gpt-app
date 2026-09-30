@@ -34,13 +34,16 @@ const SOURCE_OPTIONS = [
   { value: 'user.referral_code', label: 'User · Referral code' },
   { value: 'user.level_id', label: 'User · Level' },
   { value: 'static', label: 'Static value' },
+  { value: 'hash.username', label: 'Computed · MD5(username + "-" + Hash Key)' },
+  { value: 'hash.public_id', label: 'Computed · MD5(public ID + "-" + Hash Key)' },
+  { value: 'hash.transaction_id', label: 'Computed · MD5(transaction ID + "-" + Hash Key)' },
 ]
 
 const emptyForm = {
   name: '', internal_id: '', type: 'api', endpoint_url: '', iframe_url: '',
   hash_algorithm: '', hash_key: '', commission_rate: 20, logo_url: '',
   url_params: [{ param: 'user_id', source: 'user.public_id', value: '' }, { param: 'transaction_id', source: 'transaction_id', value: '' }],
-  s2s: { transaction_id_field: 'transaction_id', sub_id_field: '', username_field: '', status_field: 'status', payout_field: 'payout', status_map: [{ key: 'completed', value: 'success' }, { key: 'rejected', value: 'failed' }] },
+  s2s: { transaction_id_field: 'transaction_id', sub_id_field: '', username_field: '', status_field: 'status', payout_field: 'payout', hash_fields: '', hash_separator: '', status_map: [{ key: 'completed', value: 'success' }, { key: 'rejected', value: 'failed' }] },
   browser: { transaction_id_field: 'transaction_id', sub_id_field: '', payout_field: 'payout', signature_field: 'hash', hash_fields: 'transaction_id, payout, status' },
 }
 
@@ -115,6 +118,8 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
         username_field: cfg.s2s?.username_field || '',
         status_field: cfg.s2s?.status_field || '',
         payout_field: cfg.s2s?.payout_field || '',
+        hash_fields: Array.isArray(cfg.s2s?.hash_fields) ? cfg.s2s.hash_fields.join(', ') : '',
+        hash_separator: cfg.s2s?.hash_separator || '',
         status_map: cfg.s2s?.status_map
           ? Object.entries(cfg.s2s.status_map).map(([key, value]) => ({ key, value }))
           : [{ key: '', value: '' }],
@@ -138,6 +143,7 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
       form.s2s.status_map.filter((r) => r.key.trim()).map((r) => [r.key.trim(), r.value.trim()])
     )
     const hash_fields = form.browser.hash_fields.split(',').map((s) => s.trim()).filter(Boolean)
+    const s2s_hash_fields = form.s2s.hash_fields.split(',').map((s) => s.trim()).filter(Boolean)
     return {
       name: form.name.trim(),
       internal_id: form.internal_id.trim().toLowerCase().replace(/\s+/g, '_'),
@@ -157,6 +163,8 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
           username_field: form.s2s.username_field.trim() || undefined,
           status_field: form.s2s.status_field.trim(),
           payout_field: form.s2s.payout_field.trim(),
+          hash_fields: s2s_hash_fields,
+          hash_separator: form.s2s.hash_separator,
           status_map,
         },
         browser: {
@@ -432,6 +440,8 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
               <TextField label="Username field (optional)" value={form.s2s.username_field} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, username_field: e.target.value } }))} fullWidth sx={fieldSx} helperText="Only needed if the provider doesn't echo our transaction ID — we match the click by this username field instead (iframe fallback)" />
               <TextField label="Status field" value={form.s2s.status_field} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, status_field: e.target.value } }))} fullWidth sx={fieldSx} />
               <TextField label="Payout field" value={form.s2s.payout_field} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, payout_field: e.target.value } }))} fullWidth sx={fieldSx} />
+              <TextField label="Hash fields (comma-separated)" value={form.s2s.hash_fields} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, hash_fields: e.target.value } }))} fullWidth sx={fieldSx} helperText="Fields the provider signs, e.g. trans_id — leave blank if they don't sign S2S callbacks" />
+              <TextField label="Hash separator" value={form.s2s.hash_separator} onChange={(e) => setForm((f) => ({ ...f, s2s: { ...f.s2s, hash_separator: e.target.value } }))} fullWidth sx={fieldSx} helperText={`e.g. "-" for CPX Research's MD5(trans_id + '-' + secret) — leave blank if fields are just concatenated directly`} />
 
               <Typography sx={{ fontWeight: 600, fontSize: '0.85rem', color: COLORS.textPrimary, mt: 1 }}>Status mapping (their value → our value)</Typography>
               {form.s2s.status_map.map((row, i) => (

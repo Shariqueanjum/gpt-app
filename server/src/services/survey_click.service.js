@@ -25,6 +25,9 @@ const generateTransactionId = (publicId) => {
  *   "user.referral_code"     → user.referral_code
  *   "user.level_id"          → user.level_id
  *   "static"                 → the literal value field
+ *   "hash.username"          → MD5(user.username + '-' + wall.hash_key)
+ *   "hash.public_id"         → MD5(user.public_id + '-' + wall.hash_key)
+ *   "hash.transaction_id"    → MD5(transactionId + '-' + wall.hash_key)
  */
 
 const resolveParamValue = (source, value, user, transactionId) => {
@@ -41,6 +44,9 @@ const resolveParamValue = (source, value, user, transactionId) => {
     case 'user.referral_code':return user.referral_code || '';
     case 'user.level_id':     return String(user.level_id || 1);
     case 'static':            return value || '';
+    case 'hash.username':     return hashKey ? crypto.createHash('md5').update(`${user.username || ''}-${hashKey}`).digest('hex') : '';
+    case 'hash.public_id':    return hashKey ? crypto.createHash('md5').update(`${user.public_id || ''}-${hashKey}`).digest('hex') : '';
+    case 'hash.transaction_id': return hashKey ? crypto.createHash('md5').update(`${transactionId}-${hashKey}`).digest('hex') : '';
     default:                  return '';
   }
 };
@@ -64,7 +70,7 @@ const resolveParamValue = (source, value, user, transactionId) => {
 //   return `${baseUrl}${separator}user_id=${encodeURIComponent(publicId)}&transaction_id=${encodeURIComponent(transactionId)}`;
 // };
 
-const buildEntryUrl = (baseUrl, user, transactionId, callbackConfig) => {
+const buildEntryUrl = (baseUrl, user, transactionId, callbackConfig, hashKey) => {
   const urlParams = callbackConfig?.url_params;
 
   const separator = baseUrl.includes('?') ? '&' : '?';
@@ -75,7 +81,7 @@ const buildEntryUrl = (baseUrl, user, transactionId, callbackConfig) => {
   }
 
   const parts = urlParams.map(({ param, source, value }) => {
-    const resolved = resolveParamValue(source, value, user, transactionId);
+    const resolved = resolveParamValue(source, value, user, transactionId, hashKey);
     return `${encodeURIComponent(param)}=${encodeURIComponent(resolved)}`;
   });
 
@@ -153,9 +159,9 @@ const createSurveyClickRecord = async (userId, payload) => {
   };
 
   if (wall.type === 'api' || wall.type === 'router') {
-    result.redirect_url = buildEntryUrl(wall.endpoint_url, user, transactionId, callbackConfig);
+    result.redirect_url = buildEntryUrl(wall.endpoint_url, user, transactionId, callbackConfig, wall.hash_key);
   } else if (wall.type === 'iframe') {
-    result.iframe_src = buildEntryUrl(wall.iframe_url, user, transactionId, callbackConfig);
+    result.iframe_src = buildEntryUrl(wall.iframe_url, user, transactionId, callbackConfig, wall.hash_key);
   }
 
   return { click: result };

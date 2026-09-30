@@ -64,7 +64,8 @@ const handleS2S = async (req, res, next) => {
       payload,
       offerWall.hash_algorithm,
       offerWall.hash_key,
-      callbackConfig.s2s?.hash_fields || []
+      callbackConfig.s2s?.hash_fields || [],
+      callbackConfig.s2s?.hash_separator || ''
     );
 
     if (!hashCheck.valid) {
@@ -264,7 +265,8 @@ const handleBrowser = async (req, res, next) => {
       req.query,
       offerWall.hash_algorithm,
       offerWall.hash_key,
-      callbackConfig.browser?.hash_fields || []
+      callbackConfig.browser?.hash_fields || [],
+      callbackConfig.browser?.hash_separator || ''
     );
 
     if (!hashCheck.valid) {
