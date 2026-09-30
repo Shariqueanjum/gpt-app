@@ -30,7 +30,7 @@ const generateTransactionId = (publicId) => {
  *   "hash.transaction_id"    → MD5(transactionId + '-' + wall.hash_key)
  */
 
-const resolveParamValue = (source, value, user, transactionId) => {
+const resolveParamValue = (source, value, user, transactionId, hashKey) => {
   switch (source) {
     case 'transaction_id':    return transactionId;
     case 'user.public_id':    return user.public_id  || '';
