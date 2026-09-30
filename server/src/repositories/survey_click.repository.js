@@ -69,17 +69,41 @@ const lockSurveyClickById = async (client, clickId) => {
   return res.rows[0];
 };
 
+// const lockSurveyClickByTransactionId = async (client, transactionId) => {
+//   const res = await client.query(
+//     `SELECT * FROM survey_clicks WHERE transaction_id = $1 FOR UPDATE`,
+//     [transactionId]
+//   );
+//   return res.rows[0];
+// };
+
 const lockSurveyClickByTransactionId = async (client, transactionId) => {
   const res = await client.query(
-    `SELECT * FROM survey_clicks WHERE transaction_id = $1 FOR UPDATE`,
+    `SELECT sc.*, u.username, u.public_id
+     FROM survey_clicks sc
+     JOIN users u ON u.id = sc.user_id
+     WHERE sc.transaction_id = $1
+     FOR UPDATE OF sc`,
     [transactionId]
   );
   return res.rows[0];
 };
 
+// const lockSurveyClickByExternalId = async (client, externalId) => {
+//   const res = await client.query(
+//     `SELECT * FROM survey_clicks WHERE external_transaction_id = $1 FOR UPDATE`,
+//     [externalId]
+//   );
+//   return res.rows[0];
+// };
+
 const lockSurveyClickByExternalId = async (client, externalId) => {
   const res = await client.query(
-    `SELECT * FROM survey_clicks WHERE external_transaction_id = $1 FOR UPDATE`,
+    `SELECT sc.*, u.username, u.public_id
+     FROM survey_clicks sc
+     JOIN users u ON u.id = sc.user_id
+     WHERE sc.external_transaction_id = $1
+     FOR UPDATE OF sc`,
     [externalId]
   );
   return res.rows[0];
