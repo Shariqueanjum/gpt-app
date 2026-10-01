@@ -20,10 +20,27 @@ const findAndLockClickForCallback = async (client, parsedCallback, offerWall) =>
   let click = null;
   let foundBy = null;
 
+  // A click found by ID is only a real match if it's still pending (a fresh
+  // conversion to credit), OR it's a genuine retry of the exact same
+  // conversion we already processed (same external/provider transaction id).
+  // If an old, already-completed click is found but THIS callback carries a
+  // different provider transaction id, that means the provider reused the
+  // same subid/transaction_id across multiple real conversions in one
+  // session (CPX does this) — treat it as no match here and let later
+  // priorities (ultimately the auto-create fallback) credit it as the
+  // separate, genuine conversion it actually is.
+
+  const isUsableMatch = (foundClick, theirId) => {
+    if (!foundClick) return false;
+    if (foundClick.status === SURVEY_CLICK_STATUS.PENDING) return true;
+    return !!(theirId && foundClick.external_transaction_id && foundClick.external_transaction_id === theirId);
+  };
+
   // Priority 1: sub_id — intermediary echoing our internal transaction_id
   if (parsedCallback.subId) {
-    click = await lockSurveyClickByTransactionId(client, parsedCallback.subId);
-    if (click) {
+    const foundClick = await lockSurveyClickByTransactionId(client, parsedCallback.subId);
+    if (isUsableMatch(foundClick, parsedCallback.externalTransactionId)) {
+      click = foundClick;
       foundBy = 'sub_id';
       // Store external transaction ID if provided and not already stored
       if (parsedCallback.externalTransactionId && !click.external_transaction_id) {
@@ -42,8 +59,9 @@ const findAndLockClickForCallback = async (client, parsedCallback, offerWall) =>
   }
 
   // Priority 2: direct match — our transaction_id (direct client)
-  click = await lockSurveyClickByTransactionId(client, parsedCallback.transactionId);
-  if (click) {
+   const foundClick = await lockSurveyClickByTransactionId(client, parsedCallback.transactionId);
+  if (isUsableMatch(foundClick, parsedCallback.externalTransactionId)) {
+    click = foundClick;
     foundBy = 'transaction_id';
     if (parsedCallback.externalTransactionId && !click.external_transaction_id) {
       const exists = await externalTransactionIdExists(parsedCallback.externalTransactionId);
