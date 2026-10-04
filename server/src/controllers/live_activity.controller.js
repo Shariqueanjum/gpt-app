@@ -1,5 +1,6 @@
 const pool = require('../config/db')
 const { emitter } = require('../services/activityEmitter.service')
+const { getNumericSetting } = require('../services/settings.service')
 
 /**
  * GET /api/live-activity/stream
@@ -25,9 +26,9 @@ const stream = async (req, res) => {
     } catch (_) {}
   }
 
-  // 1. Immediately send last 15 events so feed isn't empty on connect
+  // 1. Immediately send last 20 events so feed isn't empty on connect
   try {
-    const seed = await getRecentActivity(15)
+    const seed = await getRecentActivity(20)
     seed.reverse().forEach(row => send('activity', row))
   } catch (_) {}
 
@@ -60,6 +61,12 @@ const recent = async (req, res, next) => {
 // ── DB helpers ────────────────────────────────────────────────────────────────
 
 const getRecentActivity = async (limit) => {
+
+  // Same threshold used for the real-time announcement in credit.service.js,
+  // so a tiny credit stays hidden consistently whether seen live or on reload.
+
+  const minPoints = await getNumericSetting('live_activity_min_points') || 5
+
   // Merge survey completions + registrations + level-ups, newest first
   const res = await pool.query(
     `(
@@ -81,6 +88,7 @@ const getRecentActivity = async (limit) => {
         AND (tl.processing_result->>'success')::boolean = true
         AND tl.processing_result ? 'user_credited'
         AND tl.user_username IS NOT NULL
+        AND (tl.processing_result->>'user_credited')::numeric >= $2
     )
     UNION ALL
     (
@@ -129,7 +137,7 @@ const getRecentActivity = async (limit) => {
     )
     ORDER BY created_at DESC
     LIMIT $1`,
-    [limit]
+    [limit, minPoints]
   )
   return res.rows.map(formatRow)
 }

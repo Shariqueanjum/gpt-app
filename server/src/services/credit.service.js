@@ -59,7 +59,9 @@ const findAndLockClickForCallback = async (client, parsedCallback, offerWall) =>
   }
 
   // Priority 2: direct match — our transaction_id (direct client)
-   const foundClick = await lockSurveyClickByTransactionId(client, parsedCallback.transactionId);
+  {
+    const foundClick = await lockSurveyClickByTransactionId(client, parsedCallback.transactionId);
+    
   if (isUsableMatch(foundClick, parsedCallback.externalTransactionId)) {
     click = foundClick;
     foundBy = 'transaction_id';
@@ -74,6 +76,7 @@ const findAndLockClickForCallback = async (client, parsedCallback, offerWall) =>
       click.external_transaction_id = parsedCallback.externalTransactionId;
     }
     return { click, foundBy, user_id: click.user_id, username: click.username };
+   }
   }
 
   // Priority 3: external_transaction_id — previously stored or reversal callback
@@ -260,6 +263,17 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
       const payoutMultiplier = parseFloat(offerWall.callback_config?.payout_multiplier) || 1;
 
       cpaOriginal = parseFloat((parsedCallback.payout * payoutMultiplier).toFixed(2));
+
+      // CPX sends small bonus points for screenouts.
+      // Do nothing with these callbacks; simply acknowledge them.
+      if (cpaOriginal <= 5) {
+          await client.query('ROLLBACK');
+
+          return {
+            acknowledged: true
+         };
+      }
+      
       const commissionRate = parseFloat(click.commission_rate);
       cpaUser = parseFloat((cpaOriginal * (100 - commissionRate) / 100).toFixed(2));
       commissionEarned = parseFloat((cpaOriginal - cpaUser).toFixed(2));
@@ -368,6 +382,8 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
 
     // Fire real-time live activity event instantly
     try {
+      const minPointsForAnnouncement = await getNumericSetting('live_activity_min_points') || 5;
+      if (cpaUser && cpaUser >= minPointsForAnnouncement) {
       emitActivity({
         type: 'survey_completed',
         username: username,
@@ -375,6 +391,7 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
         amount: cpaUser ? cpaUser.toString() : null,
         country: user?.country || 'Unknown',
       });
+     }
     } catch (_) { }
 
     return {

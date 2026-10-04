@@ -98,6 +98,12 @@ const handleS2S = async (req, res, next) => {
     if (parsed.status === 'success' || parsed.status === 'completed') {
       const result = await processSurveyCompletion(parsed, offerWall);
 
+      if (result?.acknowledged) {
+         return res.status(200).json({
+        success: true
+      });
+    }
+
        await logIncomingTraffic({
         type: 's2s_callback',
         offer_wall_id: offerWall.id,

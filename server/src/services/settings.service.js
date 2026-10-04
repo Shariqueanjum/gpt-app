@@ -8,7 +8,8 @@ const DEFAULT_SETTINGS = {
   site_name: 'PickOpinion',
   min_withdrawal_points: '500',
   points_to_dollar_rate: '100',
-  vpn_detection_enabled: 'false' // 100 points = $1.00
+  vpn_detection_enabled: 'false', // 100 points = $1.00
+  live_activity_min_points: '5' // survey completions below this amount don't announce in the live feed
 };
 
 const seedSettings = async () => {
