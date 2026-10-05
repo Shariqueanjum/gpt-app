@@ -7,6 +7,31 @@ const {
 } = require('../repositories/offer_wall.repository');
 const { buildEntryUrl } = require('../services/survey_click.service');
 
+
+/**
+ * Normalise + validate logo_url from the admin form.
+ * - undefined  -> leave field untouched (update) / null (create)
+ * - '' / null  -> null (clears the logo)
+ * - otherwise  -> must be an http(s) URL, max 2048 chars
+ * Throws an error with status 400 on invalid input.
+ */
+const normaliseLogoUrl = (value) => {
+  if (value === undefined) return undefined;
+  if (value === null || String(value).trim() === '') return null;
+ 
+  const trimmed = String(value).trim();
+  let parsed;
+  try { parsed = new URL(trimmed); } catch (_) { parsed = null; }
+ 
+  if (!parsed || !['http:', 'https:'].includes(parsed.protocol) || trimmed.length > 2048) {
+    const err = new Error('Logo URL must be a valid http(s) image URL (max 2048 chars)');
+    err.status = 400;
+    throw err;
+  }
+  return trimmed;
+};
+
+
 /** GET /api/admin/offer-walls */
 const listAll = async (req, res, next) => {
   try {
@@ -27,6 +52,7 @@ const getOne = async (req, res, next) => {
 /** POST /api/admin/offer-walls */
 const create = async (req, res, next) => {
   try {
+    const body = { ...req.body, logo_url: normaliseLogoUrl(req.body.logo_url) };
     const wall = await createOfferWall(req.body);
     res.status(201).json({ success: true, data: wall });
   } catch (err) { next(err); }
@@ -35,6 +61,7 @@ const create = async (req, res, next) => {
 /** PUT /api/admin/offer-walls/:id */
 const update = async (req, res, next) => {
   try {
+    const body = { ...req.body, logo_url: normaliseLogoUrl(req.body.logo_url) };
     const wall = await updateOfferWall(req.params.id, req.body);
     if (!wall) return res.status(404).json({ success: false, message: 'Not found' });
     res.json({ success: true, data: wall });
@@ -91,4 +118,15 @@ const previewUrl = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { listAll, getOne, create, update, toggle, previewUrl };
+const uploadLogo = async (req, res, next) => {
+  try {
+    if (!req.file?.path) {
+      const err = new Error('No logo file received');
+      err.status = 400;
+      throw err;
+    }
+    res.json({ success: true, data: { url: req.file.path } });
+  } catch (err) { next(err); }
+};
+
+module.exports = { listAll, getOne, create, update, toggle, previewUrl, uploadLogo };

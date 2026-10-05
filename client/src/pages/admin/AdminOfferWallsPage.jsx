@@ -10,6 +10,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined'
+import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined'
 import { AdminPageWrapper } from '../../components/Layout/AdminLayout'
 import { getColors } from '../../components/Layout/SharedLayout'
 import adminAxiosInstance from '../../utils/adminAxiosInstance'
@@ -63,6 +64,7 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
+  const [uploadingLogo, setUploadingLogo] = useState(false)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewResult, setPreviewResult] = useState(null)
 
@@ -196,6 +198,26 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
       setSaving(false)
     }
   }
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-selecting the same file
+    if (!file) return
+    setUploadingLogo(true); setSaveError('')
+    try {
+      const fd = new FormData()
+      fd.append('logo', file)
+      const res = await adminAxiosInstance.post('/admin/offer-walls/upload-logo', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setForm((f) => ({ ...f, logo_url: res.data?.data?.url || '' }))
+    } catch (err) {
+      setSaveError(err.response?.data?.message || 'Logo upload failed')
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
 
   const handlePreview = async () => {
     if (!editingId) return
@@ -350,7 +372,30 @@ const AdminOfferWallsPage = ({ darkMode, toggleDarkMode }) => {
               </Select>
               <TextField label="Commission Rate (%)" type="number" value={form.commission_rate} onChange={(e) => setForm((f) => ({ ...f, commission_rate: e.target.value }))} fullWidth sx={fieldSx} />
               <TextField label="Payout multiplier" type="number" value={form.payout_multiplier} onChange={(e) => setForm((f) => ({ ...f, payout_multiplier: e.target.value }))} fullWidth sx={fieldSx} helperText="Applies to both S2S and Browser postbacks from this wall. Use 1 if their payout is already in points. Use 100 if their payout is in real currency (e.g. $0.50 → 50 points, since 100 points = $1)." />
-              <TextField label="Logo URL" value={form.logo_url} onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value }))} fullWidth sx={fieldSx} helperText="Optional — image URL shown on frontend cards" />
+              {/* <TextField label="Logo URL" value={form.logo_url} onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value }))} fullWidth sx={fieldSx} helperText="Optional — image URL shown on frontend cards" /> */}
+
+
+              <Box>
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: COLORS.textSecondary, mb: 1 }}>Logo</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box sx={{ width: 96, height: 64, borderRadius: 2, border: `1px dashed ${COLORS.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: darkMode ? 'rgba(255,255,255,0.04)' : '#f8f9fb', overflow: 'hidden', flexShrink: 0 }}>
+                    {uploadingLogo ? <CircularProgress size={20} /> : form.logo_url ? (
+                      <Box component="img" src={form.logo_url} alt="Logo preview" sx={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain' }} />
+                    ) : (
+                      <Typography sx={{ fontSize: '0.7rem', color: COLORS.textMuted }}>No logo</Typography>
+                    )}
+                  </Box>
+                  <Button component="label" variant="outlined" disabled={uploadingLogo} startIcon={<CloudUploadOutlinedIcon />} sx={{ textTransform: 'none', borderRadius: 2 }}>
+                    {form.logo_url ? 'Replace' : 'Upload logo'}
+                    <input hidden type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={handleLogoUpload} />
+                  </Button>
+                  {form.logo_url && (
+                    <Button onClick={() => setForm((f) => ({ ...f, logo_url: '' }))} sx={{ textTransform: 'none', color: COLORS.textMuted }}>Remove</Button>
+                  )}
+                </Box>
+                <Typography sx={{ fontSize: '0.72rem', color: COLORS.textMuted, mt: 0.8 }}>PNG, JPG, WEBP or SVG · max 2 MB · transparent background works best</Typography>
+              </Box>
+
 
               {form.type === 'iframe' ? (
                 <TextField label="Iframe URL" value={form.iframe_url} onChange={(e) => setForm((f) => ({ ...f, iframe_url: e.target.value }))} fullWidth sx={fieldSx} />

@@ -100,9 +100,9 @@ const updateOfferWall = async (id, fields) => {
        commission_rate = COALESCE($8,  commission_rate),
        callback_config = COALESCE($9,  callback_config),
        is_active       = COALESCE($10, is_active),
-       logo_url = COALESCE($11, logo_url),
+       logo_url        = CASE WHEN $12::boolean THEN $11 ELSE logo_url END,
        updated_at      = NOW()
-     WHERE id = $12
+     WHERE id = $13
      RETURNING *`,
     [
       name         || null,
@@ -116,6 +116,7 @@ const updateOfferWall = async (id, fields) => {
       callback_config !== undefined ? JSON.stringify(callback_config) : null,
       is_active   !== undefined ? is_active : null,
       logo_url !== undefined ? logo_url : null,
+      logo_url !== undefined, // lets an explicit null/empty clear the logo
       id,
     ]
   );

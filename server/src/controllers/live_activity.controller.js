@@ -26,9 +26,9 @@ const stream = async (req, res) => {
     } catch (_) {}
   }
 
-  // 1. Immediately send last 20 events so feed isn't empty on connect
+  // 1. Immediately send last 15 events so feed isn't empty on connect
   try {
-    const seed = await getRecentActivity(20)
+    const seed = await getRecentActivity(15)
     seed.reverse().forEach(row => send('activity', row))
   } catch (_) {}
 

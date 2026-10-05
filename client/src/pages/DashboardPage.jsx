@@ -35,6 +35,8 @@ import HomeIcon from '@mui/icons-material/Home'
 import PaymentIcon from '@mui/icons-material/Payment'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import axiosInstance from '../utils/axiosInstance'
+import PartnersGrid from '../components/common/PartnersGrid'
+
 import { formatUTCDateTime, formatUTCMonthYear } from '../utils/formatTime'
 import { fetchCurrentUser } from '../slices/authSlice'
 
@@ -613,7 +615,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
         </Box>
 
          {/* OUR PARTNERS - HERO */}
-        <Box sx={{ px: 2.5, mt: 3, mb: 2 }}>
+        {/* <Box sx={{ px: 2.5, mt: 3, mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: COLORS.primary }} />
@@ -649,8 +651,26 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
               })}
             </Box>
           )}
-        </Box>
+        </Box> */}
 
+
+         {/* OUR PARTNERS */}
+        <Box sx={{ px: 2.5, mt: 3, mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: COLORS.primary }} />
+              <Typography sx={{ fontSize: '1.15rem', fontWeight: 800, color: COLORS.textPrimary, letterSpacing: '-0.01em' }}>Our Partners</Typography>
+            </Box>
+            <Typography onClick={() => navigate('/earn')} sx={{ fontSize: '0.8rem', fontWeight: 600, color: COLORS.primary, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View All</Typography>
+          </Box>
+          {offerWalls.length === 0 ? (
+            <Paper elevation={0} sx={{ borderRadius: 3, p: 4, textAlign: 'center', bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.border}` }}>
+              <Typography sx={{ color: COLORS.textMuted, fontSize: '0.9rem' }}>No partners available yet. Check back soon!</Typography>
+            </Paper>
+          ) : (
+            <PartnersGrid walls={offerWalls} COLORS={COLORS} darkMode={darkMode} onSelect={(wall) => navigate(`/earn?wall=${wall.internal_id || wall.id}`)} />
+          )}
+        </Box>
        
 
           {/* OUR PARTNERS - HERO */}
@@ -960,31 +980,7 @@ const DashboardPage = ({ darkMode, toggleDarkMode }) => {
                   <Typography sx={{ color: COLORS.textMuted, fontSize: '0.9rem' }}>No partners available yet. Check back soon!</Typography>
                 </Paper>
               ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  {offerWalls.map((wall, idx) => {
-                    const color = WALL_COLORS[idx % WALL_COLORS.length]
-                    const isLocked = wall.min_level && user?.level < wall.min_level
-                    return (
-                      <Paper key={wall.id} elevation={0} onClick={() => !isLocked && navigate(`/earn?wall=${wall.internal_id || wall.id}`)} sx={{ borderRadius: 3, p: 3, border: `1px solid ${COLORS.border}`, bgcolor: COLORS.cardBg, cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1, transition: 'all 0.25s ease', '&:hover': !isLocked && { boxShadow: '0 8px 30px rgba(83,18,188,0.08)', transform: 'translateY(-2px)', borderColor: `${COLORS.primary}30` } }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Box sx={{ width: 52, height: 52, borderRadius: 2.5, bgcolor: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <StarIcon sx={{ fontSize: 26, color }} />
-                          </Box>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography sx={{ fontWeight: 700, fontSize: '1.05rem', color: COLORS.textPrimary }}>{wall.name}</Typography>
-                            <Typography sx={{ fontSize: '0.82rem', color: COLORS.textMuted, mt: 0.3, lineHeight: 1.4 }}>{wall.description || 'High paying surveys and offers'}</Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.8 }}>
-                              {/* <StarIcon sx={{ fontSize: 14, color: COLORS.gold }} />
-                              <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary, fontWeight: 600 }}>{wall.rating || '4.5'}</Typography>
-                              <Typography sx={{ fontSize: '0.75rem', color: COLORS.textMuted }}>({wall.review_count || '120'} reviews)</Typography> */}
-                            </Box>
-                          </Box>
-                          <ArrowForwardIosIcon sx={{ fontSize: 18, color: COLORS.textMuted, flexShrink: 0 }} />
-                        </Box>
-                      </Paper>
-                    )
-                  })}
-                </Box>
+                <PartnersGrid walls={offerWalls} COLORS={COLORS} darkMode={darkMode} onSelect={(wall) => navigate(`/earn?wall=${wall.internal_id || wall.id}`)} />
               )}
             </Box>
 

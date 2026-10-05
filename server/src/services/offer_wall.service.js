@@ -11,6 +11,7 @@ const getActiveOfferWalls = async () => {
     internal_id: wall.internal_id,
     type: wall.type,
     commission_rate: wall.commission_rate,
+    logo_url: wall.logo_url || null,
     // For API type: frontend will call /api/offer-walls/:internal_id/surveys
     // For Router/iFrame: frontend will call POST /api/survey-clicks directly
     has_survey_list: wall.type === 'api'

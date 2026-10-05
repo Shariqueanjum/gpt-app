@@ -26,4 +26,13 @@ const proofStorage = new CloudinaryStorage({
   }
 });
 
-module.exports = { cloudinary, ticketStorage, proofStorage };
+const logoStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'offerwalls/logos',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [{ width: 400, height: 400, crop: 'limit' }]
+  }
+});
+
+module.exports = { cloudinary, ticketStorage, proofStorage, logoStorage };
