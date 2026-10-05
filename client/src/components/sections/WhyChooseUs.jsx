@@ -1,6 +1,14 @@
 // client/src/components/sections/WhyChooseUs.jsx
+
 import { useRef, useState, useEffect } from 'react'
-import { Box, Typography, Paper, Container } from '@mui/material'
+import {
+  Box,
+  Typography,
+  Container,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material'
+
 import SpeedIcon from '@mui/icons-material/Speed'
 import SecurityIcon from '@mui/icons-material/Security'
 import PaymentsIcon from '@mui/icons-material/Payments'
@@ -8,81 +16,522 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import HeadsetMicIcon from '@mui/icons-material/HeadsetMic'
 
+// -----------------------------------------------------------------------------
+// Features
+// -----------------------------------------------------------------------------
+
 const features = [
   {
     icon: <SpeedIcon sx={{ fontSize: 28 }} />,
     title: 'Lightning Fast',
     desc: 'New surveys drop every hour. Grab them before they fill up — the best ones go fast.',
+    mobileDesc: 'New surveys arrive regularly. Grab the best ones before they fill up.',
     color: '#5312bc',
   },
   {
     icon: <SecurityIcon sx={{ fontSize: 28 }} />,
-    title: 'Bank-Grade Security',
+    title: 'Secure & Private',
     desc: 'Your personal data stays encrypted. We never share or sell your information.',
+    mobileDesc: 'Your personal information stays protected and private.',
     color: '#006e2f',
   },
   {
     icon: <PaymentsIcon sx={{ fontSize: 28 }} />,
-    title: 'Highest Payouts',
+    title: 'Great Payouts',
     desc: 'We negotiate directly with advertisers for top rates.',
+    mobileDesc: 'Earn competitive rewards for the time you spend on surveys.',
     color: '#623c00',
   },
   {
     icon: <EmojiEventsIcon sx={{ fontSize: 28 }} />,
     title: 'Daily Bonuses',
     desc: 'Streak rewards, leaderboard prizes, and surprise lootboxes.',
+    mobileDesc: 'Keep your streak going and unlock extra rewards.',
     color: '#be185d',
   },
   {
     icon: <TrendingUpIcon sx={{ fontSize: 28 }} />,
     title: 'Level Up System',
-    desc: 'Complete more surveys to climb levels. Higher levels unlock bigger rewards and exclusive offers',
+    desc: 'Complete more surveys to climb levels. Higher levels unlock bigger rewards and exclusive offers.',
+    mobileDesc: 'Complete more surveys and unlock better rewards as you level up.',
     color: '#1e40af',
   },
   {
     icon: <HeadsetMicIcon sx={{ fontSize: 28 }} />,
     title: '24/7 Live Support',
     desc: 'Real humans, not bots. Get help whenever you need it.',
+    mobileDesc: 'Real people are here to help whenever you need us.',
     color: '#701a75',
   },
 ]
 
+// -----------------------------------------------------------------------------
+// Book settings
+// -----------------------------------------------------------------------------
+
+const FLIP_MS = 900
+const STAGGER_MS = 140
+const EASE = 'cubic-bezier(0.645, 0.045, 0.355, 1)'
+
+const BRAND = '#5312bc'
+const HAIRLINE = '1px solid rgba(203,195,215,0.4)'
+
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
+
+const toItems = (list) =>
+  list.map((feature) => ({
+    feature,
+    number: String(features.indexOf(feature) + 1).padStart(2, '0'),
+  }))
+
+// -----------------------------------------------------------------------------
+// Desktop feature block
+// -----------------------------------------------------------------------------
+
+const FeatureBlock = ({ feature, number, desktop, divided }) => (
+  <Box
+    sx={{
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      px: { xs: 3, md: 6 },
+      py: { xs: 2.5, md: 4 },
+      borderTop: divided ? HAIRLINE : 'none',
+    }}
+  >
+    {/* Number */}
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        mb: desktop ? 2.5 : 1.5,
+      }}
+    >
+      <Box
+        sx={{
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          bgcolor: feature.color,
+        }}
+      />
+
+      <Typography
+        sx={{
+          fontFamily: '"Plus Jakarta Sans", sans-serif',
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: '0.14em',
+          color: feature.color,
+        }}
+      >
+        {number}
+      </Typography>
+    </Box>
+
+    {/* Icon */}
+    <Box
+      sx={{
+        width: desktop ? 52 : 44,
+        height: desktop ? 52 : 44,
+        borderRadius: '14px',
+        bgcolor: `${feature.color}14`,
+        color: feature.color,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        mb: desktop ? 2.5 : 1.5,
+      }}
+    >
+      {feature.icon}
+    </Box>
+
+    {/* Title */}
+    <Typography
+      sx={{
+        fontFamily: '"Sora", sans-serif',
+        fontSize: desktop ? '23px' : '19px',
+        fontWeight: 800,
+        color: '#131b2e',
+        lineHeight: 1.25,
+        mb: 1,
+      }}
+    >
+      {feature.title}
+    </Typography>
+
+    {/* Desktop description */}
+    <Typography
+      sx={{
+        fontFamily: '"Plus Jakarta Sans", sans-serif',
+        fontSize: desktop ? '15.5px' : '14px',
+        lineHeight: 1.65,
+        color: '#4b5563',
+        fontWeight: 500,
+        maxWidth: 380,
+      }}
+    >
+      {feature.desc}
+    </Typography>
+  </Box>
+)
+
+// -----------------------------------------------------------------------------
+// Mobile feature block
+// -----------------------------------------------------------------------------
+
+const MobileFeatureBlock = ({ feature, number, divided }) => (
+  <Box
+    sx={{
+      flex: 1,
+      minHeight: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+
+      px: {
+        xs: 2.5,
+        sm: 3,
+      },
+
+      py: {
+        xs: 1.55,
+        sm: 2,
+      },
+
+      borderTop: divided
+        ? '1px solid rgba(203,195,215,0.45)'
+        : 'none',
+    }}
+  >
+    {/* Top row */}
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        mb: 1.05,
+      }}
+    >
+      {/* ---------------------------------------------------------------
+          Premium number
+      ---------------------------------------------------------------- */}
+
+      <Box
+        sx={{
+          position: 'relative',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+
+          minWidth: 38,
+          height: 24,
+
+          px: 1,
+
+          borderRadius: '7px',
+
+          background: `linear-gradient(
+            135deg,
+            ${feature.color}0d,
+            ${feature.color}04
+          )`,
+
+          border: `1px solid ${feature.color}10`,
+
+          overflow: 'hidden',
+
+          // Very subtle glow around the number
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            width: 24,
+            height: 24,
+            borderRadius: '50%',
+            background: feature.color,
+            opacity: 0.045,
+            filter: 'blur(8px)',
+          },
+        }}
+      >
+        <Typography
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+
+            fontFamily: '"Sora", sans-serif',
+
+            fontSize: '10px',
+
+            fontWeight: 700,
+
+            letterSpacing: '0.16em',
+
+            // Slightly faded rather than dark
+            color: `${feature.color}b8`,
+
+            lineHeight: 1,
+
+            userSelect: 'none',
+          }}
+        >
+          {number}
+        </Typography>
+      </Box>
+
+      {/* ---------------------------------------------------------------
+          Icon
+      ---------------------------------------------------------------- */}
+
+      <Box
+        sx={{
+          width: 40,
+          height: 40,
+
+          borderRadius: '12px',
+
+          bgcolor: `${feature.color}11`,
+
+          color: feature.color,
+
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+
+          '& svg': {
+            fontSize: 23,
+          },
+        }}
+      >
+        {feature.icon}
+      </Box>
+    </Box>
+
+    {/* ---------------------------------------------------------------
+        Title
+    ---------------------------------------------------------------- */}
+
+    <Typography
+      sx={{
+        fontFamily: '"Sora", sans-serif',
+
+        fontSize: {
+          xs: '17px',
+          sm: '18px',
+        },
+
+        fontWeight: 800,
+
+        color: '#131b2e',
+
+        lineHeight: 1.25,
+
+        mb: 0.55,
+      }}
+    >
+      {feature.title}
+    </Typography>
+
+    {/* ---------------------------------------------------------------
+        Short mobile description
+    ---------------------------------------------------------------- */}
+
+    <Typography
+      sx={{
+        fontFamily: '"Plus Jakarta Sans", sans-serif',
+
+        fontSize: {
+          xs: '12.5px',
+          sm: '13.5px',
+        },
+
+        lineHeight: 1.48,
+
+        color: '#687184',
+
+        fontWeight: 500,
+
+        maxWidth: 430,
+      }}
+    >
+      {feature.mobileDesc}
+    </Typography>
+  </Box>
+)
+
+// -----------------------------------------------------------------------------
+// Render helpers
+// -----------------------------------------------------------------------------
+
+const renderDesktopItems = (items) =>
+  items.map((it) => (
+    <FeatureBlock
+      key={it.feature.title}
+      {...it}
+      desktop
+      divided={false}
+    />
+  ))
+
+const renderMobileItems = (items) =>
+  items.map((it, j) => (
+    <MobileFeatureBlock
+      key={it.feature.title}
+      {...it}
+      divided={j > 0}
+    />
+  ))
+
+// -----------------------------------------------------------------------------
+// Main component
+// -----------------------------------------------------------------------------
+
 const WhyChooseUs = () => {
-  const scrollRef = useRef(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [startX, setStartX] = useState(0)
-  const [scrollLeft, setScrollLeft] = useState(0)
+  const theme = useTheme()
 
-  // Drag support
-  const handleMouseDown = (e) => {
-    setIsDragging(true)
-    setStartX(e.pageX - scrollRef.current.offsetLeft)
-    setScrollLeft(scrollRef.current.scrollLeft)
+  const desktop = useMediaQuery(theme.breakpoints.up('md'), {
+    noSsr: true,
+  })
+
+  const [current, setCurrent] = useState(0)
+
+  const prevRef = useRef(0)
+  const startX = useRef(null)
+
+  // ---------------------------------------------------------------------------
+  // Desktop:
+  //
+  // Feature 01 permanently on left.
+  //
+  // Remaining pages:
+  //
+  // 02 / 03
+  // 04 / 05
+  // 06
+  //
+  // Mobile:
+  //
+  // 01 / 02
+  // 03 / 04
+  // 05 / 06
+  // ---------------------------------------------------------------------------
+
+  const leafList = desktop
+    ? Array.from(
+        {
+          length: Math.ceil((features.length - 1) / 2),
+        },
+        (_, i) => ({
+          front: toItems([features[1 + 2 * i]]),
+
+          back: features[2 + 2 * i]
+            ? toItems([features[2 + 2 * i]])
+            : [],
+        })
+      )
+    : Array.from(
+        {
+          length: Math.ceil(features.length / 2),
+        },
+        (_, i) => ({
+          front: toItems(
+            features.slice(2 * i, 2 * i + 2)
+          ),
+
+          back: [],
+        })
+      )
+
+  const total = leafList.length
+
+  const page = Math.min(current, total - 1)
+
+  // ---------------------------------------------------------------------------
+  // Previous page
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    prevRef.current = page
+  }, [page])
+
+  // ---------------------------------------------------------------------------
+  // Navigation
+  // ---------------------------------------------------------------------------
+
+  const goTo = (n) => {
+    setCurrent(
+      Math.max(
+        0,
+        Math.min(total - 1, n)
+      )
+    )
   }
 
-  const handleMouseUp = () => {
-    setIsDragging(false)
+  // ---------------------------------------------------------------------------
+  // Swipe / drag
+  // ---------------------------------------------------------------------------
+
+  const onPointerDown = (e) => {
+    startX.current = e.clientX
   }
 
-  const handleMouseMove = (e) => {
-    if (!isDragging) return
-    e.preventDefault()
-    const x = e.pageX - scrollRef.current.offsetLeft
-    const walk = (x - startX) * 2
-    scrollRef.current.scrollLeft = scrollLeft - walk
+  const onPointerUp = (e) => {
+    if (startX.current === null) return
+
+    const dx = e.clientX - startX.current
+
+    startX.current = null
+
+    if (Math.abs(dx) > 40) {
+      goTo(page + (dx < 0 ? 1 : -1))
+    }
   }
 
-  // Touch support
-  const handleTouchStart = (e) => {
-    setStartX(e.touches[0].pageX - scrollRef.current.offsetLeft)
-    setScrollLeft(scrollRef.current.scrollLeft)
+  const onPointerCancel = () => {
+    startX.current = null
   }
 
-  const handleTouchMove = (e) => {
-    const x = e.touches[0].pageX - scrollRef.current.offsetLeft
-    const walk = (x - startX) * 2
-    scrollRef.current.scrollLeft = scrollLeft - walk
+  // ---------------------------------------------------------------------------
+  // Keyboard
+  // ---------------------------------------------------------------------------
+
+  const onKeyDown = (e) => {
+    if (e.key === 'ArrowRight') {
+      goTo(page + 1)
+    }
+
+    if (e.key === 'ArrowLeft') {
+      goTo(page - 1)
+    }
   }
+
+  // ---------------------------------------------------------------------------
+  // Flip animation
+  // ---------------------------------------------------------------------------
+
+  const from = prevRef.current
+
+  const flipDelay = (i) => {
+    if (from === page) return 0
+
+    if (page > from && i >= from && i < page) {
+      return (i - from) * STAGGER_MS
+    }
+
+    if (page < from && i >= page && i < from) {
+      return (from - 1 - i) * STAGGER_MS
+    }
+
+    return 0
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
   return (
     <Box
@@ -90,35 +539,91 @@ const WhyChooseUs = () => {
       id="why-choose-us"
       sx={{
         position: 'relative',
-        pt: { xs: 6, md: 8 },
-        pb: { xs: 8, md: 10 },
+
+        pt: {
+          xs: 5.5,
+          md: 8,
+        },
+
+        pb: {
+          xs: 6,
+          md: 10,
+        },
+
         overflow: 'hidden',
+
         bgcolor: '#faf8ff',
       }}
     >
-      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
-        {/* Header */}
-        <Box sx={{ mb: { xs: 4, md: 5 }, textAlign: 'center' }}>
+      <Container
+        maxWidth="lg"
+        sx={{
+          position: 'relative',
+          zIndex: 2,
+        }}
+      >
+        {/* -------------------------------------------------------------------
+            Header
+        ------------------------------------------------------------------- */}
+
+        <Box
+          sx={{
+            mb: {
+              xs: 3.2,
+              md: 5,
+            },
+
+            textAlign: 'center',
+
+            px: {
+              xs: 1,
+              sm: 0,
+            },
+          }}
+        >
           <Typography
             sx={{
               fontFamily: '"Sora", sans-serif',
-              fontSize: { xs: '28px', md: '36px' },
+
+              fontSize: {
+                xs: '26px',
+                sm: '30px',
+                md: '36px',
+              },
+
               fontWeight: 800,
+
               lineHeight: 1.15,
+
               color: '#131b2e',
-              mb: 1.5,
+
+              mb: {
+                xs: 1.2,
+                md: 1.5,
+              },
             }}
           >
             Why Earners Choose Us
           </Typography>
+
           <Typography
             sx={{
               fontFamily: '"Plus Jakarta Sans", sans-serif',
-              fontSize: { xs: '1.1rem', md: '1.2rem' },
+
+              fontSize: {
+                xs: '0.9rem',
+                sm: '1rem',
+                md: '1.2rem',
+              },
+
               lineHeight: 1.5,
+
               color: '#1f2937',
+
               fontWeight: 500,
+
               maxWidth: 480,
+
               mx: 'auto',
             }}
           >
@@ -126,134 +631,467 @@ const WhyChooseUs = () => {
           </Typography>
         </Box>
 
-        {/* Netflix-style Carousel */}
+        {/* -------------------------------------------------------------------
+            Browser / card frame
+        ------------------------------------------------------------------- */}
+
         <Box
           sx={{
-            position: 'relative',
-            mx: { xs: -2, md: 0 },
+            maxWidth: 920,
+
+            mx: 'auto',
+
+            borderRadius: {
+              xs: '20px',
+              md: '20px',
+            },
+
+            overflow: 'hidden',
+
+            // Mobile = clean card
+            // Desktop = browser
+            bgcolor: {
+              xs: '#ffffff',
+              md: '#1c1c1e',
+            },
+
+            border: {
+              xs: '1px solid rgba(83,18,188,0.08)',
+              md: 'none',
+            },
+
+            boxShadow: {
+              xs: '0 18px 45px rgba(19,27,46,0.10)',
+              md: '0 30px 70px rgba(19,27,46,0.22), 0 8px 20px rgba(19,27,46,0.10)',
+            },
           }}
         >
+          {/* -----------------------------------------------------------------
+              Desktop browser title bar
+          ----------------------------------------------------------------- */}
+
           <Box
-            ref={scrollRef}
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onMouseMove={handleMouseMove}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
             sx={{
-              display: 'flex',
-              gap: { xs: 1.5, md: 2 },
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              px: { xs: 2, md: 0 },
-              // Hide scrollbar completely
-              '&::-webkit-scrollbar': { display: 'none' },
-              scrollbarWidth: 'none',
-              cursor: isDragging ? 'grabbing' : 'grab',
-              // Smooth scroll behavior
-              scrollBehavior: 'smooth',
-              // Prevent vertical scroll on touch
-              touchAction: 'pan-x',
+              height: 46,
+
+              display: {
+                xs: 'none',
+                md: 'flex',
+              },
+
+              alignItems: 'center',
+
+              gap: 1,
+
+              px: 2.25,
             }}
           >
-            {features.map((feature, idx) => (
-              <Paper
-                key={idx}
-                elevation={0}
+            {['#ff5f57', '#febc2e', '#28c840'].map((c) => (
+              <Box
+                key={c}
                 sx={{
-                  flex: '0 0 auto',
-                  // Netflix card ratio — wider than tall
-                  width: { xs: 260, sm: 280, md: 300 },
-                  // Height auto based on content
-                  p: { xs: 3, md: 3.5 },
-                  borderRadius: '16px',
-                  border: '1px solid rgba(203, 195, 215, 0.25)',
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  bgcolor: c,
+                }}
+              />
+            ))}
+
+            <Box
+              sx={{
+                ml: 1.5,
+
+                px: 2,
+
+                py: 0.6,
+
+                borderRadius: '8px',
+
+                bgcolor: '#2b2b2e',
+
+                color: '#a8a8ad',
+
+                fontFamily: '"Plus Jakarta Sans", sans-serif',
+
+                fontSize: 13,
+
+                lineHeight: 1.2,
+              }}
+            >
+              pickopinion.com
+            </Box>
+          </Box>
+
+          {/* -----------------------------------------------------------------
+              Main stage
+          ----------------------------------------------------------------- */}
+
+          <Box
+            tabIndex={0}
+            role="region"
+            aria-roledescription="carousel"
+            aria-label="Why earners choose us"
+            onKeyDown={onKeyDown}
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            sx={{
+              position: 'relative',
+
+              height: {
+                xs: 330,
+                sm: 350,
+                md: 350,
+              },
+
+              perspective: {
+                xs: '1400px',
+                md: '2600px',
+              },
+
+              bgcolor: {
+                xs: '#ffffff',
+                md: '#ece7f7',
+              },
+
+              overflow: 'hidden',
+
+              touchAction: 'pan-y',
+
+              userSelect: 'none',
+
+              cursor: 'grab',
+
+              '&:active': {
+                cursor: 'grabbing',
+              },
+
+              '&:focus-visible': {
+                outline: `2px solid ${BRAND}`,
+                outlineOffset: -2,
+              },
+            }}
+          >
+            {/* -----------------------------------------------------------------
+                Desktop permanent left page
+            ----------------------------------------------------------------- */}
+
+            {desktop && (
+              <Box
+                sx={{
+                  position: 'absolute',
+
+                  top: 0,
+                  bottom: 0,
+
+                  left: 0,
+
+                  width: '50%',
+
+                  zIndex: 0,
+
                   bgcolor: '#ffffff',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  '&:hover': {
-                    transform: 'scale(1.03)',
-                    zIndex: 2,
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                    '& .feature-icon': {
-                      bgcolor: feature.color,
-                      color: '#fff',
-                    },
-                    '& .feature-bar': {
-                      width: '100%',
-                    },
-                  },
-                  // Active/pressed state
-                  '&:active': {
-                    transform: 'scale(0.98)',
-                  },
+
+                  display: 'flex',
+
+                  flexDirection: 'column',
+
+                  backgroundImage:
+                    'linear-gradient(270deg, rgba(83,18,188,0.10) 0%, rgba(83,18,188,0) 5%)',
                 }}
               >
-                {/* Top accent bar — subtle */}
+                {renderDesktopItems(
+                  toItems([features[0]])
+                )}
+              </Box>
+            )}
+
+            {/* -----------------------------------------------------------------
+                Pages
+            ----------------------------------------------------------------- */}
+
+            {leafList.map((leaf, i) => {
+              const flipped = i < page
+
+              const delay = flipDelay(i)
+
+              const turn = `${FLIP_MS}ms ${EASE} ${delay}ms`
+
+              return (
                 <Box
-                  className="feature-bar"
+                  key={i}
                   sx={{
                     position: 'absolute',
+
                     top: 0,
-                    left: 0,
-                    height: '3px',
-                    width: '30%',
-                    bgcolor: feature.color,
-                    borderRadius: '0 0 4px 0',
-                    transition: 'width 0.4s ease',
-                  }}
-                />
+                    bottom: 0,
 
-                {/* Icon */}
-                <Box
-                  className="feature-icon"
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '12px',
-                    bgcolor: 'rgba(0,0,0,0.04)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#9ca3af',
-                    mb: 2.5,
-                    transition: 'all 0.3s ease',
+                    left: desktop
+                      ? '50%'
+                      : 0,
+
+                    width: desktop
+                      ? '50%'
+                      : '100%',
+
+                    transformOrigin: 'left center',
+
+                    transformStyle: 'preserve-3d',
+
+                    transform: flipped
+                      ? 'rotateY(-180deg)'
+                      : 'rotateY(0deg)',
+
+                    zIndex: flipped
+                      ? i + 1
+                      : total - i + 1,
+
+                    transition: `transform ${turn}, z-index 0s ${
+                      delay + FLIP_MS / 2
+                    }ms`,
+
+                    '@media (prefers-reduced-motion: reduce)': {
+                      transition: 'none',
+                    },
                   }}
                 >
-                  {feature.icon}
+                  {/* ---------------------------------------------------------
+                      FRONT
+                  --------------------------------------------------------- */}
+
+                  <Box
+                    sx={{
+                      position: 'absolute',
+
+                      inset: 0,
+
+                      backfaceVisibility: 'hidden',
+
+                      WebkitBackfaceVisibility: 'hidden',
+
+                      bgcolor: '#ffffff',
+
+                      display: 'flex',
+
+                      flexDirection: 'column',
+
+                      backgroundImage: desktop
+                        ? 'linear-gradient(90deg, rgba(83,18,188,0.10) 0%, rgba(83,18,188,0) 5%)'
+                        : 'none',
+                    }}
+                  >
+                    {desktop
+                      ? renderDesktopItems(leaf.front)
+                      : renderMobileItems(leaf.front)}
+
+                    {/* Desktop flip shadow */}
+
+                    <Box
+                      sx={{
+                        position: 'absolute',
+
+                        inset: 0,
+
+                        pointerEvents: 'none',
+
+                        background:
+                          'linear-gradient(90deg, rgba(19,27,46,0.32), rgba(19,27,46,0))',
+
+                        opacity: flipped ? 1 : 0,
+
+                        transition: `opacity ${turn}`,
+
+                        display: {
+                          xs: 'none',
+                          md: 'block',
+                        },
+                      }}
+                    />
+                  </Box>
+
+                  {/* ---------------------------------------------------------
+                      BACK
+                  --------------------------------------------------------- */}
+
+                  <Box
+                    sx={{
+                      position: 'absolute',
+
+                      inset: 0,
+
+                      backfaceVisibility: 'hidden',
+
+                      WebkitBackfaceVisibility: 'hidden',
+
+                      transform: 'rotateY(180deg)',
+
+                      bgcolor: leaf.back.length
+                        ? '#ffffff'
+                        : '#f7f4fc',
+
+                      display: 'flex',
+
+                      flexDirection: 'column',
+
+                      backgroundImage: leaf.back.length
+                        ? 'linear-gradient(270deg, rgba(83,18,188,0.10) 0%, rgba(83,18,188,0) 5%)'
+                        : 'none',
+                    }}
+                  >
+                    {desktop &&
+                      renderDesktopItems(leaf.back)}
+
+                    <Box
+                      sx={{
+                        position: 'absolute',
+
+                        inset: 0,
+
+                        pointerEvents: 'none',
+
+                        background:
+                          'linear-gradient(270deg, rgba(19,27,46,0.32), rgba(19,27,46,0))',
+
+                        opacity: flipped ? 0 : 1,
+
+                        transition: `opacity ${turn}`,
+
+                        display: {
+                          xs: 'none',
+                          md: 'block',
+                        },
+                      }}
+                    />
+                  </Box>
                 </Box>
+              )
+            })}
 
-                {/* Title */}
-                <Typography
+            {/* -----------------------------------------------------------------
+                Desktop book spine
+            ----------------------------------------------------------------- */}
+
+            {desktop && (
+              <Box
+                sx={{
+                  position: 'absolute',
+
+                  top: 0,
+                  bottom: 0,
+
+                  left: 'calc(50% - 22px)',
+
+                  width: 44,
+
+                  zIndex: 100,
+
+                  pointerEvents: 'none',
+
+                  background:
+                    'linear-gradient(90deg, rgba(19,27,46,0) 0%, rgba(19,27,46,0.13) 50%, rgba(19,27,46,0) 100%)',
+                }}
+              />
+            )}
+          </Box>
+
+          {/* -----------------------------------------------------------------
+              Pagination
+          ----------------------------------------------------------------- */}
+
+          <Box
+            sx={{
+              height: {
+                xs: 42,
+                md: 52,
+              },
+
+              bgcolor: '#ffffff',
+
+              borderTop:
+                '1px solid rgba(203,195,215,0.35)',
+
+              display: 'flex',
+
+              alignItems: 'center',
+
+              justifyContent: 'center',
+
+              gap: {
+                xs: 0.2,
+                md: 0.5,
+              },
+            }}
+          >
+            {leafList.map((_, i) => {
+              const active = i === page
+
+              return (
+                <Box
+                  key={i}
+                  component="button"
+                  type="button"
+                  onClick={() => goTo(i)}
+                  aria-label={`Go to page ${i + 1} of ${total}`}
+                  aria-current={
+                    active ? 'true' : undefined
+                  }
                   sx={{
-                    fontFamily: '"Sora", sans-serif',
-                    fontSize: '17px',
-                    fontWeight: 700,
-                    color: '#131b2e',
-                    mb: 1,
-                    lineHeight: 1.3,
+                    p: {
+                      xs: 0.75,
+                      md: 1,
+                    },
+
+                    border: 0,
+
+                    bgcolor: 'transparent',
+
+                    cursor: 'pointer',
+
+                    display: 'flex',
+
+                    alignItems: 'center',
+
+                    '&:focus-visible': {
+                      outline: `2px solid ${BRAND}`,
+                      outlineOffset: 2,
+                      borderRadius: 4,
+                    },
                   }}
                 >
-                  {feature.title}
-                </Typography>
+                  <Box
+                    component="span"
+                    sx={{
+                      display: 'block',
 
-                {/* Description */}
-                <Typography
-                  sx={{
-                    fontFamily: '"Plus Jakarta Sans", sans-serif',
-                    fontSize: '14px',
-                    lineHeight: 1.6,
-                    color: '#6b7280',
-                    fontWeight: 500,
-                  }}
-                >
-                  {feature.desc}
-                </Typography>
-              </Paper>
-            ))}
+                      height: {
+                        xs: 7,
+                        md: 8,
+                      },
+
+                      width: active
+                        ? {
+                            xs: 22,
+                            md: 26,
+                          }
+                        : {
+                            xs: 7,
+                            md: 8,
+                          },
+
+                      borderRadius: '4px',
+
+                      bgcolor: active
+                        ? BRAND
+                        : 'rgba(83,18,188,0.22)',
+
+                      transition:
+                        'width 0.35s ease, background-color 0.35s ease',
+                    }}
+                  />
+                </Box>
+              )
+            })}
           </Box>
         </Box>
       </Container>
