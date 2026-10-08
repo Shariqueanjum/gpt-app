@@ -1,13 +1,29 @@
 const pool = require('../config/db');
 
-const findSurveyClickByTransactionId = async (clientOrPool, transactionId) => {
+const findSurveyClickByTransactionId = async (clientOrPool, transactionId, offerWallId = null) => {
   const executor = clientOrPool || pool;
   const res = await executor.query(
     `SELECT sc.*, u.balance_available, u.balance_locked, u.id as user_id, u.username
      FROM survey_clicks sc
      JOIN users u ON sc.user_id = u.id
-     WHERE sc.transaction_id = $1`,
-    [transactionId]
+     WHERE sc.transaction_id = $1
+         AND ($2::int IS NULL OR sc.offer_wall_id = $2)`,
+    [transactionId, offerWallId]
+  );
+  return res.rows[0];
+};
+
+const findSurveyClickByExternalId = async (clientOrPool, externalId, offerWallId = null) => {
+  const executor = clientOrPool || pool;
+  const res = await executor.query(
+    `SELECT sc.*, u.balance_available, u.balance_locked, u.id as user_id, u.username
+     FROM survey_clicks sc
+     JOIN users u ON sc.user_id = u.id
+     WHERE sc.external_transaction_id = $1
+       AND ($2::int IS NULL OR sc.offer_wall_id = $2)
+     ORDER BY sc.id DESC
+     LIMIT 1`,
+    [externalId, offerWallId]
   );
   return res.rows[0];
 };
@@ -128,6 +144,7 @@ const lockUndoReversalTransaction = async (client, referenceType, referenceId) =
 
 module.exports = {
   findSurveyClickByTransactionId,
+  findSurveyClickByExternalId,
   findOriginalTransaction,
   findReferralTransaction,
   createReversalTransaction,

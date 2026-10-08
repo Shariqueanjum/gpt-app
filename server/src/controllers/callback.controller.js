@@ -131,12 +131,29 @@ const handleS2S = async (req, res, next) => {
         message: 'Survey credited successfully',
         data: result
       });
+    // } else if (parsed.status === 'reversed') {
+    //   const lookupId = parsed.subId || parsed.externalTransactionId || parsed.transactionId;
+    //   let reversalResult, reversalError = null;
+    //   try {
+    //     reversalResult = await processSingleReversal(
+    //       lookupId,
+    //       `Provider reversal postback (raw status: ${parsed.rawStatus || parsed.status})`,
+    //       'callback', null, req.ip
+    //     );
+    //   } catch (err) {
+    //     reversalError = err;
+    //     reversalResult = { reversed: false, error: err.message };
+    //   }
     } else if (parsed.status === 'reversed') {
-      const lookupId = parsed.subId || parsed.externalTransactionId || parsed.transactionId;
       let reversalResult, reversalError = null;
       try {
         reversalResult = await processSingleReversal(
-          lookupId,
+          {
+            transactionId: parsed.subId || parsed.transactionId,
+            externalTransactionId: parsed.externalTransactionId,
+            offerWallId: offerWall.id,
+            payout: parsed.payout
+          },
           `Provider reversal postback (raw status: ${parsed.rawStatus || parsed.status})`,
           'callback', null, req.ip
         );

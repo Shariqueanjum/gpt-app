@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const {
   findSurveyClickByTransactionId,
+  findSurveyClickByExternalId,
   findOriginalTransaction,
   findReferralTransaction,
   createReversalTransaction,
@@ -27,33 +28,71 @@ const { emitAdminEvent } = require('./activityEmitter.service');
  * Unified click finder for reversals — tries internal ID first, then external
  */
 
-const findClickForReversal = async (client, transactionId) => {
-  // Priority 1: internal transaction_id
-  let click = await findSurveyClickByTransactionId(client, transactionId);
-  if (click) {
-    return { click, foundBy: 'transaction_id' };
+// const findClickForReversal = async (client, transactionId) => {
+//   // Priority 1: internal transaction_id
+//   let click = await findSurveyClickByTransactionId(client, transactionId);
+//   if (click) {
+//     return { click, foundBy: 'transaction_id' };
+//   }
+
+//   // Priority 2: external_transaction_id (intermediary reversals)
+//   click = await findByExternalTransactionId(transactionId);
+//   if (click) {
+//     return { click, foundBy: 'external_transaction_id' };
+//   }
+
+//   return { click: null, foundBy: null };
+// };
+
+
+const findClickForReversal = async (client, ids) => {
+  const { transactionId, externalTransactionId, offerWallId } = ids;
+
+  // 1. Provider's unique id first (CPX sends a new one per conversion)
+  if (externalTransactionId) {
+    const byExt = await findSurveyClickByExternalId(client, externalTransactionId, offerWallId);
+    if (byExt) return { click: byExt, foundBy: 'external_transaction_id' };
   }
 
-  // Priority 2: external_transaction_id (intermediary reversals)
-  click = await findByExternalTransactionId(transactionId);
-  if (click) {
-    return { click, foundBy: 'external_transaction_id' };
+  // 2. Our own transaction id (direct clients: unique per click)
+  if (transactionId) {
+    const byTxn = await findSurveyClickByTransactionId(client, transactionId, offerWallId);
+    if (byTxn) {
+      // Safety: provider told us a specific conversion, but this click belongs to a different one
+      if (externalTransactionId && byTxn.external_transaction_id &&
+          byTxn.external_transaction_id !== externalTransactionId) {
+        return { click: null, foundBy: null };
+      }
+      return { click: byTxn, foundBy: 'transaction_id' };
+    }
+
+    // 3. Admin/CSV gave only an external id, or provider sent its id without sub_id
+    if (!externalTransactionId) {
+      const byExt = await findSurveyClickByExternalId(client, transactionId, offerWallId);
+      if (byExt) return { click: byExt, foundBy: 'external_transaction_id' };
+    }
   }
 
   return { click: null, foundBy: null };
 };
 
-
-const processSingleReversal = async (transactionId, reason, source, adminId, adminIp) => {
+const processSingleReversal = async (input, reason, source, adminId, adminIp) => {
+    // input is a plain string (admin/CSV) or an object (provider callback)
+  const ids = typeof input === 'object' && input !== null ? input : { transactionId: input };
+  const transactionId = ids.externalTransactionId || ids.transactionId; // label for logs/messages
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
 
-        // FIX: Use unified finder
-    const { click, foundBy } = await findClickForReversal(client, transactionId);
+    const { click, foundBy } = await findClickForReversal(client, ids);
     
     if (!click) {
+        // Bonus/screenout reversals (<=5 points) were never credited, so just acknowledge
+      if (ids.payout !== undefined && ids.payout !== null && Math.abs(ids.payout) <= 5) {
+        await client.query('ROLLBACK');
+        return { reversed: false, acknowledged: true, reason: 'bonus_not_credited', transaction_id: transactionId };
+      }
       const err = new Error(`Survey click not found: ${transactionId}`);
       err.status = 404;
       throw err;
