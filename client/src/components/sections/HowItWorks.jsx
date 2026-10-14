@@ -1,5 +1,6 @@
 // client/src/components/sections/HowItWorks.jsx
-import { Box, Typography, Paper } from '@mui/material'
+
+import { Box, Typography, Paper, Button } from '@mui/material'
 import { Link } from 'react-router-dom'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import AssignmentIcon from '@mui/icons-material/Assignment'
@@ -8,38 +9,24 @@ import FadeInSection from '../common/FadeInSection'
 
 const steps = [
   {
-    icon: <PersonAddIcon sx={{ fontSize: 28 }} />,
+    number: '01',
+    icon: <PersonAddIcon sx={{ fontSize: 22 }} />,
     title: 'Create Your Account',
     desc: 'Sign up in seconds with your email, no hidden fees. Start your earning journey instantly.',
-    avgEarning: 'Free',
-    color: '#5312bc',
-    bgHover: '#5312bc',
-    textColor: '#ffffff',
-    action: 'Start',
     link: '/register',
-    clickable: true,
   },
   {
-    icon: <AssignmentIcon sx={{ fontSize: 28 }} />,
+    number: '02',
+    icon: <AssignmentIcon sx={{ fontSize: 22 }} />,
     title: 'Complete Offers',
     desc: 'Pick from hundreds of daily surveys, games, and offers tailored to your profile. Every task pays real cash.',
-    avgEarning: '$5.00+ Avg.',
-    color: '#006e2f',
-    bgHover: '#006e2f',
-    textColor: '#ffffff',
-    action: 'Browse',
-    clickable: false,
+    featured: true,
   },
   {
-    icon: <PaymentsIcon sx={{ fontSize: 28 }} />,
+    number: '03',
+    icon: <PaymentsIcon sx={{ fontSize: 22 }} />,
     title: 'Cash Out Instantly',
     desc: 'Withdraw your earnings via PayPal, UPI, Net Banking or gift cards. Most payouts processed within hours, not days.',
-    avgEarning: '24h Avg.',
-    color: '#623c00',
-    bgHover: '#623c00',
-    textColor: '#ffffff',
-    action: 'Withdraw',
-    clickable: false,
   },
 ]
 
@@ -47,658 +34,492 @@ const bottomCards = [
   {
     icon: '👥',
     title: 'Refer & Earn',
-    desc: 'Invite friends and earn 10% of everything they make. Forever. Build your passive income stream.',
-    stat: '+10% Lifetime',
-    statColor: '#006e2f',
-    action: 'Invite',
-    color: '#006e2f',
-    clickable: false,
+    desc: '+10% lifetime commission',
   },
   {
     icon: '🎁',
     title: 'Daily Lootbox',
-    desc: 'Log in daily to claim your free reward crate. Odds of winning $50.00 inside every single day.',
-    stat: 'Free Daily',
-    statColor: '#653e00',
-    action: 'Claim',
-    color: '#653e00',
-    clickable: false,
+    desc: 'Free reward every day',
   },
 ]
 
-const HowItWorks = () => {
-  return (
-    <Box
-      component="section"
-      id="how-it-works"
-      sx={{
-        // TIGHTER padding top — less space after Hero
-        pt: { xs: 6, md: 8 },
-        pb: { xs: 8, md: 10 },
-        px: { xs: 2, md: 4 },
-        maxWidth: '1280px',
-        mx: 'auto',
-      }}
-    >
-      {/* Section Header */}
-      <Box sx={{ textAlign: 'center', mb: { xs: 5, md: 7 } }}>
+const PURPLE = '#7C3AED'
+const FEATURED_LIGHT_PURPLE = '#A78BFA'
+// const FEATURED_PURPLE = '#B49AF5'
+// const DARK = '#171923'
+const DARK = '#131b2e'
+const MUTED = '#64748B'
+const BORDER = '#E9E3FF'
+
+const HowItWorks = () => (
+  <Box
+    component="section"
+    id="how-it-works"
+    sx={{
+      width: '100%',
+      boxSizing: 'border-box',
+      bgcolor: '#F8FAFC',
+      px: { xs: 2, sm: 3, md: 4 },
+      pt: { xs: 6, sm: 7, md: 8 },
+      pb: { xs: 8, md: 10 },
+      maxWidth: '1280px',
+      mx: 'auto',
+    }}
+  >
+    
+      {/* Section heading */}
+      <Box sx={{ textAlign: 'center', mb: { xs: 5, sm: 6, md: 7 } }}>
         <Typography
+          component="h2"
           sx={{
             fontFamily: '"Sora", sans-serif',
             fontSize: { xs: '28px', md: '36px' },
             fontWeight: 800,
             lineHeight: 1.15,
-            color: '#131b2e',
-            mb: 2,
+            letterSpacing: '-0.035em',
+            color: DARK,
+            mb: 1.25,
           }}
         >
           How It Works
         </Typography>
-
-        {/* IMPROVED subtitle — bolder, darker, bigger */}
         <Typography
           sx={{
-            fontFamily: '"Plus Jakarta Sans", sans-serif',
-            fontSize: { xs: '1.1rem', md: '1.2rem' },
-            lineHeight: 1.5,
-            color: '#1f2937',
             maxWidth: 500,
             mx: 'auto',
-            fontWeight: 500,
+            fontFamily: '"Plus Jakarta Sans", sans-serif',
+            fontSize: { xs: '1rem', md: '1.1rem' },
+            lineHeight: 1.55,
+            color:'#1f2937',
           }}
         >
-          Few simple steps to start earning real rewards today.
+          Three simple steps to start earning real rewards today.
         </Typography>
       </Box>
 
-      {/* Top 3 Cards Grid */}
+      {/* Three steps: mobile timeline, clean desktop row */}
       <Box
         sx={{
+          position: 'relative',
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
-          gap: 3,
+          gridTemplateColumns: {
+            xs: 'minmax(0, 1fr)',
+            sm: 'minmax(0, 1fr)',
+            md: 'repeat(3, minmax(0, 1fr))',
+          },
+          alignItems: 'stretch',
+          gap: { xs: 2, sm: 2.25, md: 2.5 },
+          pl: { xs: 5.5, sm: 5.5, md: 0 },
+          '&:before': {
+            content: '""',
+            position: 'absolute',
+            zIndex: 0,
+            display: { xs: 'block', sm: 'block', md: 'none' },
+            left: 15,
+            top: 12,
+            bottom: 12,
+            borderLeft: '2px dashed #C4B5FD',
+          },
         }}
       >
-        {/* Card 1 — Create Account */}
-
-       <FadeInSection delay={0} direction="zoomUp">
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 4, md: 5 },
-            borderRadius: '16px',
-            border: '1px solid rgba(203, 195, 215, 0.3)',
-            bgcolor: '#ffffff',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            minHeight: '280px',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            cursor: 'pointer',
-            '&:hover': {
-              transform: 'translateY(-8px)',
-              boxShadow: '0 20px 40px -15px rgba(107, 56, 212, 0.15)',
-              '& .icon-circle': {
-                bgcolor: '#5312bc',
-                color: '#ffffff',
-              },
-              '& .arrow-icon': {
-                transform: 'translateX(8px)',
-              },
-            },
-          }}
-        >
-          <Box>
-            <Box
-              className="icon-circle"
+        {steps.map((step, index) => (
+          <FadeInSection key={step.number} delay={index * 0.12} direction="zoomUp">
+            <Paper
+              elevation={0}
               sx={{
-                width: 56,
-                height: 56,
-                borderRadius: '12px',
-                bgcolor: 'rgba(83, 18, 188, 0.1)',
+                position: 'relative',
+                zIndex: 1,
+                boxSizing: 'border-box',
+                width: '100%',
+                height: { xs: 'auto', md: '100%' },
+                minHeight: { xs: 0, sm: 0, md: 260 },
+                p: { xs: 2.5, sm: 2.75, md: 3 },
+                pt: { xs: 2.5, sm: 2.75, md: 3.5 },
                 display: 'flex',
-                alignItems: 'center',
+                flexDirection: 'column',
                 justifyContent: 'center',
-                color: '#5312bc',
-                mb: 3,
-                transition: 'all 0.3s ease',
+                borderRadius: '16px',
+                border: step.featured ? '1px solid transparent' : `1px solid ${BORDER}`,
+                bgcolor: step.featured ? PURPLE : '#FFFFFF',
+                color: step.featured ? '#FFFFFF' : DARK,
+                boxShadow: step.featured
+                  ? '0 18px 34px -15px rgba(124,58,237,.38)'
+                  : '0 8px 22px rgba(55,35,100,.045)',
+                transition: 'transform .25s ease, box-shadow .25s ease',
+                '&:hover': {
+                  transform: { xs: 'none', md: 'translateY(-4px)' },
+                  boxShadow: step.featured
+                    ? '0 22px 38px -15px rgba(124,58,237,.42)'
+                    : '0 13px 27px rgba(55,35,100,.08)',
+                },
               }}
             >
-              {steps[0].icon}
-            </Box>
-            <Typography
-              sx={{
-                fontFamily: '"Sora", sans-serif',
-                fontSize: '22px',
-                fontWeight: 700,
-                lineHeight: 1.3,
-                color: '#131b2e',
-                mb: 1.5,
-              }}
-            >
-              {steps[0].title}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: '"Plus Jakarta Sans", sans-serif',
-                fontSize: '15px',
-                lineHeight: 1.6,
-                color: '#4b5563',
-                fontWeight: 500,
-              }}
-            >
-              {steps[0].desc}
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              pt: 4,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Typography
-              sx={{
-                fontFamily: '"Sora", sans-serif',
-                fontSize: '14px',
-                fontWeight: 700,
-                color: '#006e2f',
-              }}
-            >
-              {steps[0].avgEarning}
-            </Typography>
-            <Link
-              to={steps[0].link}
-              style={{
-                textDecoration: 'none',
-                color: '#5312bc',
-                fontFamily: '"Sora", sans-serif',
-                fontSize: '14px',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              {steps[0].action}
+              {/* Number centered on desktop; aligned to the mobile timeline */}
               <Box
-                className="arrow-icon"
-                component="span"
                 sx={{
-                  display: 'inline-flex',
-                  transition: 'transform 0.3s ease',
+                  position: 'absolute',
+                  zIndex: 2,
+                  left: { xs: -46, sm: -46, md: '50%' },
+                  top: { xs: 0, sm: 0, md: -16 },
+                  transform: { xs: 'none', sm: 'none', md: 'translateX(-50%)' },
+                  width: 32,
+                  height: 32,
+                  display: 'grid',
+                  placeItems: 'center',
+                  border: '1px solid #E9DFFF',
+                  borderRadius: '10px',
+                  bgcolor: '#F3EDFF',
+                  color: PURPLE,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  boxShadow: '0 2px 5px rgba(124,58,237,.05)',
                 }}
               >
-                →
+                {step.number}
               </Box>
-            </Link>
-          </Box>
-        </Paper>
-        </FadeInSection>
 
-        {/* Card 2 — Complete Offers (Featured) */}
-        <FadeInSection delay={0.15} direction="zoomUp">
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 4, md: 5 },
-            borderRadius: '16px',
-            bgcolor: '#6b38d4',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            minHeight: { xs: '280px', md: '100%' },
-            position: 'relative',
-            overflow: 'hidden',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            cursor: 'default',
-            '&:hover': {
-              transform: 'translateY(-8px)',
-              boxShadow: '0 20px 40px -15px rgba(107, 56, 212, 0.3)',
-              '& .featured-bg': {
-                transform: 'scale(1.1)',
-              },
-            },
-          }}
-        >
-          <Box
-            className="featured-bg"
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              opacity: 0.1,
-              background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 70%)',
-              transition: 'transform 0.7s ease',
-            }}
-          />
-          <Box sx={{ position: 'relative', zIndex: 2, spaceY: 'md' }}>
-            <Box
-              sx={{
-                width: 64,
-                height: 64,
-                borderRadius: '12px',
-                bgcolor: 'rgba(255, 255, 255, 0.2)',
-                backdropFilter: 'blur(10px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-                mb: 3,
-              }}
-            >
-              {steps[1].icon}
-            </Box>
-            <Typography
-              sx={{
-                fontFamily: '"Sora", sans-serif',
-                fontSize: { xs: '28px', md: '32px' },
-                fontWeight: 800,
-                lineHeight: 1.1,
-                color: '#ffffff',
-                mb: 2,
-              }}
-            >
-              {steps[1].title}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: '"Plus Jakarta Sans", sans-serif',
-                fontSize: '16px',
-                lineHeight: 1.6,
-                color: 'rgba(255, 255, 255, 0.85)',
-                fontWeight: 500,
-                mb: 4,
-              }}
-            >
-              {steps[1].desc}
-            </Typography>
-            {/* DUMMY button — not clickable, just text */}
-            <Box
-              sx={{
-                display: 'inline-block',
-                bgcolor: '#ffffff',
-                color: '#5312bc',
-                px: 4,
-                py: 1.5,
-                borderRadius: '9999px',
-                fontFamily: '"Sora", sans-serif',
-                fontSize: '14px',
-                fontWeight: 700,
-                boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-                opacity: 0.9,
-              }}
-            >
-              {steps[1].action}
-            </Box>
-          </Box>
-        </Paper>
-        </FadeInSection>
-
-        {/* Card 3 — Cash Out */}
-        <FadeInSection delay={0.3} direction="zoomUp">
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 4, md: 5 },
-            borderRadius: '16px',
-            border: '1px solid rgba(203, 195, 215, 0.3)',
-            bgcolor: '#ffffff',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            minHeight: '280px',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            cursor: 'pointer',
-            '&:hover': {
-              transform: 'translateY(-8px)',
-              boxShadow: '0 20px 40px -15px rgba(107, 56, 212, 0.15)',
-              '& .icon-circle-3': {
-                bgcolor: '#623c00',
-                color: '#ffffff',
-              },
-              '& .arrow-icon-3': {
-                transform: 'translateX(8px)',
-              },
-            },
-          }}
-        >
-          <Box>
-            <Box
-              className="icon-circle-3"
-              sx={{
-                width: 56,
-                height: 56,
-                borderRadius: '12px',
-                bgcolor: 'rgba(98, 60, 0, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#623c00',
-                mb: 3,
-                transition: 'all 0.3s ease',
-              }}
-            >
-              {steps[2].icon}
-            </Box>
-            <Typography
-              sx={{
-                fontFamily: '"Sora", sans-serif',
-                fontSize: '22px',
-                fontWeight: 700,
-                lineHeight: 1.3,
-                color: '#131b2e',
-                mb: 1.5,
-              }}
-            >
-              {steps[2].title}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: '"Plus Jakarta Sans", sans-serif',
-                fontSize: '15px',
-                lineHeight: 1.6,
-                color: '#4b5563',
-                fontWeight: 500,
-              }}
-            >
-              {steps[2].desc}
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              pt: 4,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Typography
-              sx={{
-                fontFamily: '"Sora", sans-serif',
-                fontSize: '14px',
-                fontWeight: 700,
-                color: '#623c00',
-              }}
-            >
-              {steps[2].avgEarning}
-            </Typography>
-            {/* DUMMY text — not a link */}
-            <Box
-              sx={{
-                color: '#5312bc',
-                fontFamily: '"Sora", sans-serif',
-                fontSize: '14px',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                cursor: 'default',
-                opacity: 0.7,
-              }}
-            >
-              {steps[2].action}
-              <Box
-                className="arrow-icon-3"
-                component="span"
+              {/* Icon and copy intentionally leave the upper-right area uncluttered */}
+              {/* <Box
                 sx={{
-                  display: 'inline-flex',
-                  transition: 'transform 0.3s ease',
+                  width: 40,
+                  height: 40,
+                  mb: 2,
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: '12px',
+                  bgcolor: step.featured ? 'rgba(255,255,255,.18)' : '#F3EDFF',
+                  color: step.featured ? '#FFFFFF' : PURPLE,
+                  flexShrink: 0,
                 }}
               >
-                →
-              </Box>
-            </Box>
-          </Box>
-        </Paper>
-        </FadeInSection>
+                {step.icon}
+              </Box> */}
 
+               {/* Icon pinned to the top-right corner of the card */}
+              {/* <Box
+                sx={{
+                  position: 'absolute',
+                  top: { xs: 20, sm: 22, md: 24 },
+                  right: { xs: 20, sm: 22, md: 24 },
+                  width: 40,
+                  height: 40,
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: '12px',
+                  bgcolor: step.featured ? 'rgba(255,255,255,.18)' : '#F3EDFF',
+                  color: step.featured ? '#FFFFFF' : PURPLE,
+                  flexShrink: 0,
+                }}
+              >
+                {step.icon}
+              </Box>
+
+              <Typography
+                component="h3"
+                sx={{
+                  fontFamily: '"Sora", sans-serif',
+                  fontSize: { xs: 17, sm: 18, md: 17, lg: 18 },
+                  fontWeight: 800,
+                  lineHeight: 1.35,
+                  color: 'inherit',
+                  mb: 1,
+                }}
+              >
+                {step.title}
+              </Typography>
+              <Typography
+                sx={{
+                  // Preserve the typography from the original component.
+                  fontFamily: '"Plus Jakarta Sans", sans-serif',
+                  fontSize: step.featured ? '16px' : '15px',
+                  fontWeight: 500,
+                  lineHeight: 1.6,
+                  color: step.featured ? 'rgba(255,255,255,0.85)' : '#4b5563',
+                }}
+              >
+                {step.desc}
+              </Typography>
+            </Paper>
+          </FadeInSection>
+        ))}
+      </Box> */}
+          {/* Title and icon share the same row, icon pushed to the right */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  mb: { xs: 1.5, sm: 1.75, md: 2 },
+                }}
+              >
+                <Typography
+                  component="h3"
+                  sx={{
+                    m: 0,
+                    flex: 1,
+                    minWidth: 0,
+                    fontFamily: '"Sora", sans-serif',
+                    fontSize: { xs: 17, sm: 18, md: 17, lg: 18 },
+                    fontWeight: 800,
+                    lineHeight: 1.35,
+                    color: 'inherit',
+                  }}
+                >
+                  {step.title}
+                </Typography>
+                {/* <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    flexShrink: 0,
+                    display: 'grid',
+                    placeItems: 'center',
+                    borderRadius: '12px',
+                    bgcolor: step.featured ? 'rgba(255,255,255,.18)' : '#F3EDFF',
+                    color: step.featured ? '#FFFFFF' : PURPLE,
+                  }}
+                > */}
+                 <Box
+                  sx={{
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: step.featured ? '#FFFFFF' : PURPLE,
+                  }}
+                >
+                  {step.icon}
+                </Box>
+              </Box>
+
+
+                {/* Description grows to fill the card so the bottom never looks empty */}
+              <Typography
+                sx={{
+                  // Preserve the typography from the original component.
+                  fontFamily: '"Plus Jakarta Sans", sans-serif',
+                  fontSize: step.featured ? '16px' : '15px',
+                  fontWeight: 500,
+                  lineHeight: 1.6,
+                  color: step.featured ? 'rgba(255,255,255,0.85)' : '#4b5563',
+                  
+                }}
+              >
+                {step.desc}
+              </Typography>
+            </Paper>
+          </FadeInSection>
+        ))}
       </Box>
 
-      {/* Bottom Row */}
-      <Box
+      {/* Compact bonus banner */}
+      {/* <Paper
+        elevation={0}
         sx={{
+          mt: { xs: 2.5, sm: 3, md: 3.5 },
+          p: { xs: 2, sm: 2.25, md: 2.5 },
+          border: `1px solid ${BORDER}`,
+          borderRadius: '16px',
+          bgcolor: '#FFFFFF',
+          boxShadow: '0 8px 22px rgba(55,35,100,.045)',
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
-          gap: 3,
-          mt: 3,
+          gridTemplateColumns: {
+            xs: 'minmax(0, 1fr)',
+            sm: 'minmax(0, 1fr) minmax(0, 1fr)',
+            md: 'minmax(0, 1fr) 130px 136px 155px',
+          },
+          alignItems: 'center',
+          gap: { xs: 1.25, sm: 1.5, md: 1.5 },
         }}
       >
-        {/* Refer & Earn — DUMMY */}
-        <FadeInSection delay={0} direction="zoomUp">
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 4, md: 5 },
-            borderRadius: '16px',
-            bgcolor: 'rgba(0, 110, 47, 0.08)',
-            border: '1px solid rgba(0, 110, 47, 0.15)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            minHeight: '200px',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            cursor: 'default',
-            '&:hover': {
-              transform: 'translateY(-8px)',
-              boxShadow: '0 20px 40px -15px rgba(0, 110, 47, 0.15)',
-              '& .ref-icon': {
-                bgcolor: '#006e2f',
-                color: '#ffffff',
-              },
-            },
-          }}
-        >
-          <Box>
-            <Box
-              className="ref-icon"
-              sx={{
-                width: 56,
-                height: 56,
-                borderRadius: '12px',
-                bgcolor: 'rgba(0, 110, 47, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#006e2f',
-                mb: 3,
-                transition: 'all 0.3s ease',
-                fontSize: '28px',
-              }}
-            >
-              {bottomCards[0].icon}
-            </Box>
-            <Typography
-              sx={{
-                fontFamily: '"Sora", sans-serif',
-                fontSize: '22px',
-                fontWeight: 700,
-                lineHeight: 1.3,
-                color: '#131b2e',
-                mb: 1.5,
-              }}
-            >
-              {bottomCards[0].title}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: '"Plus Jakarta Sans", sans-serif',
-                fontSize: '15px',
-                lineHeight: 1.6,
-                color: '#4b5563',
-                fontWeight: 500,
-              }}
-            >
-              {bottomCards[0].desc}
-            </Typography>
-          </Box>
-          <Box
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
             sx={{
-              pt: 3,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              fontFamily: '"Sora", sans-serif',
+              fontSize: { xs: 15, sm: 16 },
+              fontWeight: 800,
+              color: DARK,
+              mb: 0.35,
             }}
           >
-            <Typography
-              sx={{
-                fontFamily: '"Sora", sans-serif',
-                fontSize: '14px',
-                fontWeight: 800,
-                color: bottomCards[0].statColor,
-              }}
-            >
-              {bottomCards[0].stat}
-            </Typography>
-            {/* DUMMY text */}
-            <Box
-              sx={{
-                color: bottomCards[0].color,
-                fontFamily: '"Sora", sans-serif',
-                fontSize: '14px',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                cursor: 'default',
-                opacity: 0.7,
-              }}
-            >
-              {bottomCards[0].action}
-              <Box
-                component="span"
-                sx={{
-                  display: 'inline-flex',
-                  transition: 'transform 0.3s ease',
-                }}
-              >
-                →
-              </Box>
-            </Box>
-          </Box>
-        </Paper>
-        </FadeInSection>
+            Want to earn even more?
+          </Typography>
+          <Typography sx={{ color: MUTED, fontSize: { xs: 11.5, sm: 12 }, lineHeight: 1.45 }}>
+            Refer friends for 10% lifetime commission + claim a free daily lootbox.
+          </Typography>
+        </Box>
 
-        {/* Daily Lootbox — DUMMY */}
-        <FadeInSection delay={0.15} direction="right" distance={60}>
-        <Paper
-          elevation={0}
+        {bottomCards.map((card) => (
+          <Box
+            key={card.title}
+            sx={{
+              minWidth: 0,
+              boxSizing: 'border-box',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.9,
+              p: 1.1,
+              border: '1px solid #EDE9FE',
+              borderRadius: '11px',
+              bgcolor: '#FAFAFF',
+            }}
+          >
+            <Box component="span" sx={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>
+              {card.icon}
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontSize: 10.5, fontWeight: 800, color: DARK, lineHeight: 1.3, whiteSpace: 'nowrap' }}>
+                {card.title}
+              </Typography>
+              <Typography sx={{ fontSize: 9.5, color: MUTED, lineHeight: 1.4, mt: 0.25, whiteSpace: 'nowrap' }}>
+                {card.desc}
+              </Typography>
+            </Box>
+          </Box>
+        ))}
+
+        <Button
+          component={Link}
+          to="/register"
+          variant="contained"
+          disableElevation
           sx={{
-            p: { xs: 4, md: 5 },
-            borderRadius: '16px',
-            bgcolor: '#ffffff',
-            border: '1px solid rgba(203, 195, 215, 0.3)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            minHeight: '200px',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            cursor: 'default',
+            width: '100%',
+            minWidth: 0,
+            gridColumn: { xs: '1', sm: '1 / -1', md: 'auto' },
+            px: 1.5,
+            py: 1.2,
+            borderRadius: '10px',
+            textTransform: 'none',
+            fontFamily: '"Sora", sans-serif',
+            fontSize: 11,
+            fontWeight: 800,
+            color: '#FFFFFF',
+            background: 'linear-gradient(110deg, #8B5CF6 0%, #7C3AED 100%)',
+            boxShadow: '0 8px 18px rgba(124,58,237,.25)',
             '&:hover': {
-              transform: 'translateY(-8px)',
-              boxShadow: '0 20px 40px -15px rgba(107, 56, 212, 0.15)',
-              '& .bonus-icon': {
-                bgcolor: '#653e00',
-                color: '#ffffff',
-              },
+              background: 'linear-gradient(110deg, #7C3AED 0%, #6D28D9 100%)',
+              boxShadow: '0 10px 22px rgba(124,58,237,.32)',
             },
           }}
         >
-          <Box>
-            <Box
-              className="bonus-icon"
-              sx={{
-                width: 56,
-                height: 56,
-                borderRadius: '12px',
-                bgcolor: 'rgba(101, 62, 0, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#653e00',
-                mb: 3,
-                transition: 'all 0.3s ease',
-                fontSize: '28px',
-              }}
-            >
-              {bottomCards[1].icon}
-            </Box>
-            <Typography
-              sx={{
-                fontFamily: '"Sora", sans-serif',
-                fontSize: '22px',
-                fontWeight: 700,
-                lineHeight: 1.3,
-                color: '#131b2e',
-                mb: 1.5,
-              }}
-            >
-              {bottomCards[1].title}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: '"Plus Jakarta Sans", sans-serif',
-                fontSize: '15px',
-                lineHeight: '1.6',
-                color: '#4b5563',
-                fontWeight: 500,
-              }}
-            >
-              {bottomCards[1].desc}
-            </Typography>
-          </Box>
-          <Box
+          Start Earning Free
+        </Button>
+      </Paper> */}
+
+         {/* Compact bonus banner */}
+      <Paper
+        elevation={0}
+        sx={{
+          mt: { xs: 2.5, sm: 3, md: 3.5 },
+          p: { xs: 2, sm: 2.25, md: 2.5 },
+          border: `1px solid ${BORDER}`,
+          borderRadius: '16px',
+          bgcolor: '#FFFFFF',
+          boxShadow: '0 8px 22px rgba(55,35,100,.045)',
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: 'minmax(0, 1fr)',
+            sm: 'minmax(0, 1fr) minmax(0, 1fr)',
+            md: 'minmax(0, 1fr) 185px 185px 145px',
+          },
+          alignItems: 'center',
+          gap: { xs: 1.25, sm: 1.5, md: 1.5 },
+        }}
+      >
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
             sx={{
-              pt: 3,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              fontFamily: '"Sora", sans-serif',
+              fontSize: { xs: 15, sm: 16 },
+              fontWeight: 800,
+              color: DARK,
+              mb: 0.35,
             }}
           >
-            <Typography
-              sx={{
-                fontFamily: '"Sora", sans-serif',
-                fontSize: '14px',
-                fontWeight: 700,
-                color: bottomCards[1].statColor,
-              }}
-            >
-              {bottomCards[1].stat}
-            </Typography>
-            {/* DUMMY text */}
-            <Box
-              sx={{
-                color: '#5312bc',
-                fontFamily: '"Sora", sans-serif',
-                fontSize: '14px',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                cursor: 'default',
-                opacity: 0.7,
-              }}
-            >
-              {bottomCards[1].action}
-              <Box
-                component="span"
+            Want to earn even more?
+          </Typography>
+          <Typography sx={{ color: MUTED, fontSize: { xs: 11.5, sm: 12 }, lineHeight: 1.45 }}>
+            Refer friends for 10% lifetime commission + claim a free daily lootbox.
+          </Typography>
+        </Box>
+
+        {bottomCards.map((card) => (
+          <Box
+            key={card.title}
+            sx={{
+              minWidth: 0,
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: { xs: 'row', md: 'column' },
+              alignItems: { xs: 'center', md: 'stretch' },
+              gap: { xs: 0.9, md: 0.75 },
+              height: { md: '100%' },
+              p: { xs: 1.1, md: 1.25 },
+              border: '1px solid #EDE9FE',
+              borderRadius: '11px',
+              bgcolor: '#FAFAFF',
+            }}
+          >
+            {/* Mobile keeps the compact horizontal layout */}
+            <Box component="span" sx={{ display: { xs: 'block', md: 'none' }, fontSize: 18, lineHeight: 1, flexShrink: 0 }}>
+              {card.icon}
+            </Box>
+            <Box sx={{ minWidth: 0, width: '100%' }}>
+              {/* Desktop: title left, icon right on one line */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                <Typography sx={{ fontSize: 10.5, fontWeight: 800, color: DARK, lineHeight: 1.3 }}>
+                  {card.title}
+                </Typography>
+                <Box component="span" sx={{ display: { xs: 'none', md: 'block' }, fontSize: 18, lineHeight: 1, flexShrink: 0 }}>
+                  {card.icon}
+                </Box>
+              </Box>
+              {/* Desktop: description sits on its own line below */}
+              <Typography
                 sx={{
-                  display: 'inline-flex',
-                  transition: 'transform 0.3s ease',
+                  fontSize: 9.5,
+                  color: MUTED,
+                  lineHeight: 1.4,
+                  mt: { xs: 0.25, md: 0.75 },
+                  whiteSpace: { md: 'nowrap' },
                 }}
               >
-                →
-              </Box>
+                {card.desc}
+              </Typography>
             </Box>
           </Box>
-        </Paper>
-        </FadeInSection>
-      </Box>
-    </Box>
-  )
-}
+        ))}
+
+        <Button
+          component={Link}
+          to="/register"
+          variant="contained"
+          disableElevation
+          sx={{
+            width: '100%',
+            minWidth: 0,
+            gridColumn: { xs: '1', sm: '1 / -1', md: 'auto' },
+            px: 1.5,
+            py: 1.2,
+            borderRadius: '10px',
+            textTransform: 'none',
+            fontFamily: '"Sora", sans-serif',
+            fontSize: 11,
+            fontWeight: 800,
+            color: '#FFFFFF',
+            background: 'linear-gradient(110deg, #8B5CF6 0%, #7C3AED 100%)',
+            boxShadow: '0 8px 18px rgba(124,58,237,.25)',
+            '&:hover': {
+              background: 'linear-gradient(110deg, #7C3AED 0%, #6D28D9 100%)',
+              boxShadow: '0 10px 22px rgba(124,58,237,.32)',
+            },
+          }}
+        >
+          Start Earning Free
+        </Button>
+      </Paper>
+   
+  </Box>
+)
 
 export default HowItWorks

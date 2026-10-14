@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const {
   findSurveyClickByTransactionId,
   findSurveyClickByExternalId,
+  findSurveyClickById,
   findOriginalTransaction,
   findReferralTransaction,
   createReversalTransaction,
@@ -25,7 +26,18 @@ const { emitAdminEvent } = require('./activityEmitter.service');
 
 
 /**
- * Unified click finder for reversals — tries internal ID first, then external
+ * Unified click finder for reversals.
+ *
+ * ids = {
+ *   clickId,                // exact survey_clicks.id (admin Survey Activity buttons)
+ *   transactionId,          // OUR id (sub_id / direct client id / admin-typed id)
+ *   externalTransactionId,  // PROVIDER's own unique id (CPX sends one per conversion)
+ *   offerWallId             // optional scope for provider callbacks
+ * }
+ *
+ * Order matters: CPX reuses one of our ids (T1) for several conversions, so the
+ * provider's unique id must win. Direct clients only send our id, so it is the
+ * fallback.
  */
 
 // const findClickForReversal = async (client, transactionId) => {
@@ -46,7 +58,13 @@ const { emitAdminEvent } = require('./activityEmitter.service');
 
 
 const findClickForReversal = async (client, ids) => {
-  const { transactionId, externalTransactionId, offerWallId } = ids;
+  const { clickId, transactionId, externalTransactionId, offerWallId } = ids;
+
+  // 0. Exact click (admin pressed Reverse on a specific row)
+  if (clickId) {
+    const byId = await findSurveyClickById(client, clickId);
+    return byId ? { click: byId, foundBy: 'click_id' } : { click: null, foundBy: null };
+  }
 
   // 1. Provider's unique id first (CPX sends a new one per conversion)
   if (externalTransactionId) {
@@ -58,7 +76,7 @@ const findClickForReversal = async (client, ids) => {
   if (transactionId) {
     const byTxn = await findSurveyClickByTransactionId(client, transactionId, offerWallId);
     if (byTxn) {
-      // Safety: provider told us a specific conversion, but this click belongs to a different one
+      // Safety: provider told us a specific conversion, but this click belongs to a different one. Never deduct from the wrong row.
       if (externalTransactionId && byTxn.external_transaction_id &&
           byTxn.external_transaction_id !== externalTransactionId) {
         return { click: null, foundBy: null };
@@ -76,11 +94,19 @@ const findClickForReversal = async (client, ids) => {
   return { click: null, foundBy: null };
 };
 
+/**
+ * input is either a plain string (admin manual / CSV: one id) or an object
+ * (provider callback / Survey Activity button) — see findClickForReversal.
+ */
+
 const processSingleReversal = async (input, reason, source, adminId, adminIp) => {
-    // input is a plain string (admin/CSV) or an object (provider callback)
   const ids = typeof input === 'object' && input !== null ? input : { transactionId: input };
-  const transactionId = ids.externalTransactionId || ids.transactionId; // label for logs/messages
+  const transactionId = ids.externalTransactionId || ids.transactionId || (ids.clickId ? `click#${ids.clickId}` : null);
   const client = await pool.connect();
+
+  // Remembered so a failure after the click was found can still tell the
+  // caller which click/user it was about (used to link traffic log rows).
+  let linkedClick = null;
 
   try {
     await client.query('BEGIN');
@@ -91,12 +117,14 @@ const processSingleReversal = async (input, reason, source, adminId, adminIp) =>
         // Bonus/screenout reversals (<=5 points) were never credited, so just acknowledge
       if (ids.payout !== undefined && ids.payout !== null && Math.abs(ids.payout) <= 5) {
         await client.query('ROLLBACK');
-        return { reversed: false, acknowledged: true, reason: 'bonus_not_credited', transaction_id: transactionId };
+        return { reversed: false, acknowledged: true, reason: 'bonus_not_credited', transaction_id: transactionId, click_id: null };
       }
       const err = new Error(`Survey click not found: ${transactionId}`);
       err.status = 404;
       throw err;
     }
+
+     linkedClick = click;
 
     console.log(`[Reversal] Found click by: ${foundBy}, click_id: ${click.id}`);
 
@@ -238,6 +266,7 @@ const processSingleReversal = async (input, reason, source, adminId, adminIp) =>
 
     return {
       reversed: true,
+      click_id: click.id,
       transaction_id: transactionId,
       amount: cpaUser,
       deducted_from: balanceField,
@@ -248,6 +277,11 @@ const processSingleReversal = async (input, reason, source, adminId, adminIp) =>
 
   } catch (err) {
     await client.query('ROLLBACK');
+    if (linkedClick && err && !err.click_id) {
+      err.click_id = linkedClick.id;
+      err.user_id = linkedClick.user_id;
+      err.username = linkedClick.username;
+    }
     throw err;
   } finally {
     client.release();

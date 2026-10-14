@@ -15,6 +15,9 @@ const buildProcessingResult = (success, message, data = {}) => ({
   timestamp: new Date().toISOString()
 });
 
+// traffic_logs.user_username is VARCHAR(50); a provider-supplied value can be longer
+const clip = (value, max = 50) => (value ? value.toString().slice(0, max) : null);
+
 // S2S Callback: POST /api/callback/:internal_id
 const handleS2S = async (req, res, next) => {
   const startTime = Date.now();
@@ -99,6 +102,31 @@ const handleS2S = async (req, res, next) => {
       const result = await processSurveyCompletion(parsed, offerWall);
 
       if (result?.acknowledged) {
+        await logIncomingTraffic({
+          type: 's2s_callback',
+          offer_wall_id: offerWall.id,
+          offer_wall_name: offerWall.name,
+          offer_wall_internal_id: offerWall.internal_id,
+          survey_click_id: result.click_id,
+          user_id: result.user_id,
+          user_username: result.username || clip(parsed.username),
+          internal_transaction_id: parsed.subId || parsed.transactionId,
+          external_transaction_id: parsed.externalTransactionId,
+          url: req.originalUrl,
+          method: req.method,
+          headers: req.headers,
+          query_params: req.query,
+          request_body: req.body,
+          response_status: 200,
+          response_body: { success: true },
+          ip_address: req.ip,
+          user_agent: req.headers['user-agent'],
+          processing_time_ms: Date.now() - startTime,
+          processing_result: buildProcessingResult(true, 'Bonus / screenout callback acknowledged — not credited', {
+            acknowledged: true,
+            payout_received: parsed.payout
+          })
+        });
          return res.status(200).json({
         success: true
       });
@@ -109,6 +137,7 @@ const handleS2S = async (req, res, next) => {
         offer_wall_id: offerWall.id,
         offer_wall_name: offerWall.name,
         offer_wall_internal_id: offerWall.internal_id,
+        survey_click_id: result.click_id,
         user_id: result.user_id,
         user_username: result.username,
         internal_transaction_id: parsed.subId || parsed.transactionId,
@@ -159,7 +188,13 @@ const handleS2S = async (req, res, next) => {
         );
       } catch (err) {
         reversalError = err;
-        reversalResult = { reversed: false, error: err.message };
+        reversalResult = {
+          reversed: false,
+          error: err.message,
+          click_id: err.click_id || null,
+          user_id: err.user_id || null,
+          username: err.username || null
+        };
       }
 
       await logIncomingTraffic({
@@ -167,6 +202,7 @@ const handleS2S = async (req, res, next) => {
         offer_wall_id: offerWall.id,
         offer_wall_name: offerWall.name,
         offer_wall_internal_id: offerWall.internal_id,
+        survey_click_id: reversalResult.click_id,
         user_id: reversalResult.user_id,
         user_username: reversalResult.username,
         internal_transaction_id: parsed.subId || parsed.transactionId,
@@ -177,7 +213,11 @@ const handleS2S = async (req, res, next) => {
         response_body: { success: !reversalError, message: reversalError?.message || 'Reversal processed', data: reversalResult },
         ip_address: req.ip, user_agent: req.headers['user-agent'],
         processing_time_ms: Date.now() - startTime,
-        processing_result: buildProcessingResult(!reversalError, reversalError?.message || 'Reversal processed via callback', reversalResult)
+        processing_result: buildProcessingResult(
+          !reversalError,
+          reversalError?.message || (reversalResult.acknowledged ? 'Bonus reversal acknowledged — nothing to deduct' : 'Reversal processed via callback'),
+          reversalResult
+        )
       });
 
       return res.json({
@@ -194,6 +234,7 @@ const handleS2S = async (req, res, next) => {
         offer_wall_id: offerWall.id,
         offer_wall_name: offerWall.name,
         offer_wall_internal_id: offerWall.internal_id,
+        survey_click_id: result.click_id,
         user_id: result.user_id,
         user_username: result.username,
         internal_transaction_id: parsed.subId || parsed.transactionId,
@@ -224,8 +265,9 @@ const handleS2S = async (req, res, next) => {
       offer_wall_id: offerWall?.id,
       offer_wall_name: offerWall?.name,
       offer_wall_internal_id: internal_id,
-      user_id: userId,
-      user_username: username,
+      survey_click_id: err.click_id || null,
+      user_id: err.user_id || userId,
+      user_username: err.username || username || clip(parsed?.username),
       internal_transaction_id: parsed?.subId || parsed?.transactionId,
       external_transaction_id: parsed?.externalTransactionId,
       url: req.originalUrl,
@@ -326,6 +368,7 @@ const handleBrowser = async (req, res, next) => {
         offer_wall_id: offerWall.id,
         offer_wall_name: offerWall.name,
         offer_wall_internal_id: offerWall.internal_id,
+        survey_click_id: result.click_id,
         user_id: result.user_id,
         user_username: result.username,
         internal_transaction_id: parsed.subId || parsed.transactionId,
@@ -338,7 +381,7 @@ const handleBrowser = async (req, res, next) => {
         ip_address: req.ip,
         user_agent: req.headers['user-agent'],
         processing_time_ms: Date.now() - startTime,
-        processing_result: buildProcessingResult(true, 'Survey credited via browser', result)
+        processing_result: buildProcessingResult(true, result.acknowledged ? 'Bonus / screenout callback acknowledged — not credited' : 'Survey credited via browser', result)
       });
 
       return redirectToFrontend(res, 'success', null, result.user_credited);
@@ -357,6 +400,7 @@ const handleBrowser = async (req, res, next) => {
         offer_wall_id: offerWall.id,
         offer_wall_name: offerWall.name,
         offer_wall_internal_id: offerWall.internal_id,
+        survey_click_id: result.click_id,
         user_id: result.user_id,
         user_username: result.username,
         internal_transaction_id: parsed.subId || parsed.transactionId,
@@ -382,8 +426,9 @@ const handleBrowser = async (req, res, next) => {
       offer_wall_id: offerWall?.id,
       offer_wall_name: offerWall?.name,
       offer_wall_internal_id: internal_id,
-      user_id: userId,
-      user_username: username,
+      survey_click_id: err.click_id || null,
+      user_id: err.user_id || userId,
+      user_username: err.username || username || clip(parsed?.username),
       internal_transaction_id: parsed?.subId || parsed?.transactionId,
       external_transaction_id: parsed?.externalTransactionId,
       url: req.originalUrl,

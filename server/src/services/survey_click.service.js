@@ -163,8 +163,9 @@ const createSurveyClickRecord = async (userId, payload) => {
   } else if (wall.type === 'iframe') {
     result.iframe_src = buildEntryUrl(wall.iframe_url, user, transactionId, callbackConfig, wall.hash_key);
   }
-
-  return { click: result };
+   
+  // click_id is for server-side logging only — `click` is what the user's browser receives
+  return { click: result, click_id: click.id };
 };
 
 module.exports = { createSurveyClickRecord, buildEntryUrl,resolveParamValue };

@@ -195,14 +195,35 @@ const findAndLockClickForCallback = async (client, parsedCallback, offerWall) =>
   return { click: null, foundBy: null, user_id: null, username: null };
 };
 
+// Which click/user a callback was about, so the controller can link its traffic
+// log row to the click even when processing fails. An auto-created click is
+// rolled back on failure, so it must never be exposed as a linkable id.
+const buildCallbackContext = ({ click, foundBy, user_id, username }) => ({
+  click_id: click && foundBy !== 'iframe_auto_create' ? click.id : null,
+  user_id: user_id || null,
+  username: username || null
+});
+
+const attachCallbackContext = (err, ctx) => {
+  if (ctx && err && !err.click_id && !err.user_id) {
+    err.click_id = ctx.click_id;
+    err.user_id = ctx.user_id;
+    err.username = ctx.username;
+  }
+  return err;
+};
+
 const processSurveyCompletion = async (parsedCallback, offerWall) => {
   const client = await pool.connect();
+  let callbackContext = null;
 
   try {
     await client.query('BEGIN');
 
     // FIX: Use unified finder
-    const { click, foundBy, user_id, username } = await findAndLockClickForCallback(client, parsedCallback, offerWall);
+    const found = await findAndLockClickForCallback(client, parsedCallback, offerWall);
+    const { click, foundBy, user_id, username } = found;
+    callbackContext = buildCallbackContext(found);
 
         if (foundBy === 'iframe_auto_create_duplicate') {
       await client.query('ROLLBACK');
@@ -270,7 +291,10 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
           await client.query('ROLLBACK');
 
           return {
-            acknowledged: true
+            acknowledged: true,
+            click_id: callbackContext.click_id,
+            user_id: callbackContext.user_id,
+            username: callbackContext.username
          };
       }
       
@@ -410,7 +434,7 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
 
   } catch (err) {
     await client.query('ROLLBACK');
-    throw err;
+    throw attachCallbackContext(err, callbackContext);
   } finally {
     client.release();
   }
@@ -418,11 +442,14 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
 
 const processNonSuccessCallback = async (parsedCallback, offerWall) => {
   const client = await pool.connect();
+  let callbackContext = null;
 
   try {
     await client.query('BEGIN');
 
-    const { click, foundBy, user_id, username } = await findAndLockClickForCallback(client, parsedCallback, offerWall);
+    const found = await findAndLockClickForCallback(client, parsedCallback, offerWall);
+    const { click, foundBy, user_id, username } = found;
+    callbackContext = buildCallbackContext(found);
 
     if (!click) {
       const err = new Error('Transaction ID not found');
@@ -445,7 +472,7 @@ const processNonSuccessCallback = async (parsedCallback, offerWall) => {
 
   } catch (err) {
     await client.query('ROLLBACK');
-    throw err;
+    throw attachCallbackContext(err, callbackContext);
   } finally {
     client.release();
   }

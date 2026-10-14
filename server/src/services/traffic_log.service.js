@@ -112,9 +112,9 @@ const getAdminTrafficLogs = async (query = {}) => {
   const result = await getTrafficLogsForAdmin(filters, pagination, sort);
   
   // Auto-cleanup old logs (1% chance per request)
-  if (Math.random() < 0.01) {
-    deleteOldTrafficLogs().catch(() => {});
-  }
+  // if (Math.random() < 0.01) {
+  //   deleteOldTrafficLogs().catch(() => {});
+  // }
 
   return result;
 };

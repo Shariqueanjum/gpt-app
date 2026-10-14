@@ -43,6 +43,7 @@ const AdminOfferWallsPage = lazy(() => import('./pages/admin/AdminOfferWallsPage
 const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'))
 const AdminPaymentProofsPage = lazy(() => import('./pages/admin/AdminPaymentProofsPage'))
 const AdminTrafficLogsPage = lazy(() => import('./pages/admin/AdminTrafficLogsPage'))
+const AdminSurveyActivityPage = lazy(() => import('./pages/admin/AdminSurveyActivityPage'))
 const AdminAnnouncementsPage = lazy(() => import('./pages/admin/Adminannouncementspage'))
 const AdminAuditLogsPage = lazy(() => import('./pages/admin/AdminAuditLogsPage'))
 const AdminFraudPage = lazy(() => import('./pages/admin/AdminFraudPage'))
@@ -285,6 +286,13 @@ function App() {
             <Suspense fallback={<AdminPageLoader />}><AdminTrafficLogsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
           </AdminProtectedRoute>
         } />
+
+        <Route path="/admin/survey-activity" element={ 
+          <AdminProtectedRoute> 
+            <Suspense fallback={<AdminPageLoader />}><AdminSurveyActivityPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+             </AdminProtectedRoute>
+             } />
+
         <Route path="/admin/announcements" element={
           <AdminProtectedRoute>
             <Suspense fallback={<AdminPageLoader />}><AdminAnnouncementsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>

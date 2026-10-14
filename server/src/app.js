@@ -34,6 +34,7 @@ const adminAnnouncementRoutes = require('./routes/admin_announcement.routes');
 const settingsRoutes = require('./routes/settings.routes');
 const adminSettingsRoutes = require('./routes/admin_settings.routes');
 const adminTrafficLogRoutes = require('./routes/admin_traffic_log.routes');
+const adminSurveyActivityRoutes = require('./routes/admin_survey_activity.routes');
 const performanceRoutes = require('./routes/performance.routes');
 const adminVPNRoutes = require('./routes/admin_vpn.routes');
 const adminOfferWallRoutes = require('./routes/admin_offer_wall.routes');
@@ -113,6 +114,8 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/admin/settings', adminSettingsRoutes);
 
 app.use('/api/admin/traffic-logs', adminTrafficLogRoutes);
+
+app.use('/api/admin/survey-activity', adminSurveyActivityRoutes);
 
 app.use('/api/performance', performanceRoutes);
 

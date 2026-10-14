@@ -49,6 +49,8 @@ import {
 } from '@mui/icons-material';
 import adminAxiosInstance from '../../utils/adminAxiosInstance';
 import { AdminPageWrapper } from '../../components/Layout/AdminLayout';
+import TrafficSubNav from '../../components/Admin/TrafficSubNav';
+import { getLogEventStatus } from '../../utils/trafficLogStatus';
 import { getColors } from '../../components/Layout/SharedLayout';
 import { formatUTCDateTime } from '../../utils/formatTime';
 import { UserDetailDrawer } from './AdminUsersPage';
@@ -224,6 +226,7 @@ const AdminTrafficLogsPage = ({ darkMode, toggleDarkMode }) => {
 
   return (
     <AdminPageWrapper darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
+    <TrafficSubNav darkMode={darkMode} />
     <Box>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5, mb: 2 }}>
         <Box>
@@ -344,8 +347,9 @@ const AdminTrafficLogsPage = ({ darkMode, toggleDarkMode }) => {
                 <TableCell sx={{ fontWeight: 600, color: colors.textPrimary }}>Type</TableCell>
                 <TableCell sx={{ fontWeight: 600, color: colors.textPrimary }}>Username</TableCell>
                 <TableCell sx={{ fontWeight: 600, color: colors.textPrimary }}>Time (UTC)</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: colors.textPrimary }}>Transaction ID</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: colors.textPrimary }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: colors.textPrimary }}>Our ID</TableCell> 
+                <TableCell sx={{ fontWeight: 600, color: colors.textPrimary }}>External ID</TableCell> 
+                <TableCell sx={{ fontWeight: 600, color: colors.textPrimary }}>Status</TableCell>                
                 <TableCell sx={{ fontWeight: 600, color: colors.textPrimary }}>Offer Wall</TableCell>
                 <TableCell sx={{ fontWeight: 600, color: colors.textPrimary }} align="center">Actions</TableCell>
               </TableRow>
@@ -353,13 +357,13 @@ const AdminTrafficLogsPage = ({ darkMode, toggleDarkMode }) => {
             <TableBody>
               {loading && logs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : logs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 4, color: colors.textMuted }}>
+                  <TableCell colSpan={9} align="center" sx={{ py: 4, color: colors.textMuted }}>
                     No traffic logs found
                   </TableCell>
                 </TableRow>
@@ -409,13 +413,8 @@ const AdminTrafficLogsPage = ({ darkMode, toggleDarkMode }) => {
                         </Tooltip>
                       ) : '-'}
                     </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={log.click_status || 'unknown'}
-                        size="small"
-                        color={getStatusColor(log.click_status)}
-                      />
-                    </TableCell>
+                    <TableCell sx={{ color: colors.textPrimary, fontFamily: 'monospace', fontSize: '0.8rem' }}>{log.external_transaction_id ? <Tooltip title={log.external_transaction_id}><span>{log.external_transaction_id.length > 15 ? log.external_transaction_id.slice(0, 15) + '...' : log.external_transaction_id}</span></Tooltip> : '-'}</TableCell>
+                    <TableCell>{(() => { const eventStatus = getLogEventStatus(log); return <><Chip label={eventStatus.label} size="small" color={eventStatus.color} />{log.click_status && log.click_status !== eventStatus.label && <Box component="span" sx={{ display: 'block', fontSize: '0.7rem', color: colors.textMuted, mt: 0.3 }}>click now: {log.click_status}</Box>}</>; })()}</TableCell>
                     <TableCell sx={{ color: colors.textPrimary }}>
                       {log.offer_wall_name || log.offer_wall_name_joined || '-'}
                     </TableCell>

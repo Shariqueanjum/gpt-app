@@ -390,6 +390,15 @@ const runSchemaUpdates = async () => {
     `CREATE INDEX IF NOT EXISTS idx_traffic_logs_created_at ON traffic_logs(created_at DESC)`,
     `CREATE INDEX IF NOT EXISTS idx_traffic_logs_direction_created ON traffic_logs(direction, created_at DESC)`,
 
+    `CREATE INDEX IF NOT EXISTS idx_traffic_logs_survey_click ON traffic_logs(survey_click_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_survey_clicks_created_at ON survey_clicks(created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_survey_clicks_status ON survey_clicks(status)`,
+    `CREATE INDEX IF NOT EXISTS idx_survey_clicks_user ON survey_clicks(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_survey_clicks_offer_wall ON survey_clicks(offer_wall_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_transactions_reference ON transactions(reference_type, reference_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_transactions_from_click ON transactions((metadata->>'from_survey_click')) WHERE type = 'referral'`,
+
+
     `CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token)`,
     `CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email)`,
 

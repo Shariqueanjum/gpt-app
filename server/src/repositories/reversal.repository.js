@@ -1,11 +1,16 @@
 const pool = require('../config/db');
 
+// All three finders return the same shape (click + user balances) so the
+// reversal service can treat them interchangeably.
+const CLICK_WITH_USER_SELECT = `
+  SELECT sc.*, u.balance_available, u.balance_locked, u.id as user_id, u.username
+  FROM survey_clicks sc
+  JOIN users u ON sc.user_id = u.id`;
+
 const findSurveyClickByTransactionId = async (clientOrPool, transactionId, offerWallId = null) => {
   const executor = clientOrPool || pool;
   const res = await executor.query(
-    `SELECT sc.*, u.balance_available, u.balance_locked, u.id as user_id, u.username
-     FROM survey_clicks sc
-     JOIN users u ON sc.user_id = u.id
+    `${CLICK_WITH_USER_SELECT}
      WHERE sc.transaction_id = $1
          AND ($2::int IS NULL OR sc.offer_wall_id = $2)`,
     [transactionId, offerWallId]
@@ -16,14 +21,24 @@ const findSurveyClickByTransactionId = async (clientOrPool, transactionId, offer
 const findSurveyClickByExternalId = async (clientOrPool, externalId, offerWallId = null) => {
   const executor = clientOrPool || pool;
   const res = await executor.query(
-    `SELECT sc.*, u.balance_available, u.balance_locked, u.id as user_id, u.username
-     FROM survey_clicks sc
-     JOIN users u ON sc.user_id = u.id
+    `${CLICK_WITH_USER_SELECT}
      WHERE sc.external_transaction_id = $1
        AND ($2::int IS NULL OR sc.offer_wall_id = $2)
      ORDER BY sc.id DESC
      LIMIT 1`,
     [externalId, offerWallId]
+  );
+  return res.rows[0];
+};
+
+// Exact click row — used by the admin Survey Activity page, where the admin
+// is looking at one specific click and no id-matching should be needed.
+const findSurveyClickById = async (clientOrPool, clickId) => {
+  const executor = clientOrPool || pool;
+  const res = await executor.query(
+    `${CLICK_WITH_USER_SELECT}
+     WHERE sc.id = $1`,
+    [clickId]
   );
   return res.rows[0];
 };
@@ -145,6 +160,7 @@ const lockUndoReversalTransaction = async (client, referenceType, referenceId) =
 module.exports = {
   findSurveyClickByTransactionId,
   findSurveyClickByExternalId,
+  findSurveyClickById,
   findOriginalTransaction,
   findReferralTransaction,
   createReversalTransaction,

@@ -29,6 +29,7 @@ import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined'
 import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined'
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined'
 import PaymentIcon from '@mui/icons-material/Payment'
+import PollOutlinedIcon from '@mui/icons-material/PollOutlined'
 import { getColors } from './SharedLayout'
 
 import useAdminLiveEvents from '../../hooks/useAdminLiveEvents'
@@ -41,6 +42,7 @@ const ADMIN_NAV = [
   { label: 'Payment Proofs', icon: ReceiptLongOutlinedIcon, color: '#14b8a6', path: '/admin/payment-proofs' },
   { label: 'Offer Walls', icon: LocalOfferIcon, color: '#ec4899', path: '/admin/offer-walls' },
   { label: 'Transactions', icon: ReceiptIcon, color: '#14b8a6', path: '/admin/transactions' },
+  { label: 'Survey Activity', icon: PollOutlinedIcon, color: '#0ea5e9', path: '/admin/survey-activity' },
   { label: 'Traffic Logs', icon: TrafficOutlinedIcon, color: '#0ea5e9', path: '/admin/traffic-logs' },
   { label: 'Fraud Detection', icon: GppMaybeOutlinedIcon, color: '#ef4444', path: '/admin/fraud' },
   { label: 'Reversals', icon: GavelOutlinedIcon, color: '#f97316', path: '/admin/reversals' },

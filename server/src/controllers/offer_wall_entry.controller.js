@@ -55,7 +55,7 @@ const getEntryUrl = async (req, res, next) => {
       offer_wall_id: wall.id,
       offer_wall_name: wall.name,
       offer_wall_internal_id: wall.internal_id,
-      survey_click_id: result.click?.id || null,
+      survey_click_id: result.click_id || null,
       internal_transaction_id: result.click?.transaction_id,
       url: result.click.redirect_url || result.click.iframe_src,
       method: 'GET',
