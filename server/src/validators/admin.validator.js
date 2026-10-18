@@ -18,7 +18,8 @@ const banUserSchema = z.object({
 });
 
 const adjustBalanceSchema = z.object({
-  amount: z.number().refine((val) => val !== 0, 'Amount cannot be zero'),
+  amount: z.number().refine((val) => val !== 0, 'Amount cannot be zero')
+                    .refine((val) => Math.abs(val) <= 100000000, 'Amount is too large'),  
   reason: z.string().trim().min(1, 'Reason is required').max(500, 'Reason too long')
 });
 

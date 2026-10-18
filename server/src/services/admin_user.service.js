@@ -95,10 +95,17 @@ const getUserTransactions = async (userId, query = {}) => {
   const filters = {};
   if (query.type) filters.type = query.type;
   if (query.status) filters.status = query.status;
-  if (query.date_from && query.date_to) {
-    filters.dateFrom = query.date_from;
-    filters.dateTo = query.date_to;
+  // if (query.date_from && query.date_to) {
+  //   filters.dateFrom = query.date_from;
+  //   filters.dateTo = query.date_to;
+  // }
+
+  // Admin view: either date alone works, and the "to" day is included fully
+  if (query.date_from || query.date_to) {
+    filters.dateFrom = query.date_from ? `${query.date_from} 00:00:00` : '1970-01-01 00:00:00';
+    filters.dateTo = query.date_to ? `${query.date_to} 23:59:59.999` : '2999-12-31 23:59:59.999';
   }
+  
   const pagination = { page: query.page || 1, limit: query.limit || 20 };
   const sort = { column: query.sort_by || 'created_at', order: query.sort_order || 'desc' };
   return await getTransactionsByUserId(userId, filters, pagination, sort);
