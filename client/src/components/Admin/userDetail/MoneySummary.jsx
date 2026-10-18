@@ -38,8 +38,12 @@ const Line = ({ label, points, sub, color, COLORS }) => (
   </Box>
 )
 
+// On phones the tiles stack, so the sign sits centred on its own line between them
 const Operator = ({ children, COLORS }) => (
-  <Typography sx={{ fontSize: '1.4rem', fontWeight: 800, color: COLORS.textMuted, alignSelf: 'center', px: 0.5 }}>{children}</Typography>
+  <Typography sx={{
+    fontSize: '1.4rem', fontWeight: 800, color: COLORS.textMuted, lineHeight: 1,
+    flex: { xs: '0 0 100%', sm: '0 0 auto' }, textAlign: 'center', alignSelf: 'center', px: { sm: 0.5 }, my: { xs: -0.25, sm: 0 },
+  }}>{children}</Typography>
 )
 
 /**
@@ -68,12 +72,12 @@ const MoneySummary = ({ overview, COLORS, onOpenLocked }) => {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {/* 1. Earned - Reversed = Net */}
       <SectionCard COLORS={COLORS} title="Earnings summary" subtitle="Net amount = everything the user earned minus everything that was reversed.">
-        <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 1, flexWrap: 'wrap' }}>
-          <Box sx={{ flex: '1 1 170px' }}><Tile COLORS={COLORS} label="Total earned" points={earnings.total} color={GREEN} hint="Surveys + referral commission + bonuses" /></Box>
+        <Box sx={{ display: 'flex', alignItems: 'stretch', gap: { xs: 0.75, sm: 1 }, flexWrap: 'wrap' }}>
+          <Box sx={{ flex: '1 1 170px', minWidth: 0 }}><Tile COLORS={COLORS} label="Total earned" points={earnings.total} color={GREEN} hint="Surveys + referral commission + bonuses" /></Box>
           <Operator COLORS={COLORS}>−</Operator>
-          <Box sx={{ flex: '1 1 170px' }}><Tile COLORS={COLORS} label="Total reversed" points={reversals.total} color={RED} hint="Survey and commission reversals still in force" /></Box>
+          <Box sx={{ flex: '1 1 170px', minWidth: 0 }}><Tile COLORS={COLORS} label="Total reversed" points={reversals.total} color={RED} hint="Survey and commission reversals still in force" /></Box>
           <Operator COLORS={COLORS}>=</Operator>
-          <Box sx={{ flex: '1 1 170px' }}><Tile COLORS={COLORS} label="Net amount" points={net_amount} color={COLORS.primaryLight} hint="What the user really earned" /></Box>
+          <Box sx={{ flex: '1 1 170px', minWidth: 0 }}><Tile COLORS={COLORS} label="Net amount" points={net_amount} color={COLORS.primaryLight} hint="What the user really earned" /></Box>
         </Box>
       </SectionCard>
 

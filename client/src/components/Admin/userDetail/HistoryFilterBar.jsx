@@ -30,7 +30,8 @@ const HistoryFilterBar = ({ fields, filters, onChange, onClear, activeCount, COL
 
     if (f.type === 'select') {
       return (
-        <TextField select fullWidth size="small" value={value} onChange={(e) => set(e.target.value)} sx={fieldSx}>
+        <TextField select fullWidth size="small" value={value} onChange={(e) => set(e.target.value)} sx={fieldSx}
+          slotProps={{ select: { displayEmpty: true, MenuProps: { slotProps: { paper: { sx: { maxHeight: 320 } } } } } }}>
           {f.options.map((o) => (
             <MenuItem key={`${o.value}`} value={o.value} sx={{ fontSize: '0.83rem' }}>{o.label}</MenuItem>
           ))}
@@ -43,12 +44,12 @@ const HistoryFilterBar = ({ fields, filters, onChange, onClear, activeCount, COL
     if (f.type === 'number') {
       return (
         <TextField fullWidth size="small" type="number" value={value} placeholder={f.placeholder}
-          onChange={(e) => set(e.target.value)} sx={fieldSx} inputProps={{ min: 0, step: '0.01' }} />
+          onChange={(e) => set(e.target.value)} sx={fieldSx} slotProps={{ htmlInput: { min: 0, step: '0.01', inputMode: 'decimal' } }} />
       )
     }
     return (
       <TextField fullWidth size="small" value={value} placeholder={f.placeholder || 'Search…'}
-        onChange={(e) => set(e.target.value)} sx={fieldSx} inputProps={{ maxLength: 100 }} />
+        onChange={(e) => set(e.target.value)} sx={fieldSx} slotProps={{ htmlInput: { maxLength: 100 } }} />
     )
   }
 

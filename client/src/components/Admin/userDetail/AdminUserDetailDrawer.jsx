@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Drawer, Box, Typography, Avatar, IconButton, Tabs, Tab, Skeleton, Button, useTheme, useMediaQuery } from '@mui/material'
+import { Drawer, Box, Typography, Avatar, IconButton, Tabs, Tab, Skeleton, Button } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import RefreshIcon from '@mui/icons-material/Refresh'
@@ -21,8 +21,6 @@ import { HISTORY_TABS } from './userHistoryConfigs'
  */
 const AdminUserDetailDrawer = ({ userId, open, onClose, darkMode, onBanUnban }) => {
   const COLORS = getColors(darkMode)
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   // Clicking a referrer / referred user opens that person; Back returns.
   const [stack, setStack] = useState([])
@@ -56,8 +54,20 @@ const AdminUserDetailDrawer = ({ userId, open, onClose, darkMode, onBanUnban }) 
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose}
-      PaperProps={{ sx: { width: isMobile ? '100%' : 'min(1100px, 96vw)', bgcolor: COLORS.bg, borderLeft: `1px solid ${COLORS.border}`, overflow: 'hidden' } }}>
-      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      slotProps={{
+        paper: {
+          sx: {
+            // Full width on phones, wide panel on desktop. maxWidth keeps wide tables from stretching it.
+            width: { xs: '100%', md: 'min(1100px, 96vw)' },
+            maxWidth: '100%',
+            bgcolor: COLORS.bg,
+            borderLeft: `1px solid ${COLORS.border}`,
+            overflow: 'hidden',
+          },
+        },
+      }}>
+      {/* 100dvh = visible height on phones (the browser address bar no longer hides the Ban button) */}
+      <Box sx={{ height: '100dvh', maxHeight: '100%', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {/* Header */}
         <Box sx={{
           px: { xs: 1.5, sm: 2.5 }, py: 1.75, borderBottom: `1px solid ${COLORS.border}`, bgcolor: COLORS.cardBg,
@@ -84,7 +94,7 @@ const AdminUserDetailDrawer = ({ userId, open, onClose, darkMode, onBanUnban }) 
         </Box>
 
         {/* Body */}
-        <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', p: { xs: 1.5, sm: 2.5 } }}>
+        <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflowY: 'auto', overflowX: 'hidden', p: { xs: 1.25, sm: 2.5 } }}>
           {loading && !overview ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Skeleton variant="rounded" height={150} />
@@ -111,7 +121,7 @@ const AdminUserDetailDrawer = ({ userId, open, onClose, darkMode, onBanUnban }) 
                   }}>
                   {HISTORY_TABS.map((t) => <Tab key={t.key} label={t.label} />)}
                 </Tabs>
-                <Box sx={{ p: { xs: 1, sm: 2 } }}>
+                <Box sx={{ p: { xs: 0.75, sm: 2 } }}>
                   <HistoryTab key={`${currentId}-${config.key}`} config={config} userId={currentId} overview={overview}
                     COLORS={COLORS} refreshKey={refreshKey} onOpenUser={openUser} />
                 </Box>

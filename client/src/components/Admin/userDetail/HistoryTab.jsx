@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableRow, Box, Typography, Skel
 import useUserHistory from './useUserHistory'
 import HistoryFilterBar from './HistoryFilterBar'
 import { TableScroll, TableShell, PaginationFooter, EmptyState, ErrorState } from '../AdminUiKit'
+import SwipeHint from './SwipeHint'
 import { formatPoints, formatDollar } from './userDetailFormat'
 
 const DEFAULT_SORTS = [
@@ -91,6 +92,8 @@ const HistoryTab = ({ config, userId, overview, COLORS, refreshKey, onOpenUser }
       ) : rows.length === 0 ? (
         <EmptyState label={activeCount ? 'Nothing matches these filters' : config.emptyLabel} COLORS={COLORS} />
       ) : (
+        <>
+        <SwipeHint COLORS={COLORS} />
         <TableScroll>
           <Table size="small" sx={{ minWidth }}>
             <TableHead>
@@ -113,6 +116,7 @@ const HistoryTab = ({ config, userId, overview, COLORS, refreshKey, onOpenUser }
             </TableBody>
           </Table>
         </TableScroll>
+        </>
       )}
 
       <PaginationFooter meta={meta} onPageChange={setPage} onLimitChange={setLimit} COLORS={COLORS} />

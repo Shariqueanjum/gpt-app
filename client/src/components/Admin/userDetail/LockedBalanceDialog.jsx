@@ -143,7 +143,7 @@ const LockedBalanceDialog = ({ open, onClose, userId, username, COLORS, onChange
 
   return (
     <Dialog open={open} onClose={busy ? undefined : onClose} fullWidth maxWidth="sm" fullScreen={fullScreen}
-      PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3, bgcolor: COLORS.cardBg } }}>
+      slotProps={{ paper: { sx: { borderRadius: fullScreen ? 0 : 3, bgcolor: COLORS.cardBg, maxWidth: '100%' } } }}>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, pb: 1 }}>
         <Box>
           <Typography sx={{ fontWeight: 800, fontSize: '1.05rem', color: COLORS.textPrimary }}>Locked balance</Typography>

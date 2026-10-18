@@ -1,6 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableRow, Typography, Box } from '@mui/material'
 import SectionCard from './SectionCard'
 import PointsCell from './PointsCell'
+import SwipeHint from './SwipeHint'
 import { TableScroll, EmptyState } from '../AdminUiKit'
 
 const COLS = [
@@ -25,6 +26,8 @@ const ProviderBreakdown = ({ providers, COLORS }) => {
       {providers.length === 0 ? (
         <EmptyState label="This user has no survey activity yet" COLORS={COLORS} />
       ) : (
+        <>
+        <SwipeHint COLORS={COLORS} />
         <TableScroll>
           <Table size="small" sx={{ minWidth: 820 }}>
             <TableHead>
@@ -50,6 +53,7 @@ const ProviderBreakdown = ({ providers, COLORS }) => {
             </TableBody>
           </Table>
         </TableScroll>
+        </>
       )}
       <Box sx={{ px: { xs: 1.75, sm: 2.25 }, py: 1.2 }}>
         <Typography sx={{ fontSize: '0.72rem', color: COLORS.textMuted }}>
