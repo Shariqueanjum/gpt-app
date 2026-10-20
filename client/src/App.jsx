@@ -49,6 +49,7 @@ const AdminAuditLogsPage = lazy(() => import('./pages/admin/AdminAuditLogsPage')
 const AdminFraudPage = lazy(() => import('./pages/admin/AdminFraudPage'))
 const AdminReversalsPage = lazy(() => import('./pages/admin/AdminReversalsPage'))
 const AdminPaymentMethodsPage = lazy(() => import('./pages/admin/AdminPaymentMethodsPage'))
+const AdminRevenuePage = lazy(() => import('./pages/admin/AdminRevenuePage'))
 
 
 // Components
@@ -318,6 +319,12 @@ function App() {
           <AdminProtectedRoute>
             <Suspense fallback={<AdminPageLoader />}><AdminPaymentMethodsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
           </AdminProtectedRoute>
+        } />
+
+        <Route path="/admin/revenue" element={
+         <AdminProtectedRoute>
+          <Suspense fallback={<AdminPageLoader />}><AdminRevenuePage darkMode={darkMode} toggleDarkMode={toggleDarkMode} /></Suspense>
+         </AdminProtectedRoute>
         } />
 
       </Routes>

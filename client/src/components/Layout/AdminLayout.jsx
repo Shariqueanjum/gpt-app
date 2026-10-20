@@ -30,6 +30,7 @@ import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined'
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined'
 import PaymentIcon from '@mui/icons-material/Payment'
 import PollOutlinedIcon from '@mui/icons-material/PollOutlined'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import { getColors } from './SharedLayout'
 
 import useAdminLiveEvents from '../../hooks/useAdminLiveEvents'
@@ -37,6 +38,7 @@ import useAdminLiveEvents from '../../hooks/useAdminLiveEvents'
 const ADMIN_NAV = [
   { label: 'Dashboard', icon: DashboardIcon, color: '#7c3aed', path: '/admin' },
   { label: 'Users', icon: PeopleIcon, color: '#2563eb', path: '/admin/users' },
+  { label: 'Revenue & Profit', icon: TrendingUpIcon, color: '#10b981', path: '/admin/revenue' },
   { label: 'Withdrawals', icon: AccountBalanceWalletIcon, color: '#10b981', path: '/admin/withdrawals' },
   { label: 'Tickets', icon: SupportAgentIcon, color: '#f59e0b', path: '/admin/tickets' },
   { label: 'Payment Proofs', icon: ReceiptLongOutlinedIcon, color: '#14b8a6', path: '/admin/payment-proofs' },

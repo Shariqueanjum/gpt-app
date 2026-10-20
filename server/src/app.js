@@ -19,6 +19,7 @@ const paymentMethodRoutes = require('./routes/payment_method.routes');
 const withdrawalRoutes = require('./routes/withdrawal.routes');
 const adminWithdrawalRoutes = require('./routes/admin_withdrawal.routes');
 const adminUserRoutes = require('./routes/admin_user.routes');
+const adminRevenueRoutes = require('./routes/admin_revenue.routes');
 const referralRoutes = require('./routes/referral.routes');
 const fraudRoutes = require('./routes/fraud.routes');
 const auditLogRoutes = require('./routes/audit_log.routes');
@@ -84,6 +85,8 @@ app.use('/api/withdrawals', withdrawalRoutes);
 app.use('/api/admin/withdrawals', adminWithdrawalRoutes);
 
 app.use('/api/admin/users', adminUserRoutes);
+
+app.use('/api/admin/revenue', adminRevenueRoutes);
 
 app.use('/api/referrals', referralRoutes);
 
