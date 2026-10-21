@@ -287,7 +287,7 @@ const processSurveyCompletion = async (parsedCallback, offerWall) => {
 
       // CPX sends small bonus points for screenouts.
       // Do nothing with these callbacks; simply acknowledge them.
-      if (cpaOriginal <= 5) {
+      if (cpaOriginal <= 10) {
           await client.query('ROLLBACK');
 
           return {
