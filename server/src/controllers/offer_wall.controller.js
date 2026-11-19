@@ -4,7 +4,7 @@ const { assertWallUnlocked } = require('../constants/offerWallRestrictions');
 
 const listOfferWalls = async (req, res, next) => {
   try {
-    const walls = await getActiveOfferWalls();
+    const walls = await getActiveOfferWalls(req.user.id);
     
     res.json({
       success: true,
