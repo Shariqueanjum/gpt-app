@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { loginUser, clearError } from '../slices/authSlice'
-import {Turnstile} from 'react-turnstile'
+import axiosInstance from '../utils/axiosInstance'
+//import {Turnstile} from 'react-turnstile'
 import SEO from '../components/common/SEO'
 
 const MailIcon = () => (
@@ -72,8 +73,30 @@ const LoginPage = () => {
   //   return { num1, num2, operator, answer, userAnswer: '' }
   // })
 
-  const [turnstileToken, setTurnstileToken] = useState('')
-  const [turnstileKey, setTurnstileKey] = useState(0)
+    // Simple math check (signed by the server) — replaces Turnstile on login
+  const [challenge, setChallenge] = useState({ question: '', token: '' })
+  const [captchaAnswer, setCaptchaAnswer] = useState('')
+  const [challengeLoading, setChallengeLoading] = useState(false)
+
+  // const [turnstileToken, setTurnstileToken] = useState('')
+  // const [turnstileKey, setTurnstileKey] = useState(0)
+
+  const loadChallenge = async () => {
+    setChallengeLoading(true)
+    setCaptchaAnswer('')
+    setErrors(prev => ({ ...prev, security: '' }))
+    try {
+      const res = await axiosInstance.get('/auth/login-challenge')
+      setChallenge(res.data.data)
+    } catch (err) {
+      setChallenge({ question: '', token: '' })
+      setErrors(prev => ({ ...prev, security: 'Could not load the security check. Tap refresh.' }))
+    } finally {
+      setChallengeLoading(false)
+    }
+  }
+
+  useEffect(() => { loadChallenge() }, [])
 
   // Redirect after successful login
   useEffect(() => {
@@ -94,8 +117,9 @@ const LoginPage = () => {
 
  useEffect(() => {
   if (error) {
-    setTurnstileToken('')
-    setTurnstileKey(prev => prev + 1)
+    loadChallenge() // each attempt needs a fresh question
+    // setTurnstileToken('')
+    // setTurnstileKey(prev => prev + 1)
   }
 }, [error])
 
@@ -115,8 +139,14 @@ const LoginPage = () => {
     setErrors(prev => ({ ...prev, [name]: validateField(name, value) }))
   }
 
-  const handleSecurityAnswer = (e) => {
-    setSecurityQuestion(prev => ({ ...prev, userAnswer: e.target.value }))
+  // const handleSecurityAnswer = (e) => {
+  //   setSecurityQuestion(prev => ({ ...prev, userAnswer: e.target.value }))
+  //   setErrors(prev => ({ ...prev, security: '' }))
+  // }
+
+   const handleSecurityAnswer = (e) => {
+    setCaptchaAnswer(e.target.value)
+    setTouched(prev => ({ ...prev, security: true }))
     setErrors(prev => ({ ...prev, security: '' }))
   }
 
@@ -128,11 +158,18 @@ const LoginPage = () => {
     // if (parseInt(securityQuestion.userAnswer) !== securityQuestion.answer) {
     //   newErrors.security = 'Incorrect answer. Try again.'
     // }
-    if (import.meta.env.MODE !== 'development' && !turnstileToken) {
-  newErrors.turnstile = 'Please complete the CAPTCHA'
-}
+//     if (import.meta.env.MODE !== 'development' && !turnstileToken) {
+//   newErrors.turnstile = 'Please complete the CAPTCHA'
+// }
+
+    if (!challenge.token) {
+      newErrors.security = 'Security check not loaded. Tap refresh.'
+    } else if (!captchaAnswer.trim()) {
+      newErrors.security = 'Please solve the security check'
+    }
     setErrors(newErrors)
-    setTouched({ email_or_username: true, password: true, turnstile: true })
+    // setTouched({ email_or_username: true, password: true, turnstile: true })
+    setTouched({ email_or_username: true, password: true, security: true })
     return !Object.values(newErrors).some(e => e)
   }
 
@@ -141,7 +178,8 @@ const LoginPage = () => {
     dispatch(clearError())
     if (!validateAll()) return
     // dispatch(loginUser(formData))
-     dispatch(loginUser({ ...formData, turnstileToken: import.meta.env.MODE === 'development' ? 'dev-bypass' : turnstileToken }))
+    //  dispatch(loginUser({ ...formData, turnstileToken: import.meta.env.MODE === 'development' ? 'dev-bypass' : turnstileToken }))
+     dispatch(loginUser({ ...formData, captchaToken: challenge.token, captchaAnswer: captchaAnswer.trim() }))
   }
 
   const handleClose = () => {
@@ -156,15 +194,19 @@ const LoginPage = () => {
     }
   }
 
-  const regenerateQuestion = () => {
-    const operators = ['+', '-']
-    const operator = operators[Math.floor(Math.random() * operators.length)]
-    let num1 = Math.floor(Math.random() * 20) + 1
-    let num2 = Math.floor(Math.random() * 20) + 1
-    if (operator === '-' && num2 > num1) [num1, num2] = [num2, num1]
-    const answer = operator === '+' ? num1 + num2 : num1 - num2
-    setSecurityQuestion({ num1, num2, operator, answer, userAnswer: '' })
-    setErrors(prev => ({ ...prev, security: '' }))
+  // const regenerateQuestion = () => {
+  //   const operators = ['+', '-']
+  //   const operator = operators[Math.floor(Math.random() * operators.length)]
+  //   let num1 = Math.floor(Math.random() * 20) + 1
+  //   let num2 = Math.floor(Math.random() * 20) + 1
+  //   if (operator === '-' && num2 > num1) [num1, num2] = [num2, num1]
+  //   const answer = operator === '+' ? num1 + num2 : num1 - num2
+  //   setSecurityQuestion({ num1, num2, operator, answer, userAnswer: '' })
+  //   setErrors(prev => ({ ...prev, security: '' }))
+  // }
+
+   const regenerateQuestion = () => {
+    loadChallenge()
   }
 
   const inputBase = 'w-full bg-[#f2f3ff] rounded-2xl border px-5 py-3.5 pl-12 text-[#131b2e] placeholder-[#494454]/50 text-base transition-all duration-200 focus:outline-none focus:ring-4'
@@ -234,7 +276,7 @@ const LoginPage = () => {
           </div> */}
 
           {/* Cloudflare Turnstile */}
-{import.meta.env.MODE !== 'development' && (
+{/* {import.meta.env.MODE !== 'development' && (
   <>
 <div className="flex justify-center">
   <Turnstile
@@ -256,7 +298,24 @@ const LoginPage = () => {
   </p>
    )}
    </>
-)}
+)} */}
+
+ {/* Security check (simple math) */}
+          <div className="bg-[#f2f3ff] rounded-2xl p-3 border border-[#cbc3d7]/30">
+            <p className="text-xs font-semibold text-[#494454] uppercase tracking-[0.08em] mb-2">Security Check</p>
+            <div className="flex items-center gap-2">
+              <span className="text-[#131b2e] font-bold text-base font-mono bg-white px-2.5 py-2 rounded-xl border border-[#cbc3d7]/30 whitespace-nowrap shrink-0 min-w-[84px] text-center">
+                {challengeLoading || !challenge.question ? '...' : `${challenge.question} = ?`}
+              </span>
+              <input type="text" inputMode="numeric" autoComplete="off" value={captchaAnswer} onChange={handleSecurityAnswer} placeholder="Answer" className={`flex-1 min-w-0 bg-white rounded-xl border px-3 py-2 text-[#131b2e] text-base focus:outline-none focus:ring-2 transition-all ${touched.security && errors.security ? 'border-[#ba1a1a] focus:ring-[#ba1a1a]/10' : 'border-[#cbc3d7]/30 focus:border-[#5312bc] focus:ring-[#5312bc]/10'}`} />
+              <button type="button" onClick={regenerateQuestion} disabled={challengeLoading} aria-label="New question" className="p-2 rounded-xl bg-white border border-[#cbc3d7]/30 text-[#494454] hover:text-[#5312bc] hover:border-[#5312bc]/30 transition-all shrink-0 disabled:opacity-60">
+                <RefreshIcon />
+              </button>
+            </div>
+            {touched.security && errors.security && (
+              <p className="mt-1.5 text-xs text-[#ba1a1a] font-medium flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-[#ba1a1a]" />{errors.security}</p>
+            )}
+          </div>
 
           {error && (
             <div className="p-3 bg-[#ba1a1a]/[0.08] border border-[#ba1a1a]/[0.15] rounded-xl text-[#ba1a1a] text-sm font-semibold flex items-center gap-2">

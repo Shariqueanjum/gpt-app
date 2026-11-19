@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { createSurveyClick } = require('../repositories/survey_click.repository');
 const { findById } = require('../repositories/offer_wall.repository');
 const { findUserById } = require('../repositories/user.repository');
+const { assertWallUnlocked } = require('../constants/offerWallRestrictions');
 
 const generateTransactionId = (publicId) => {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -111,6 +112,9 @@ const createSurveyClickRecord = async (userId, payload) => {
     error.status = 404;
     throw error;
   }
+
+  // Level gate — e.g. CPX Research needs Level 2 (5 completed surveys)
+  assertWallUnlocked(wall, user);
 
   // API type requires survey details at click time
   if (wall.type === 'api' && (!payload.survey_id || !payload.cpa)) {

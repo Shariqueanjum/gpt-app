@@ -1,6 +1,7 @@
 const { registerUser, loginUser, verifyEmail, forgotPassword, resetPassword, forgotUsername } = require('../services/auth.service');
 const { generateToken } = require('../utils/jwt');
 const pool = require('../config/db');
+const { generateMathChallenge } = require('../utils/mathCaptcha');
 
 const register = async (req, res, next) => {
   try {
@@ -33,6 +34,15 @@ const login = async (req, res, next) => {
       token: result.token,
       user: result.user
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getLoginChallenge = (req, res, next) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    res.json({ success: true, data: generateMathChallenge() });
   } catch (err) {
     next(err);
   }
@@ -108,4 +118,4 @@ const forgotUsernameRequest = async (req, res, next) => {
 
 
 
-module.exports = { register, login, verifyEmailByToken, forgotPasswordRequest, resetPasswordConfirm, forgotUsernameRequest };
+module.exports = { register, login, getLoginChallenge, verifyEmailByToken, forgotPasswordRequest, resetPasswordConfirm, forgotUsernameRequest };

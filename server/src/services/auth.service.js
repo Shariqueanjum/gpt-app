@@ -6,6 +6,7 @@ const {generateToken} = require('../utils/jwt');
 const { generateDeviceFingerprint } = require('../utils/device');
 const {sendVerificationEmail, sendPasswordResetEmail, sendForgotUsernameEmail} = require('../utils/email')
 const { verifyTurnstileToken } = require('../utils/turnstile');
+const { verifyMathChallenge } = require('../utils/mathCaptcha');
 const { createPending, findByToken, findByEmail, deleteByEmail, findByUsername: findPendingByUsername, deleteExpired } = require('../repositories/pending_registration.repository');
 const {findByEmailOrUsername, findByReferralCode, findUserByEmail, findUserByUsername, createUser, findUserById} = require('../repositories/user.repository');
 const { emitActivity } = require('./activityEmitter.service');
@@ -182,9 +183,14 @@ const verifyEmail = async (token, meta) => {
 };
 
 const loginUser = async (payload, meta) => {
-  let { email_or_username, password, turnstileToken } = payload;
+  // let { email_or_username, password, turnstileToken } = payload;
 
-  await verifyTurnstileToken(turnstileToken, meta.ip);
+  let { email_or_username, password, captchaToken, captchaAnswer } = payload;
+
+  // Login uses a simple math check (register still uses Turnstile)
+  verifyMathChallenge(captchaToken, captchaAnswer);
+
+  //await verifyTurnstileToken(turnstileToken, meta.ip);
   const identifier = email_or_username.trim();
 
   const user = await findUserByEmailOrUsername(identifier);

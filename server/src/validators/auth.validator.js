@@ -1,7 +1,7 @@
 const { z } = require('zod');
 
 const registerSchema = z.object({
-  username: z.string().trim().min(3, 'Username must be at least 3 chars').max(20, 'Username cannot exceed 20 chars')
+  username: z.string().trim().min(4, 'Username must be at least 4 chars').max(20, 'Username cannot exceed 20 chars')
     .regex( /^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers and underscore'),
 
   email: z.string().trim().toLowerCase().email('Invalid email'),
@@ -16,7 +16,9 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email_or_username: z.string().trim().min(1, 'Email or username is required'),
   password: z.string().min(1, 'Password is required'),
-  turnstileToken: z.string().min(1, 'CAPTCHA verification required')
+  captchaToken: z.string().min(1, 'Security check required'),
+  captchaAnswer: z.union([z.string(), z.number()]).refine(v => String(v).trim() !== '', 'Security check answer required')
+ // turnstileToken: z.string().min(1, 'CAPTCHA verification required')
 });
 
 const forgotPasswordSchema = z.object({

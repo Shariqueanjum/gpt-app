@@ -1,4 +1,6 @@
 const { getActiveOfferWalls, getOfferWallByInternalId, seedAll } = require('../services/offer_wall.service');
+const { findUserById } = require('../repositories/user.repository');
+const { assertWallUnlocked } = require('../constants/offerWallRestrictions');
 
 const listOfferWalls = async (req, res, next) => {
   try {
@@ -17,6 +19,7 @@ const getSurveys = async (req, res, next) => {
   try {
     const { internal_id } = req.params;
     const wall = await getOfferWallByInternalId(internal_id);
+    assertWallUnlocked(wall, await findUserById(req.user.id));
 
     // Only API-type walls support pre-fetching survey lists
     if (wall.type !== 'api') {

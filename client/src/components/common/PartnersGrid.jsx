@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { Box, Typography } from '@mui/material'
+import LockIcon from '@mui/icons-material/Lock'
+import WallLockedDialog from './WallLockedDialog'
 
 // Single partner tile: logo on top, name below. Nothing else.
 const PartnerCard = ({ wall, COLORS, darkMode, onClick }) => {
   const [broken, setBroken] = useState(false)
   const showLogo = wall.logo_url && !broken
+   const locked = Boolean(wall.is_locked)
 
   return (
     <Box
@@ -20,6 +23,12 @@ const PartnerCard = ({ wall, COLORS, darkMode, onClick }) => {
         '&:active': { transform: 'scale(0.98)' },
       }}
     >
+      {locked && (
+        <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1, width: 24, height: 24, borderRadius: '50%', bgcolor: COLORS.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(83,18,188,0.3)' }}>
+          <LockIcon sx={{ fontSize: 14, color: '#fff' }} />
+        </Box>
+      )}
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, width: '100%', filter: locked ? 'blur(1.5px)' : 'none', opacity: locked ? 0.7 : 1, transition: 'filter 0.2s ease' }}>
       <Box sx={{ height: 44, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {showLogo ? (
           <Box
@@ -39,16 +48,31 @@ const PartnerCard = ({ wall, COLORS, darkMode, onClick }) => {
       <Typography sx={{ fontWeight: 700, fontSize: '0.82rem', color: COLORS.textPrimary, textAlign: 'center', lineHeight: 1.2, wordBreak: 'break-word' }}>
         {wall.name}
       </Typography>
+       </Box>
     </Box>
   )
 }
 
-const PartnersGrid = ({ walls, COLORS, darkMode, onSelect }) => (
+const PartnersGrid = ({ walls, COLORS, darkMode, onSelect }) => {
+  const [lockedWall, setLockedWall] = useState(null)
+
+  // Locked walls never reach onSelect — we block the click and explain how to unlock.
+  const handleClick = (wall) => {
+    if (wall.is_locked) { setLockedWall(wall); return }
+    onSelect(wall)
+  }
+
+
+  return (
+  <>
   <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(auto-fill, minmax(190px, 1fr))' }, gap: { xs: 1.5, md: 2 } }}>
     {walls.map((wall) => (
-      <PartnerCard key={wall.id} wall={wall} COLORS={COLORS} darkMode={darkMode} onClick={() => onSelect(wall)} />
+      <PartnerCard key={wall.id} wall={wall} COLORS={COLORS} darkMode={darkMode} onClick={() => handleClick(wall)} />
     ))}
   </Box>
-)
+  <WallLockedDialog wall={lockedWall} onClose={() => setLockedWall(null)} COLORS={COLORS} />
+  </>
+  )
+}
 
 export default PartnersGrid

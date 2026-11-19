@@ -16,7 +16,9 @@ import MonetizationOnIcon from '@mui/icons-material/MonetizationOn'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import CategoryIcon from '@mui/icons-material/Category'
 import axiosInstance from '../utils/axiosInstance'
+import LockIcon from '@mui/icons-material/Lock'
 import { PageWrapper, getColors } from '../components/Layout/SharedLayout'
+import WallLockedDialog from '../components/common/WallLockedDialog'
 
 const EarnPage = ({ darkMode, toggleDarkMode }) => {
   const [searchParams] = useSearchParams()
@@ -35,6 +37,7 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
   const [iframeUrl, setIframeUrl] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [lockedWall, setLockedWall] = useState(null) // wall the user tapped but hasn't unlocked yet
 
   // FIX: Refs to prevent duplicate operations
   const wallLoadedRef = useRef(false)
@@ -87,6 +90,14 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
   }
 
   const loadWallContent = async (wall) => {
+    // Locked wall (e.g. opened via direct link) — don't load it, explain how to unlock
+    if (wall.is_locked) {
+      setLockedWall(wall)
+      setLoading(false)
+      navigate('/earn', { replace: true })
+      return
+    }
+
     if (wallLoadedRef.current) return
     wallLoadedRef.current = true
     clickCreatedRef.current = false
@@ -228,22 +239,28 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {filteredWalls.map((wall, idx) => {
                 const color = ['#5312bc', '#2563eb', '#10b981', '#f59e0b', '#ec4899', '#14b8a6'][idx % 6]
+                const locked = Boolean(wall.is_locked)
 
                 return (
                   <Paper key={wall.id} onClick={() => {
+                    if (locked) { setLockedWall(wall); return }
                     navigate(`/earn?wall=${wall.internal_id || wall.id}`)
                   }} sx={{
                     p: 3, borderRadius: 3, bgcolor: COLORS.cardBg,
                     border: `1px solid ${COLORS.border}`,
                     cursor: 'pointer',
                     transition: 'all 0.25s ease',
-                    '&:hover': {
+                    position: 'relative',
+                    '&:hover': locked ? {} : {
                       boxShadow: '0 8px 30px rgba(83,18,188,0.08)',
                       transform: 'translateY(-2px)',
                       borderColor: `${COLORS.primary}30`,
                     },
                   }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'space-between' }}>
+                    {locked && (
+                      <Chip size="small" icon={<LockIcon sx={{ fontSize: '0.85rem !important', color: '#fff !important' }} />} label={`Level ${wall.min_level}`} sx={{ position: 'absolute', top: 10, right: 10, zIndex: 1, bgcolor: COLORS.primary, color: '#fff', fontWeight: 700, fontSize: '0.7rem' }} />
+                    )}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'space-between', filter: locked ? 'blur(1.5px)' : 'none', opacity: locked ? 0.7 : 1, transition: 'filter 0.2s ease' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         {wall.logo_url ? (
                           <Box component="img" src={wall.logo_url} sx={{ width: 48, height: 48, borderRadius: 2, objectFit: 'contain' }} />
@@ -273,6 +290,7 @@ const EarnPage = ({ darkMode, toggleDarkMode }) => {
             </Box>
           )}
         </Box>
+        <WallLockedDialog wall={lockedWall} onClose={() => setLockedWall(null)} COLORS={COLORS} />
       </PageWrapper>
     )
   }

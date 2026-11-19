@@ -2,6 +2,7 @@ const { getOfferWallByInternalId } = require('../services/offer_wall.service');
 const { createSurveyClickRecord } = require('../services/survey_click.service');
 const { logOutgoingTraffic } = require('../services/traffic_log.service');
 const { findUserById } = require('../repositories/user.repository');
+const { assertWallUnlocked } = require('../constants/offerWallRestrictions');
 
 /**
  * POST /api/offer-walls/:internal_id/entry
@@ -23,6 +24,9 @@ const getEntryUrl = async (req, res, next) => {
 
   try {
     wall = await getOfferWallByInternalId(internal_id);
+
+    // Level gate — e.g. CPX Research needs Level 2 (5 completed surveys)
+    assertWallUnlocked(wall, await findUserById(req.user.id))
 
     // For API type, we don't create click here — surveys are fetched first
     if (wall.type === 'api') {
