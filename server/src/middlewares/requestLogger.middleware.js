@@ -37,11 +37,14 @@ const requestLogger = pinoHttp({
   customErrorMessage: () => 'http_request_failed',
 
   // Extra fields on every request line (ids only, never emails or tokens).
-  customProps: (req) => ({
-    event: 'http_request',
-    user_id: req.user?.id ?? null,
-    admin_id: req.admin?.id ?? null
-  }),
+   customProps: (req, res) => {
+    if (!res.writableEnded) return {};
+    return {
+      event: 'http_request',
+      user_id: req.user?.id ?? null,
+      admin_id: req.admin?.id ?? null
+    };
+  },
 
   // Only safe fields: path WITHOUT the query string (queries can hold tokens/signatures), hashed IP, no headers.
   serializers: {
