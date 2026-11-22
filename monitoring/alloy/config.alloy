@@ -1,0 +1,61 @@
+// Alloy: reads the PM2 app logs (+ nginx error log) and ships them to Loki.
+// Only low-cardinality labels are created (job, stream, level, event). Request/user ids stay inside the log line.
+
+local.file_match "pm2" {
+  path_targets = [
+    {"__path__" = "/pm2logs/gpt-app-out.log",   "job" = "gpt-app", "stream" = "out"},
+    {"__path__" = "/pm2logs/gpt-app-error.log", "job" = "gpt-app", "stream" = "err"},
+  ]
+}
+
+local.file_match "nginx" {
+  // Only the ERROR log is shipped. The access log is left out on purpose (full URLs with query strings, visitor IPs).
+  path_targets = [
+    {"__path__" = "/nginxlogs/error.log", "job" = "nginx", "stream" = "error"},
+  ]
+}
+
+loki.source.file "pm2" {
+  targets    = local.file_match.pm2.targets
+  forward_to = [loki.process.pm2.receiver]
+}
+
+loki.source.file "nginx" {
+  targets    = local.file_match.nginx.targets
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.process "pm2" {
+  forward_to = [loki.write.local.receiver]
+
+  // Only JSON lines (the pino lines) are parsed. Old plain-text console.log lines pass through unchanged.
+  stage.match {
+    selector = "{job=\"gpt-app\"} |~ \"^\\\\{\""
+
+    stage.json {
+      expressions = {
+        level = "level",
+        event = "event",
+        ts    = "time",
+      }
+    }
+
+    stage.labels {
+      values = {
+        level = "",
+        event = "",
+      }
+    }
+
+    stage.timestamp {
+      source = "ts"
+      format = "RFC3339Nano"
+    }
+  }
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

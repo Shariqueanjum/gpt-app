@@ -1,0 +1,79 @@
+# PickOpinion log stack: Loki (stores logs) + Alloy (reads log files) + Grafana (shows them).
+# Separate Compose project ("monitoring"): does not touch the gpt-app project / gpt-site-db container.
+# Everything is bound to 127.0.0.1 and has CPU + memory caps so the website can never be starved.
+name: monitoring
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  loki:
+    image: grafana/loki:3.7.4
+    command: -config.file=/etc/loki/loki-config.yml
+    environment:
+      - GOMEMLIMIT=300MiB
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki-data:/loki
+    ports:
+      - "127.0.0.1:3100:3100"
+    mem_limit: 384m
+    cpus: 0.5
+    restart: unless-stopped
+    logging: *default-logging
+
+  alloy:
+    image: grafana/alloy:v1.22.0
+    user: "0:0"   # needed to read /root/.pm2/logs (root-only); all mounts below are read-only
+    command: >
+      run --server.http.listen-addr=0.0.0.0:12345
+      --storage.path=/var/lib/alloy/data
+      /etc/alloy/config.alloy
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /root/.pm2/logs:/pm2logs:ro
+      - /var/log/nginx:/nginxlogs:ro
+      - alloy-data:/var/lib/alloy/data
+    ports:
+      - "127.0.0.1:12345:12345"
+    environment:
+      - GOMEMLIMIT=220MiB
+    depends_on:
+      - loki
+    mem_limit: 320m
+    cpus: 0.3
+    restart: unless-stopped
+    logging: *default-logging
+
+  grafana:
+    image: grafana/grafana:13.2.5
+    environment:
+      - GOMEMLIMIT=250MiB
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in monitoring/.env}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_LOG_LEVEL=warn
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3000}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - loki
+    mem_limit: 320m
+    cpus: 0.5
+    restart: unless-stopped
+    logging: *default-logging
+
+volumes:
+  loki-data:
+  alloy-data:
+  grafana-data:
