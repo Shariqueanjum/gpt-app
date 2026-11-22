@@ -5,6 +5,7 @@ const { parseS2SCallback, parseBrowserCallback } = require('../services/callback
 const { processSurveyCompletion, processNonSuccessCallback } = require('../services/credit.service');
 const { logIncomingTraffic } = require('../services/traffic_log.service');
 const { processSingleReversal } = require('../services/reversal.service');
+const { logger, hashIp } = require('../utils/logger');
 
 
 // Helper to build processing result
@@ -17,6 +18,63 @@ const buildProcessingResult = (success, message, data = {}) => ({
 
 // traffic_logs.user_username is VARCHAR(50); a provider-supplied value can be longer
 const clip = (value, max = 50) => (value ? value.toString().slice(0, max) : null);
+
+// ---------------------------------------------------------------------------
+// Structured logging for callbacks. Events:
+//   callback_accepted      survey credited
+//   callback_acknowledged  bonus/screenout acknowledged, nothing credited
+//   callback_duplicate     already credited before / duplicate provider id
+//   callback_bad_signature hash check failed
+//   callback_rejected      we refused it (unknown wall, unknown click, bad payload...)
+//   callback_non_success   provider reported failed / terminated / quota etc. (recorded)
+//   callback_reversal      reversal postback (outcome: reversed | acknowledged | failed)
+//   callback_error         unexpected server fault (includes stack)
+// Logging can never break a callback: everything is wrapped in try/catch.
+// Only ids are logged - never the raw query/body, hash keys or signatures.
+// ---------------------------------------------------------------------------
+const cbLog = (req, level, event, channel, ctx = {}) => {
+  try {
+    const { offerWall, parsed, internal_id, started, extra, err } = ctx;
+    const fields = {
+      event,
+      channel,
+      offer_wall: offerWall?.internal_id || internal_id || null,
+      offer_wall_id: offerWall?.id || null,
+      provider_status: parsed?.status || null,
+      provider_raw_status: parsed?.rawStatus || null,
+      internal_txn: parsed?.subId || parsed?.transactionId || null,
+      external_txn: parsed?.externalTransactionId || null,
+      payout: parsed?.payout ?? null,
+      ip_hash: hashIp(req.ip),
+      processing_ms: started ? Date.now() - started : null,
+      ...(extra || {})
+    };
+    if (err) fields.err = err;
+    (req.log || logger)[level](fields, event);
+  } catch (_) { /* never break callback processing because of logging */ }
+};
+
+// Decide which event a thrown error is, so bad signatures/duplicates/rejections are searchable.
+const classifyCallbackError = (err) => {
+  const msg = (err && err.message) || '';
+  const status = err && err.status;
+  if (status === 409 || /already processed|already exists|already credited/i.test(msg)) {
+    return { level: 'warn', event: 'callback_duplicate', reason: msg };
+  }
+  if ((status && status < 500) || /^Missing required field|callback config not found/i.test(msg)) {
+    return { level: 'warn', event: 'callback_rejected', reason: msg };
+  }
+  return { level: 'error', event: 'callback_error', reason: msg };
+};
+
+const logCallbackCatch = (req, channel, err, ctx, userInfo) => {
+  const c = classifyCallbackError(err);
+  cbLog(req, c.level, c.event, channel, {
+    ...ctx,
+    extra: { reason: c.reason, status: err.status || 500, click_id: err.click_id || null, user_id: err.user_id || userInfo?.user_id || null },
+    err: c.event === 'callback_error' ? err : undefined
+  });
+};
 
 // S2S Callback: POST /api/callback/:internal_id
 const handleS2S = async (req, res, next) => {
@@ -51,7 +109,8 @@ const handleS2S = async (req, res, next) => {
         processing_time_ms: Date.now() - startTime,
         processing_result: buildProcessingResult(false, 'Offer wall not found')
       });
-
+      
+      cbLog(req, 'warn', 'callback_rejected', 's2s', { internal_id, started: startTime, extra: { reason: 'wall_not_found' } });
       return res.status(404).json({ success: false, message: 'Offer wall not found' });
 
     }
@@ -92,7 +151,8 @@ const handleS2S = async (req, res, next) => {
         processing_time_ms: Date.now() - startTime,
         processing_result: buildProcessingResult(false, hashCheck.reason || 'Invalid signature', { hash_check: hashCheck })
       });
-
+      
+      cbLog(req, 'warn', 'callback_bad_signature', 's2s', { offerWall, parsed, started: startTime, extra: { reason: hashCheck.reason || 'Invalid signature' } });
       return res.status(400).json({ success: false, message: hashCheck.reason || 'Invalid signature' });
 
     }
@@ -127,6 +187,7 @@ const handleS2S = async (req, res, next) => {
             payout_received: parsed.payout
           })
         });
+         cbLog(req, 'info', 'callback_acknowledged', 's2s', { offerWall, parsed, started: startTime, extra: { click_id: result.click_id, user_id: result.user_id } });
          return res.status(200).json({
         success: true
       });
@@ -154,6 +215,16 @@ const handleS2S = async (req, res, next) => {
         processing_time_ms: Date.now() - startTime,
         processing_result: buildProcessingResult(true, 'Survey credited successfully', result)
       });
+
+      if (result?.duplicate) {
+        cbLog(req, 'warn', 'callback_duplicate', 's2s', { offerWall, parsed, started: startTime, extra: { reason: 'already_credited' } });
+      } else {
+        cbLog(req, 'info', 'callback_accepted', 's2s', { offerWall, parsed, started: startTime, extra: {
+          click_id: result?.click_id, user_id: result?.user_id, transaction_id: result?.transaction_id,
+          points: result?.user_credited, locked: result?.is_locked
+        } });
+      }
+
 
       return res.json({
         success: true,
@@ -220,6 +291,12 @@ const handleS2S = async (req, res, next) => {
         )
       });
 
+      cbLog(req, reversalError ? 'warn' : 'info', 'callback_reversal', 's2s', { offerWall, parsed, started: startTime, extra: {
+        outcome: reversalError ? 'failed' : (reversalResult?.acknowledged ? 'acknowledged' : 'reversed'),
+        reason: reversalError?.message || null,
+        click_id: reversalResult?.click_id || null, user_id: reversalResult?.user_id || null
+      } });
+
       return res.json({
         success: !reversalError,
         message: reversalError ? reversalError.message : 'Reversal processed successfully',
@@ -251,6 +328,8 @@ const handleS2S = async (req, res, next) => {
         processing_time_ms: Date.now() - startTime,
         processing_result: buildProcessingResult(true, `Survey marked as ${parsed.status}`, result)
       });
+
+      cbLog(req, 'info', 'callback_non_success', 's2s', { offerWall, parsed, started: startTime, extra: { click_id: result?.click_id, user_id: result?.user_id } });
 
       return res.json({
         success: true,
@@ -285,6 +364,7 @@ const handleS2S = async (req, res, next) => {
       processing_result: buildProcessingResult(false, err.message, { status_code: err.status || 500 })
     });
 
+    logCallbackCatch(req, 's2s', err, { offerWall, parsed, internal_id, started: startTime }, { user_id: userId });
     return res.status(200).json({ success: false, message: err.message });
 
   }
@@ -318,7 +398,8 @@ const handleBrowser = async (req, res, next) => {
         processing_time_ms: Date.now() - startTime,
         processing_result: buildProcessingResult(false, 'Offer wall not found')
       });
-
+      
+      cbLog(req, 'warn', 'callback_rejected', 'browser', { internal_id, started: startTime, extra: { reason: 'wall_not_found' } });
       return redirectToFrontend(res, 'error', 'Offer wall not found');
     }
 
@@ -353,7 +434,8 @@ const handleBrowser = async (req, res, next) => {
         processing_time_ms: Date.now() - startTime,
         processing_result: buildProcessingResult(false, 'Invalid signature', { hash_check: hashCheck })
       });
-       
+      
+      cbLog(req, 'warn', 'callback_bad_signature', 'browser', { offerWall, parsed, started: startTime, extra: { reason: hashCheck.reason || 'Invalid signature' } });
       return redirectToFrontend(res, 'error', 'Invalid signature');
     }
 
@@ -383,6 +465,17 @@ const handleBrowser = async (req, res, next) => {
         processing_time_ms: Date.now() - startTime,
         processing_result: buildProcessingResult(true, result.acknowledged ? 'Bonus / screenout callback acknowledged — not credited' : 'Survey credited via browser', result)
       });
+
+      if (result?.duplicate) {
+        cbLog(req, 'warn', 'callback_duplicate', 'browser', { offerWall, parsed, started: startTime, extra: { reason: 'already_credited' } });
+      } else if (result?.acknowledged) {
+        cbLog(req, 'info', 'callback_acknowledged', 'browser', { offerWall, parsed, started: startTime, extra: { click_id: result.click_id, user_id: result.user_id } });
+      } else {
+        cbLog(req, 'info', 'callback_accepted', 'browser', { offerWall, parsed, started: startTime, extra: {
+          click_id: result?.click_id, user_id: result?.user_id, transaction_id: result?.transaction_id,
+          points: result?.user_credited, locked: result?.is_locked
+        } });
+      }
 
       return redirectToFrontend(res, 'success', null, result.user_credited);
 
@@ -416,6 +509,7 @@ const handleBrowser = async (req, res, next) => {
         processing_result: buildProcessingResult(true, `Browser callback: ${mappedStatus}`, { mapped_status: mappedStatus })
       });
 
+      cbLog(req, 'info', 'callback_non_success', 'browser', { offerWall, parsed, started: startTime, extra: { browser_status: normalizedStatus, click_id: result?.click_id, user_id: result?.user_id } });
       return redirectToFrontend(res, normalizedStatus);
     }
 
@@ -444,6 +538,7 @@ const handleBrowser = async (req, res, next) => {
       processing_result: buildProcessingResult(false, err.message)
     });
 
+    logCallbackCatch(req, 'browser', err, { offerWall, parsed, internal_id, started: startTime }, { user_id: userId });
     return redirectToFrontend(res, 'error', err.message);
   }
 };

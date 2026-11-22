@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 require('dotenv').config();
+const { logger } = require('../utils/logger');
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -10,11 +11,11 @@ const pool = new Pool({
 });
 
 pool.on('connect', () => {
-  console.log('Connected to PostgreSQL');
+  logger.debug({ event: 'db_connect' }, 'Connected to PostgreSQL');
 });
 
 pool.on('error', (err) => {
-  console.error('PostgreSQL error:', err);
+  logger.fatal({ event: 'db_pool_error', err }, 'PostgreSQL pool error - exiting so PM2 restarts the app');
   process.exit(-1);
 });
 

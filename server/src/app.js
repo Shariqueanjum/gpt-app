@@ -8,6 +8,7 @@ const userRoutes = require('./routes/user.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const { globalLimiter } = require('./middlewares/rateLimit.middleware');
 const errorHandler = require('./middlewares/error.middleware');
+const requestLogger = require('./middlewares/requestLogger.middleware');
 const loginHistoryRoutes = require('./routes/login_history.routes');
 const offerWallRoutes = require('./routes/offer_wall.routes');
 const surveyClickRoutes = require('./routes/survey_click.routes');
@@ -48,6 +49,7 @@ const app = express();
 
 app.set('trust proxy', true);
 
+app.use(requestLogger);
 app.use(cors());
 app.use(express.json());
 //app.use(globalLimiter);

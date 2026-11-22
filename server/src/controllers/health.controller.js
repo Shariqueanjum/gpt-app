@@ -4,7 +4,7 @@ const root = (req, res) => {
   res.json({ message: 'Server is running!' });
 };
 
-const healthCheck = async (req, res) => {
+const healthCheck = async (req, res, next) => {
   try {
     const result = await pool.query('SELECT NOW()');
 
