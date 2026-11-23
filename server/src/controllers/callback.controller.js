@@ -5,7 +5,7 @@ const { parseS2SCallback, parseBrowserCallback } = require('../services/callback
 const { processSurveyCompletion, processNonSuccessCallback } = require('../services/credit.service');
 const { logIncomingTraffic } = require('../services/traffic_log.service');
 const { processSingleReversal } = require('../services/reversal.service');
-const { logger, hashIp } = require('../utils/logger');
+const { logger, ipLogFields } = require('../utils/logger');
 
 
 // Helper to build processing result
@@ -45,7 +45,7 @@ const cbLog = (req, level, event, channel, ctx = {}) => {
       internal_txn: parsed?.subId || parsed?.transactionId || null,
       external_txn: parsed?.externalTransactionId || null,
       payout: parsed?.payout ?? null,
-      ip_hash: hashIp(req.ip),
+      ...ipLogFields(req),
       processing_ms: started ? Date.now() - started : null,
       ...(extra || {})
     };

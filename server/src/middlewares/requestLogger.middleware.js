@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const pinoHttp = require('pino-http');
-const { logger, hashIp } = require('../utils/logger');
+const { logger, ipLogFields } = require('../utils/logger');
 
 // Not logged: health checks (uptime monitors hit them constantly) and long-lived SSE streams.
 const isQuiet = (req) => {
@@ -54,7 +54,7 @@ const requestLogger = pinoHttp({
         id: req.id,
         method: req.method,
         path: (raw.originalUrl || req.url || '').split('?')[0],
-        ip_hash: hashIp(raw.ip || req.remoteAddress)
+        ...ipLogFields(raw) 
       };
     },
     res: (res) => ({ statusCode: res.statusCode })

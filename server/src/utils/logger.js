@@ -48,4 +48,23 @@ const logger = pino({
   }
 });
 
-module.exports = { logger, hashIp, maskEmail };
+// Which visitor fields go into a log line.
+//   LOG_RAW_IP=true  -> real IP in "ip"   (default is the hashed "ip_hash")
+// "country" is the 2-letter country code Cloudflare adds (CF-IPCountry); XX = unknown, T1 = Tor.
+// "cf_ip" is only written when Cloudflare's own CF-Connecting-IP differs from the IP the app uses (useful spoof signal).
+const LOG_RAW_IP = String(process.env.LOG_RAW_IP || '').toLowerCase() === 'true';
+
+const ipLogFields = (req) => {
+  const ip = req.ip || req.socket?.remoteAddress || null;
+  const fields = LOG_RAW_IP ? { ip } : { ip_hash: hashIp(ip) };
+
+  const country = req.headers && req.headers['cf-ipcountry'];
+  if (typeof country === 'string' && /^[A-Za-z0-9]{2}$/.test(country)) fields.country = country.toUpperCase();
+
+  const cfIp = req.headers && req.headers['cf-connecting-ip'];
+  if (LOG_RAW_IP && typeof cfIp === 'string' && cfIp.length <= 45 && cfIp !== ip) fields.cf_ip = cfIp;
+
+  return fields;
+};
+
+module.exports = { logger, hashIp, maskEmail, ipLogFields };
