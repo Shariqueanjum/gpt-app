@@ -29,6 +29,8 @@ const requestLogger = pinoHttp({
 
   customLogLevel: (req, res, err) => {
     if (err || res.statusCode >= 500) return 'error';
+    // 401 (not logged in / wrong password) and 404 (not found) are routine noise: info, not warn.
+    if (res.statusCode === 401 || res.statusCode === 404) return 'info';
     if (res.statusCode >= 400) return 'warn';
     return 'info';
   },

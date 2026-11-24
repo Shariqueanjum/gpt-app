@@ -41,10 +41,12 @@ const errorHandler = (err, req, res, next) => {
   try {
     if (status >= 500) {
       log.error({ ...fields, err }, err.message || 'Internal server error');
-    } else {
-      log.warn({ ...fields, err_message: err.message }, err.message || 'Request error');
-    }
-  } catch (_) { /* logging must never break the error response */ }
+        } else if (status === 401 || status === 404) {
+          log.info({ ...fields, err_message: err.message }, err.message || 'Request error');
+        } else {
+         log.warn({ ...fields, err_message: err.message }, err.message || 'Request error');
+      }
+    } catch (_) { /* logging must never break the error response */ }
 
   // What the user sees: clean message, short code, request id for support. Same fields as before + two new ones.
   const message =
