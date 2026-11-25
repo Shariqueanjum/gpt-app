@@ -20,5 +20,10 @@ scrape_configs:
     static_configs:
       - targets: ['cadvisor:8080']
 
-  # Added in later stages (not active yet):
-  #   postgres_exporter (stage G2), the Node app /metrics (stage G3)
+  # Postgres statistics (postgres_exporter, read-only user pickopinion_monitor)
+  - job_name: postgres
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  # Added in a later stage (not active yet):
+  #   the Node app /metrics (stage G3)

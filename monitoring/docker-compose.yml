@@ -1,6 +1,7 @@
 # PickOpinion monitoring stack:
 #   logs:    Loki (stores logs) + Alloy (reads log files) + Grafana (shows them)
 #   numbers: Prometheus (stores metrics) + node-exporter (server) + cAdvisor (Docker containers)
+#            + postgres-exporter (Postgres statistics, read-only user)
 # Separate Compose project ("monitoring"): does not touch the gpt-app project / gpt-site-db container.
 # Everything is bound to 127.0.0.1 and has CPU + memory caps so the website can never be starved.
 name: monitoring
@@ -132,8 +133,30 @@ services:
     restart: unless-stopped
     logging: *default-logging
 
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
+    command:
+      - --collector.postmaster
+    environment:
+      - DATA_SOURCE_URI=gpt-site-db:5432/gpt_db?sslmode=disable
+      - DATA_SOURCE_USER=pickopinion_monitor
+      - DATA_SOURCE_PASS=${POSTGRES_EXPORTER_PASSWORD}
+      - GOMEMLIMIT=40MiB
+    networks:
+      - default      # lets Prometheus reach the exporter
+      - gpt-app      # lets the exporter reach the Postgres container (read-only statistics user)
+    mem_limit: 64m
+    cpus: 0.2
+    restart: unless-stopped
+    logging: *default-logging
+
 volumes:
   prometheus-data:
   loki-data:
   alloy-data:
   grafana-data:
+
+networks:
+  gpt-app:
+    external: true          # the Postgres project's existing network; this file never creates or deletes it
+    name: gpt-app_default
