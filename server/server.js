@@ -3,6 +3,7 @@ require('dotenv').config();
 const { logger } = require('./src/utils/logger');
 const app = require('./src/app');
 const createTables = require('./src/config/migrations');
+const { startMetricsServer } = require('./src/utils/metrics');
 
 // Same behaviour as before (the process exits and PM2 restarts it) - but the reason is now written to the logs first.
 process.on('uncaughtException', (err) => {
@@ -21,3 +22,6 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   logger.info({ event: 'server_started', port: Number(PORT), node: process.version, env: process.env.NODE_ENV || 'unset' }, `Server running on port ${PORT}`);
 });
+
+// Prometheus numbers on a separate private port; does nothing unless METRICS_PORT is set in .env
+startMetricsServer();

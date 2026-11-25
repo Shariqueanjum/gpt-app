@@ -6,6 +6,7 @@ const { processSurveyCompletion, processNonSuccessCallback } = require('../servi
 const { logIncomingTraffic } = require('../services/traffic_log.service');
 const { processSingleReversal } = require('../services/reversal.service');
 const { logger, ipLogFields } = require('../utils/logger');
+const { recordCallback } = require('../utils/metrics');
 
 
 // Helper to build processing result
@@ -51,6 +52,7 @@ const cbLog = (req, level, event, channel, ctx = {}) => {
     };
     if (err) fields.err = err;
     (req.log || logger)[level](fields, event);
+    recordCallback(event, offerWall?.internal_id);
   } catch (_) { /* never break callback processing because of logging */ }
 };
 

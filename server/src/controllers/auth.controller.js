@@ -3,6 +3,7 @@ const { generateToken } = require('../utils/jwt');
 const pool = require('../config/db');
 const { generateMathChallenge } = require('../utils/mathCaptcha');
 const { logger } = require('../utils/logger');
+const { recordLogin, recordRegister } = require('../utils/metrics');
 
 // Username the person chose on the register form (cut to 40 characters for the log line)
 const regUsername = (req) => String(req.body?.username ?? '').slice(0, 40) || null;
@@ -17,6 +18,7 @@ const register = async (req, res, next) => {
     });
 
     (req.log || logger).info({ event: 'register_success', username: regUsername(req),  total_ms: Date.now() - started }, 'Registration submitted');
+    recordRegister('success');
 
     res.status(201).json({
       success: true,
@@ -24,6 +26,7 @@ const register = async (req, res, next) => {
     });
   } catch (err) {
     (req.log || logger).info({ event: 'register_failed', username: regUsername(req), reason: err.message, status: err.status || 500, total_ms: Date.now() - started }, 'Registration failed');
+    recordRegister('failed');
     next(err);
   }
 };
@@ -38,6 +41,7 @@ const login = async (req, res, next) => {
     });
 
     (req.log || logger).info({ event: 'login_success', username: result.user?.username ?? null, user_id: result.user?.id ?? null, total_ms: Date.now() - started, ...(req.timings || {}) }, 'Login successful');
+    recordLogin('success', 200, Date.now() - started, req.timings);
 
     res.json({
       success: true,
@@ -47,6 +51,7 @@ const login = async (req, res, next) => {
     });
   } catch (err) {
     (req.log || logger).info({ event: 'login_failed', username: req.logUser?.username ?? null, user_id: req.logUser?.id ?? null, reason: err.message, status: err.status || 500, total_ms: Date.now() - started, ...(req.timings || {}) }, 'Login failed');
+    recordLogin('failed', err.status || 500, Date.now() - started, req.timings);
     next(err);
   }
 };

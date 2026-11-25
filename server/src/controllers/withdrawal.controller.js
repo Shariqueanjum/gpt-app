@@ -1,5 +1,6 @@
 const { requestWithdrawal, getMyWithdrawals } = require('../services/withdrawal.service');
 const { logger } = require('../utils/logger');
+const { recordWithdrawal } = require('../utils/metrics');
 
 const createWithdrawal = async (req, res, next) => {
   try {
@@ -7,6 +8,7 @@ const createWithdrawal = async (req, res, next) => {
     const result = await requestWithdrawal(userId, req.body);
 
     (req.log || logger).info({ event: 'withdrawal_requested', username: result.username ?? null, user_id: userId, withdrawal_id: result.withdrawal?.id ?? null, amount: result.withdrawal?.amount ?? null }, 'Withdrawal requested');
+    recordWithdrawal();
 
     res.status(201).json({
       success: true,

@@ -25,5 +25,8 @@ scrape_configs:
     static_configs:
       - targets: ['postgres-exporter:9187']
 
-  # Added in a later stage (not active yet):
-  #   the Node app /metrics (stage G3)
+  # The Node app: prom-client /metrics on a private port. 172.17.0.1 is the host's Docker bridge address;
+  # the app listens ONLY there (METRICS_HOST / METRICS_PORT in server/.env), never on the public IP.
+  - job_name: gptapp
+    static_configs:
+      - targets: ['172.17.0.1:9464']
