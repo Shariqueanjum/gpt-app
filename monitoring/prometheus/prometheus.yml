@@ -1,0 +1,24 @@
+# Prometheus: collects numbers (CPU, memory, disk, containers) every 30 s and keeps them 30 days.
+# Targets are reached by service name inside the "monitoring" Compose network. Nothing here is public.
+global:
+  scrape_interval: 30s
+  scrape_timeout: 10s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # The server itself: CPU, memory, swap, disk, load (node_exporter)
+  - job_name: node
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # Docker containers: memory and CPU per container (cAdvisor)
+  - job_name: cadvisor
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # Added in later stages (not active yet):
+  #   postgres_exporter (stage G2), the Node app /metrics (stage G3)

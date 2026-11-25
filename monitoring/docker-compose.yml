@@ -1,4 +1,6 @@
-# PickOpinion log stack: Loki (stores logs) + Alloy (reads log files) + Grafana (shows them).
+# PickOpinion monitoring stack:
+#   logs:    Loki (stores logs) + Alloy (reads log files) + Grafana (shows them)
+#   numbers: Prometheus (stores metrics) + node-exporter (server) + cAdvisor (Docker containers)
 # Separate Compose project ("monitoring"): does not touch the gpt-app project / gpt-site-db container.
 # Everything is bound to 127.0.0.1 and has CPU + memory caps so the website can never be starved.
 name: monitoring
@@ -73,7 +75,65 @@ services:
     restart: unless-stopped
     logging: *default-logging
 
+  prometheus:
+    image: prom/prometheus:v3.13.5
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --storage.tsdb.retention.size=3GB
+      - --web.listen-address=0.0.0.0:9090
+    environment:
+      - GOMEMLIMIT=200MiB
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    mem_limit: 256m
+    cpus: 0.5
+    restart: unless-stopped
+    logging: *default-logging
+
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    command:
+      - --path.rootfs=/host
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run|var/lib/docker/.+|var/lib/containerd/.+)($$|/)
+    pid: host            # lets it read the real server's process/mount information (read-only use)
+    environment:
+      - GOMEMLIMIT=40MiB
+    volumes:
+      - /:/host:ro,rslave
+    mem_limit: 64m
+    cpus: 0.2
+    restart: unless-stopped
+    logging: *default-logging
+
+  cadvisor:
+    image: ghcr.io/google/cadvisor:v0.61.0
+    privileged: true      # documented way to let cAdvisor read container stats
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    command:
+      - --housekeeping_interval=30s
+      - --docker_only=true
+      - --disable_metrics=percpu,sched,tcp,udp,advtcp,process,hugetlb,referenced_memory,cpu_topology,resctrl
+    environment:
+      - GOMEMLIMIT=120MiB
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    mem_limit: 160m
+    cpus: 0.3
+    restart: unless-stopped
+    logging: *default-logging
+
 volumes:
+  prometheus-data:
   loki-data:
   alloy-data:
   grafana-data:
