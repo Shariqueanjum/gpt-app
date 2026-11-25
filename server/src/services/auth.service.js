@@ -196,13 +196,18 @@ const loginUser = async (payload, meta) => {
   const user = await findUserByEmailOrUsername(identifier);
   const deviceFingerprint = generateDeviceFingerprint(meta.req);
 
+  if (user && meta.req) meta.req.logUser = { id: user.id, username: user.username };
+
   if (!user) {
     const error = new Error('Invalid credentials');
     error.status = 401;
     throw error;
   }
 
+  const timings = meta.req ? (meta.req.timings = {}) : {};
+  const bcryptStart = Date.now();
   const isMatch = await bcrypt.compare(password, user.password_hash);
+  timings.bcrypt_ms = Date.now() - bcryptStart;
 
   if (!isMatch) {
     await createLoginHistory(null, {
@@ -228,7 +233,10 @@ const loginUser = async (payload, meta) => {
     throw error;
   }
 
+  const vpnStart = Date.now();
   const vpnData = await checkVPN(meta.ip);
+  timings.vpn_check_ms = Date.now() - vpnStart;
+  
   if (vpnData && (vpnData.is_vpn || vpnData.is_proxy || vpnData.is_tor)) {
     await createVPNCheck(null, {
       user_id: user.id,

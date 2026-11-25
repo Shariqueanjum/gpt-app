@@ -122,7 +122,9 @@ const requestWithdrawal = async (userId, payload) => {
         method: withdrawal.method,
         status: withdrawal.status,
         created_at: withdrawal.created_at ? new Date(withdrawal.created_at).toISOString() : new Date().toISOString()
-      }
+      },
+      // used only for the log line in the controller (the controller sends only result.withdrawal to the client)
+      username: user.username
     };
 
   } catch (err) {
